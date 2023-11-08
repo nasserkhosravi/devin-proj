@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Devin</string>
+    <string name="menu_refresh">Refresh</string>
+    <string name="menu_share">Share Main</string>
+    <string name="menu_clear">Clear</string>
+    <string name="msg_logs_cleared">Logs cleared</string>
+    <string name="msg_empty_filter">Empty filter</string>
+    <string name="msg_refreshed">refreshed</string>
+    <string name="title_of_share">Share file with</string>
+</resources>

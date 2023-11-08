@@ -1,0 +1,25 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Devin" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    </style>
+
+    <style name="Theme.Devin" parent="Base.Theme.Devin">
+        <item name="chipStyle">@style/Theme.Base.Devin.Chip</item>
+        <item name="spaceXSmall">4dp</item>
+        <item name="borderSizeSmall">1dp</item>
+    </style>
+
+    <style name="Theme.Base.Devin.Chip" parent="Base.Widget.MaterialComponents.Chip">
+        <item name="android:textColor">@color/chip_text_color</item>
+        <item name="chipStrokeWidth">?attr/borderSizeSmall</item>
+        <item name="chipIconTint">@color/chip_icon_tint</item>
+        <item name="chipBackgroundColor">@color/chip_background_color</item>
+        <item name="chipStrokeColor">@color/chip_stroke_color</item>
+    </style>
+
+    <attr name="spaceXSmall" />
+    <attr name="borderSizeSmall"/>
+
+</resources>

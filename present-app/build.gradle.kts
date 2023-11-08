@@ -1,0 +1,48 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt")
+}
+
+android {
+    namespace = "ir.khosravi.devin.present"
+    compileSdk = 33
+
+    defaultConfig {
+        minSdk = 26
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+    buildFeatures {
+        viewBinding = true
+    }
+}
+
+dependencies {
+    implementation(project(mapOf("path" to ":devin")))
+
+    implementation("androidx.core:core-ktx:1.9.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.9.0")
+    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
+    implementation("androidx.fragment:fragment-ktx:1.4.0")
+
+    implementation("androidx.room:room-runtime:2.5.1")
+
+    implementation("com.google.dagger:dagger-android:2.24")
+    kapt("com.google.dagger:dagger-compiler:2.24")
+ }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="black_pearl_alpha_87">#DE040A1F</color>
+    <color name="black_pearl_alpha_38">#61040A1F</color>
+    <color name="green_dark_2">#22A958</color>
+    <color name="green_light_1">#00DD7F</color>
+    <color name="white_light_1">#ffffff</color>
+    <color name="white_light_2">#EBECF2</color>
+
+    <color name="colorPrimary">@color/green_dark_2</color>
+    <color name="colorPrimaryVariant">@color/green_light_1</color>
+    <color name="colorSurface">@color/white_light_1</color>
+    <color name="colorOnSurfaceVariant">@color/white_light_2</color>
+    <color name="colorOnSurface">@color/black_pearl_alpha_87</color>
+    <color name="colorOnSurfaceWeak">@color/black_pearl_alpha_38</color>
+</resources>
