@@ -14,13 +14,16 @@ class SampleActivity : AppCompatActivity() {
         setContentView(binding.root)
         binding.edCustomText.setText("Custom text")
 
+        val devinLogger = devinLogger(this)
         binding.btnSendDebug.setOnClickListener {
-            devinLogger(this).debug(binding.edCustomText.text.toString())
+            devinLogger.debug(binding.edCustomText.text.toString())
         }
 
         binding.btnSendAnalytic.setOnClickListener {
-            devinLogger(this).custom("Analytic", binding.edCustomText.text.toString())
+            devinLogger.custom("Analytic", binding.edCustomText.text.toString())
         }
+
+        devinLogger.callerFunc()
 
     }
 }

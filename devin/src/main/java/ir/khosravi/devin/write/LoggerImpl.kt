@@ -28,6 +28,10 @@ class LoggerImpl(
         sendLog(type, value)
     }
 
+    override fun callerFunc() {
+        debug(TraceLogger.callerFuncInfo(1))
+    }
+
     private fun sendLog(type: String, value: String) {
         appContext.contentResolver.insert(
             DevinContentProvider.URI_ALL_LOG.toUri(),

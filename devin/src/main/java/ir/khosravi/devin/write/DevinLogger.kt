@@ -8,5 +8,6 @@ interface DevinLogger {
     fun info(value: String)
     fun warning(value: String)
     fun custom(type: String, value: String)
+    fun callerFunc()
 }
 
