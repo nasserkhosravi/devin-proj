@@ -1,19 +1,16 @@
 package ir.khosravi.devin.present.formatter
 
-import android.content.Context
-import ir.khosravi.devin.present.getPackageInfo
 import ir.khosravi.devin.write.room.LogTable
+import java.util.Date
 
+internal object TxtFileReporter {
 
-object TxtFileFormatter {
-
-    fun execute(
-        context: Context,
+    fun create(
+        versionName: String,
         logs: List<LogTable>
-    ): String {
-        val pInfo = context.getPackageInfo()
+    ): TextualReport {
         val stringBuilder = StringBuilder()
-            .append("version name:").append(pInfo.versionName)
+            .append("version name:").append(versionName)
             .appendLine()
 
         logs.forEach {
@@ -24,6 +21,6 @@ object TxtFileFormatter {
                 .appendLine()
                 .appendLine()
         }
-        return stringBuilder.toString()
+        return TextualReport("DevinShareFile: ${Date()}.txt", stringBuilder.toString())
     }
 }
