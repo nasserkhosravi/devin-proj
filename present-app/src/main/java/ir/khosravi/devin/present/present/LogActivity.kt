@@ -125,8 +125,12 @@ class LogActivity : AppCompatActivity(), FilterAdapter.Listener, CoroutineScope 
                 true
             }
 
-            R.id.action_share -> {
+            R.id.action_share_txt -> {
                 onShareTxtFile()
+                true
+            }
+
+            R.id.action_share_json -> {
                 true
             }
 

@@ -24,14 +24,15 @@ fun Context.toUriByFileProvider(file: File): Uri {
     return FileProvider.getUriForFile(this, "ir.khosravi.devin.present.fileprovider", file)
 }
 
-fun shareTxtFileIntent(fileUri: Uri): Intent {
+fun shareFileIntent(fileUri: Uri, type: String): Intent {
     return Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
+        this.type = type
         clipData = ClipData.newRawUri("", fileUri)
         putExtra(Intent.EXTRA_STREAM, fileUri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 }
+
 @Suppress("DEPRECATION")
 fun Context.getPackageInfo(): PackageInfo {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
