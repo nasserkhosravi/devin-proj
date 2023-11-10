@@ -76,7 +76,10 @@ class LogActivity : AppCompatActivity(), FilterAdapter.Listener, CoroutineScope 
     private fun onClearLogs() {
         launch {
             viewModel.clearLogs()
+                .flowOn(Dispatchers.Main)
                 .collect {
+                    filterAdapter.removeAll()
+                    logAdapter.removeAll()
                     Toast.makeText(this@LogActivity, getString(R.string.msg_logs_cleared), Toast.LENGTH_SHORT).show()
                 }
         }

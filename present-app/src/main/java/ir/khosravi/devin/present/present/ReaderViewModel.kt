@@ -51,7 +51,7 @@ class ReaderViewModel constructor(
     fun clearLogs() = flow {
         ContentProviderLogsDao.clear(getContext())
         emit(Unit)
-    }
+    }.flowOn(Dispatchers.Default)
 
     fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
         JsonFileReporter.create(BuildConfig.VERSION_NAME, it)
