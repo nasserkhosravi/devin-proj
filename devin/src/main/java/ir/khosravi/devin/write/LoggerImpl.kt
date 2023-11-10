@@ -15,14 +15,16 @@ internal class LoggerImpl(
         sendLog(tag, message)
     }
 
-    override fun logCallerFunc() {
-        sendLog(LOG_TYPE_UNTAG, TraceLogger.callerFuncInfo(1))
+    override fun logCallerFunc(tag: String?, message: String?, enableParentName: Boolean) {
+        val value = TraceLogger.callerFuncInfo(1, enableParentName).plus(" $message")
+        sendLog(tag, value)
     }
 
-    private fun sendLog(type: String, value: String) {
+    private fun sendLog(type: String?, value: String) {
+        val fType = if (type.isNullOrEmpty()) LOG_TYPE_UNTAG else type
         appContext.contentResolver.insert(
             DevinContentProvider.URI_ALL_LOG.toUri(),
-            DevinContentProvider.contentValueLog(type, value)
+            DevinContentProvider.contentValueLog(fType, value)
         )
     }
 
