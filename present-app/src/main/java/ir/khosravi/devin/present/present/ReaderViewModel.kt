@@ -4,12 +4,15 @@ import android.app.Application
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
+import ir.khosravi.devin.present.BuildConfig
 import ir.khosravi.devin.present.data.ContentProviderLogsDao
 import ir.khosravi.devin.present.fileForCache
 import ir.khosravi.devin.present.filter.DefaultFilterItem
 import ir.khosravi.devin.present.filter.FilterItem
 import ir.khosravi.devin.present.filter.MainFilterItem
-import ir.khosravi.devin.present.formatter.TxtFileFormatter
+import ir.khosravi.devin.present.formatter.JsonFileReporter
+import ir.khosravi.devin.present.formatter.TextualReport
+import ir.khosravi.devin.present.formatter.TxtFileReporter
 import ir.khosravi.devin.present.log.LogItem
 import ir.khosravi.devin.present.toUriByFileProvider
 import ir.khosravi.devin.write.room.LogTable
@@ -50,15 +53,13 @@ class ReaderViewModel constructor(
         emit(Unit)
     }
 
+    fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
+        JsonFileReporter.create(BuildConfig.VERSION_NAME, it)
+    }.map { createCacheShareFile(it) }
+
     fun getLogsInCachedTxtFile(): Flow<Uri> = collectLogs().map {
-        TxtFileFormatter.execute(getContext(), it)
-    }.map { target ->
-        val file = getContext().fileForCache()
-        file.printWriter().use { out ->
-            out.print(target)
-        }
-        getContext().toUriByFileProvider(file)
-    }
+        TxtFileReporter.create(BuildConfig.VERSION_NAME, it)
+    }.map { createCacheShareFile(it)}
 
     /**
      * Get logs and filter them by [type], If type is null or empty then it means all logs.
@@ -79,10 +80,18 @@ class ReaderViewModel constructor(
     }
 
     private fun LogTable.toLogItem(): LogItem {
-        return LogItem(value,this.date)
+        return LogItem(value, this.date)
     }
 
     private fun getContext(): Context = getApplication()
+
+    private fun createCacheShareFile(textualReport: TextualReport): Uri {
+        val file = getContext().fileForCache(textualReport.fileName)
+        file.printWriter().use { out ->
+            out.print(textualReport.content)
+        }
+        return getContext().toUriByFileProvider(file)
+    }
 
     open class FilterAndLogs(
         val filter: FilterItem,
