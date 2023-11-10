@@ -23,4 +23,9 @@ abstract class BaseAdapter<D, VH : RecyclerView.ViewHolder> : RecyclerView.Adapt
         notifyDataSetChanged()
     }
 
+    fun removeAll() {
+        mItems.clear()
+        notifyDataSetChanged()
+    }
+
 }

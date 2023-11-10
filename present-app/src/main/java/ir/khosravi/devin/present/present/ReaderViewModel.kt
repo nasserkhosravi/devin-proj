@@ -48,7 +48,7 @@ class ReaderViewModel constructor(
     fun clearLogs() = flow {
         ContentProviderLogsDao.clear(getContext())
         emit(Unit)
-    }
+    }.flowOn(Dispatchers.Default)
 
     fun getLogsInCachedTxtFile(): Flow<Uri> = collectLogs().map {
         TxtFileFormatter.execute(getContext(), it)
