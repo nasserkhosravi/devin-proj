@@ -15,7 +15,7 @@ import ir.khosravi.devin.present.di.getAppComponent
 import ir.khosravi.devin.present.filter.FilterAdapter
 import ir.khosravi.devin.present.filter.FilterItem
 import ir.khosravi.devin.present.log.LogAdapter
-import ir.khosravi.devin.present.shareTxtFileIntent
+import ir.khosravi.devin.present.shareFileIntent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -98,12 +99,21 @@ class LogActivity : AppCompatActivity(), FilterAdapter.Listener, CoroutineScope 
             }
     }
 
-    private fun onShareTxtFile() {
+    private fun shareTxtFile() {
         launch {
-            viewModel.getLogsInCachedTxtFile().collect { fileUri ->
-                val sharingIntent = shareTxtFileIntent(fileUri)
-                startActivity(Intent.createChooser(sharingIntent, getString(R.string.title_of_share)))
-            }
+            viewModel.getLogsInCachedTxtFile().map { shareFileIntent(it, "text/plain") }
+                .collect {
+                    startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
+                }
+        }
+    }
+
+    private fun shareJsonFile() {
+        launch {
+            viewModel.getLogsInCachedJsonFile().map { shareFileIntent(it, "application/json") }
+                .collect {
+                    startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
+                }
         }
     }
 
@@ -128,8 +138,13 @@ class LogActivity : AppCompatActivity(), FilterAdapter.Listener, CoroutineScope 
                 true
             }
 
-            R.id.action_share -> {
-                onShareTxtFile()
+            R.id.action_share_txt -> {
+                shareTxtFile()
+                true
+            }
+
+            R.id.action_share_json -> {
+                shareJsonFile()
                 true
             }
 

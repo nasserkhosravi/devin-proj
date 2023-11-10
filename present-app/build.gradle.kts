@@ -13,9 +13,14 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    val versionName = "\"1.0.0\""
 
     buildTypes {
+        debug {
+            buildConfigField("String", "VERSION_NAME", versionName)
+        }
         release {
+            buildConfigField("String", "VERSION_NAME", versionName)
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -29,6 +34,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 }
 
@@ -45,4 +51,4 @@ dependencies {
 
     implementation("com.google.dagger:dagger-android:2.24")
     kapt("com.google.dagger:dagger-compiler:2.24")
- }
+}
