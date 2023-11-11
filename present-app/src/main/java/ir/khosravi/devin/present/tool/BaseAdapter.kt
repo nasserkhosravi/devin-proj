@@ -11,6 +11,11 @@ abstract class BaseAdapter<D, VH : RecyclerView.ViewHolder> : RecyclerView.Adapt
 
     override fun getItemCount(): Int = mItems.size
 
+    fun add(item: D) {
+        mItems.add(item)
+        notifyItemInserted(mItems.lastIndex)
+    }
+
     fun addAll(newItems: List<D>) {
         val lastIndex = mItems.lastIndex
         mItems.addAll(newItems)

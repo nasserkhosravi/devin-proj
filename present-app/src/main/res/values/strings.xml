@@ -4,8 +4,13 @@
     <string name="menu_share_txt">Share Main in plain txt</string>
     <string name="menu_share_json">Share Main in json</string>
     <string name="menu_clear">Clear</string>
-    <string name="msg_logs_cleared">Logs cleared</string>
+    <string name="msg_cleared">Logs and filters cleared</string>
     <string name="msg_empty_filter">Empty filter</string>
     <string name="msg_refreshed">refreshed</string>
     <string name="title_of_share">Share file with</string>
+    <string name="menu_create_filter">Create filter</string>
+    <string name="field_title">title</string>
+    <string name="field_search_text">search text</string>
+    <string name="confirm">confirm</string>
+    <string name="msg_title_required">title required</string>
 </resources>
