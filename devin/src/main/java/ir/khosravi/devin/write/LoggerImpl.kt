@@ -15,8 +15,16 @@ internal class LoggerImpl(
         sendLog(tag, message)
     }
 
+    override fun logCallerFunc() {
+        sendLog(LOG_TYPE_UNTAG, TraceLogger.callerFuncInfo(1, false))
+    }
+
     override fun logCallerFunc(tag: String?, message: String?, enableParentName: Boolean) {
-        val value = TraceLogger.callerFuncInfo(1, enableParentName).plus(" $message")
+        // 2, one for logCallerFunc parent, one for logCallerFunc has default parameter
+        val value = TraceLogger.callerFuncInfo(2, enableParentName).let {
+            if (!message.isNullOrEmpty()) it.plus(" $message")
+            else it
+        }
         sendLog(tag, value)
     }
 
