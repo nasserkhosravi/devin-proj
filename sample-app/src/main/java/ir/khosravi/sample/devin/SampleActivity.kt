@@ -12,18 +12,18 @@ class SampleActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val binding = ActivitySampleBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
-        binding.edCustomText.setText("Custom text")
+        binding.edCustomText.setText("Custom")
 
         val devinLogger = devinLogger(this)
         binding.btnSendDebug.setOnClickListener {
-            devinLogger.debug(binding.edCustomText.text.toString())
+            devinLogger.log(binding.edCustomText.text.toString())
         }
 
         binding.btnSendAnalytic.setOnClickListener {
-            devinLogger.custom("Analytic", binding.edCustomText.text.toString())
+            devinLogger.log("My-Analytic", binding.edCustomText.text.toString())
         }
 
-        devinLogger.callerFunc()
+        devinLogger.logCallerFunc(tag = "Trace")
 
     }
 }

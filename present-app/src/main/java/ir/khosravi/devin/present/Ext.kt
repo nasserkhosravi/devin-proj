@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
+import ir.khosravi.devin.present.tool.NotEmptyString
 import java.io.File
 import java.util.Date
 
@@ -48,3 +49,5 @@ fun Int.withPadding(): String {
     }
     return this.toString()
 }
+
+fun String.creataNotEmpty() = NotEmptyString(this)

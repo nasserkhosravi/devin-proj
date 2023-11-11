@@ -8,8 +8,11 @@
     <style name="Theme.Devin" parent="Base.Theme.Devin">
         <item name="chipStyle">@style/Theme.Base.Devin.Chip</item>
         <item name="spaceXSmall">4dp</item>
+        <item name="spaceSmall">8dp</item>
         <item name="borderSizeSmall">1dp</item>
     </style>
+
+    <style name="DialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog"/>
 
     <style name="Theme.Base.Devin.Chip" parent="Base.Widget.MaterialComponents.Chip">
         <item name="android:textColor">@color/chip_text_color</item>
@@ -18,8 +21,5 @@
         <item name="chipBackgroundColor">@color/chip_background_color</item>
         <item name="chipStrokeColor">@color/chip_stroke_color</item>
     </style>
-
-    <attr name="spaceXSmall" />
-    <attr name="borderSizeSmall"/>
 
 </resources>

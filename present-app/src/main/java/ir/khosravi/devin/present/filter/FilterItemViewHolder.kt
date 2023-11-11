@@ -5,11 +5,11 @@ import ir.khosravi.devin.present.databinding.ItemFilterBinding
 
 class FilterItemViewHolder(
     private val view: ItemFilterBinding,
-    private val onClick: (data: FilterItem) -> Unit
+    private val onClick: (data: FilterUiData) -> Unit
 ) : RecyclerView.ViewHolder(view.root) {
 
-    fun bind(data: FilterItem) = view.apply {
-        chip.text = data.type
+    fun bind(data: FilterUiData) = view.apply {
+        chip.text = data.title.value
         chip.isSelected = data.isChecked
 
         chip.setOnClickListener {

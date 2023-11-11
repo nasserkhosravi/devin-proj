@@ -8,7 +8,7 @@ import ir.khosravi.devin.present.tool.BaseAdapter
 
 class FilterAdapter(
     private val itemListener: Listener,
-) : BaseAdapter<FilterItem, RecyclerView.ViewHolder>() {
+) : BaseAdapter<FilterUiData, RecyclerView.ViewHolder>() {
 
     override fun onCreateViewHolder(position: ViewGroup, p1: Int): RecyclerView.ViewHolder {
         val inflater = LayoutInflater.from(position.context)
@@ -25,19 +25,23 @@ class FilterAdapter(
 
 
     interface Listener {
-        fun onNewFilterSelected(data: FilterItem, newIndex: Int)
+        fun onNewFilterSelected(data: FilterUiData, newIndex: Int)
     }
 
 
     ///Selection part, TODO: try to decouple it to new class.
-    private val adapter: BaseAdapter<FilterItem, *> = this
+    private val adapter: BaseAdapter<FilterUiData, *> = this
 
     ///0 index linked to main item implicitly
     var selectedIndex: Int = 0
         private set
 
-    private fun onSelectChanged(data: FilterItem) {
+    private fun onSelectChanged(data: FilterUiData) {
         val newIndex = adapter.items.indexOf(data)
+        checkSelect(newIndex)
+    }
+
+    private fun checkSelect(newIndex: Int) {
         if (newIndex == -1) {
             return
         }
@@ -49,10 +53,14 @@ class FilterAdapter(
         onNewFilterSelected(oldIndex, newIndex, adapter.items[newIndex])
     }
 
-    private fun onNewFilterSelected(oldIndex: Int, newIndex: Int, newItem: FilterItem) {
+    private fun onNewFilterSelected(oldIndex: Int, newIndex: Int, newItem: FilterUiData) {
         adapter.notifyItemChanged(oldIndex)
         adapter.notifyItemChanged(newIndex)
         itemListener.onNewFilterSelected(newItem, newIndex)
+    }
+
+    fun select(index: Int) {
+        checkSelect(index)
     }
 
 }
