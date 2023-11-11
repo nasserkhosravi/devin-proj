@@ -13,7 +13,7 @@ You can see an example in [SampleActivity](https://github.com/nasserkhosravi/dev
 ```groovy
 
 dependencies {
-    
+    implementation 'com.github.nasserkhosravi:devin-proj:1.0.1'
 }
 ```
 
