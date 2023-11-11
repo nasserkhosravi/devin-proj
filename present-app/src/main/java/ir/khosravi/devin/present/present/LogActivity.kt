@@ -12,16 +12,17 @@ import ir.khosravi.devin.present.R
 import ir.khosravi.devin.present.databinding.ActivityLogBinding
 import ir.khosravi.devin.present.di.ViewModelFactory
 import ir.khosravi.devin.present.di.getAppComponent
+import ir.khosravi.devin.present.filter.DefaultFilterItem
 import ir.khosravi.devin.present.filter.FilterAdapter
-import ir.khosravi.devin.present.filter.FilterItem
+import ir.khosravi.devin.present.filter.FilterUiData
 import ir.khosravi.devin.present.log.LogAdapter
+import ir.khosravi.devin.present.log.LogItem
 import ir.khosravi.devin.present.shareFileIntent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -61,16 +62,20 @@ class LogActivity : AppCompatActivity(), FilterAdapter.Listener, CoroutineScope 
         }
     }
 
-    override fun onNewFilterSelected(data: FilterItem, newIndex: Int) {
+    override fun onNewFilterSelected(data: FilterUiData, newIndex: Int) {
         launch {
-            binding.rvFilter.isEnabled = false
-            viewModel.getLogsByType(data.id)
-                .flowOn(Dispatchers.Main)
-                .collect {
-                    binding.rvFilter.isEnabled = true
-                    logAdapter.replaceAll(it)
-                }
+            selectNewFilter(data).collect()
         }
+    }
+
+    private fun selectNewFilter(data: FilterUiData): Flow<List<LogItem>> {
+        binding.rvFilter.isEnabled = false
+        return viewModel.getLogsByType(data)
+            .flowOn(Dispatchers.Main)
+            .onEach {
+                binding.rvFilter.isEnabled = true
+                logAdapter.replaceAll(it)
+            }
     }
 
     private fun onClearLogs() {
@@ -80,17 +85,16 @@ class LogActivity : AppCompatActivity(), FilterAdapter.Listener, CoroutineScope 
                 .collect {
                     filterAdapter.removeAll()
                     logAdapter.removeAll()
-                    Toast.makeText(this@LogActivity, getString(R.string.msg_logs_cleared), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@LogActivity, getString(R.string.msg_cleared), Toast.LENGTH_SHORT).show()
                 }
         }
     }
 
     private fun requestRefresh(index: Int): Flow<List<ReaderViewModel.FilterAndLogs>> {
         return viewModel.getLogListSectioned()
-            .flatMapLatest { viewModel.createAndAddMainItemToFirstIndex(it) }
             .flowOn(Dispatchers.Main)
             .onEach {
-                filterAdapter.replaceAll(it.map { it.filter })
+                filterAdapter.replaceAll(it.map { it.filter.ui })
                 if (it[index].logList.isEmpty()) {
                     Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
                 } else {
@@ -148,7 +152,42 @@ class LogActivity : AppCompatActivity(), FilterAdapter.Listener, CoroutineScope 
                 true
             }
 
+            R.id.action_create_filter -> {
+                createFilter()
+                true
+            }
+
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun createFilter() {
+        FilterDialog.newInstance().apply {
+            onConfirm = {
+                addFilter(it)
+                dismiss()
+            }
+            show(supportFragmentManager, FilterDialog.TAG)
+        }
+    }
+
+    private fun addFilter(data: DefaultFilterItem) {
+        launch {
+            viewModel.addFilter(data)
+                .flowOn(Dispatchers.Main)
+                .collect {
+                    filterAdapter.add(it.ui)
+                    onNewFilterCreated(it.ui, filterAdapter.items.lastIndex)
+                }
+        }
+    }
+
+    private fun onNewFilterCreated(data: FilterUiData, lastIndex: Int) {
+        launch {
+            selectNewFilter(data)
+                .collect {
+                    filterAdapter.select(lastIndex)
+                }
         }
     }
 
