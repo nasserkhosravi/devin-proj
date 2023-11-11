@@ -1,3 +1,4 @@
+[![](https://jitpack.io/v/nasserkhosravi/devin-proj.svg)](https://jitpack.io/#nasserkhosravi/devin-proj)
 # Devin project
 
 Devin project is intended to ease creating a solid language for QA report sharing,
