@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "ir.khosravi.writter"
+    namespace = "com.khosravi.devin.write"
     compileSdk = 33
 
     defaultConfig {

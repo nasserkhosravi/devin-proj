@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "ir.khosravi.devin.present"
+    namespace = "com.khosravi.devin.present"
     compileSdk = 33
 
     defaultConfig {

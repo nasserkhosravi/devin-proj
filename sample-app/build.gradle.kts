@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "ir.khosravi.sample.devin"
+    namespace = "com.khosravi.sample.devin"
     compileSdk = 33
 
     defaultConfig {
-        applicationId = "ir.khosravi.sample.devin"
+        applicationId = "com.khosravi.sample.devin"
         minSdk = 26
         targetSdk = 32
         versionCode = 1

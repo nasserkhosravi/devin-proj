@@ -19,19 +19,16 @@ dependencies {
 ```
 
 Add to your AndroidManifest.xml
+
 ```xml
-    <permission android:name="ir.khosravi.devin.permission.READ" 
-    android:protectionLevel="normal" />
 
-    <permission android:name="ir.khosravi.devin.permission.WRITE"
-    android:protectionLevel="normal" />
+<permission android:name="com.khosravi.devin.permission.READ" android:protectionLevel="normal" />
 
-    <application>
-        <provider
-            android:name="ir.khosravi.devin.write.DevinContentProvider"
-            android:authorities="ir.khosravi.devin.provider"
-            android:exported="true"
-            android:readPermission="ir.khosravi.devin.permission.READ"
-            android:writePermission="ir.khosravi.devin.permission.WRITE" />
-    </application>
+<permission android:name="com.khosravi.devin.permission.WRITE" android:protectionLevel="normal" />
+
+<application>
+<provider android:name="com.khosravi.devin.write.DevinContentProvider" android:authorities="com.khosravi.devin.provider"
+    android:exported="true" android:readPermission="com.khosravi.devin.permission.READ"
+    android:writePermission="com.khosravi.devin.permission.WRITE" />
+</application>
 ```

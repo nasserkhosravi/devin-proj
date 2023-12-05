@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="ir.khosravi.devin.permission.READ" />
-    <uses-permission android:name="ir.khosravi.devin.permission.WRITE" />
+    <uses-permission android:name="com.khosravi.devin.permission.READ" />
+    <uses-permission android:name="com.khosravi.devin.permission.WRITE" />
 
     <application
         android:name=".PresentApplication"
@@ -16,7 +16,7 @@
         android:theme="@style/Theme.Devin"
         tools:targetApi="31">
         <activity
-            android:name="ir.khosravi.devin.present.present.LogActivity"
+            android:name="com.khosravi.devin.present.present.LogActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,7 +27,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="ir.khosravi.devin.present.fileprovider"
+            android:authorities="com.khosravi.devin.present.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
 
