@@ -15,8 +15,7 @@ class FilterCriteria(
 
 class FilterUiData(
     val id: String,
-    val title: NotEmptyString,
-    var isChecked: Boolean = false
+    val title: NotEmptyString
 )
 
 class DefaultFilterItem(

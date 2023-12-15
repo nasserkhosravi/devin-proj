@@ -45,7 +45,7 @@ class FilterDialog : BaseDialog() {
         }
         val searchText = binding.edSearchText.text.toString()
         val filterItem = DefaultFilterItem(
-            ui = FilterUiData(title, title.creataNotEmpty(), true),
+            ui = FilterUiData(title, title.creataNotEmpty()),
             //TODO: in future support filter by type
             criteria = FilterCriteria(null, searchText)
         )

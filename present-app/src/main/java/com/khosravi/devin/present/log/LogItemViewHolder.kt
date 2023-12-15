@@ -1,21 +1,20 @@
 package com.khosravi.devin.present.log
 
+import android.view.LayoutInflater
+import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemLogBinding
 import com.khosravi.devin.present.withPadding
+import com.mikepenz.fastadapter.binding.AbstractBindingItem
 import java.util.Calendar
 import java.util.Date
 
 class LogItemViewHolder(
-    private val view: ItemLogBinding
-) : RecyclerView.ViewHolder(view.root) {
+    val data: LogItemData,
+) : AbstractBindingItem<ItemLogBinding>() {
 
-    fun bind(data: LogItem) = view.apply {
-        val dataText = getDateText(data)
-        tvText.text = dataText.plus(" ${data.text}")
-    }
-
-    private fun getDateText(data: LogItem): String {
+    private fun getDateText(data: LogItemData): String {
         val calendar = Calendar.getInstance().apply {
             time = Date(data.dateTimeStamp)
         }
@@ -29,6 +28,18 @@ class LogItemViewHolder(
 
         val dataText = "$year/$month/$day $hour:$minute:$second"
         return dataText
+    }
+
+    override val type: Int = R.id.vh_item_log
+
+    override fun createBinding(inflater: LayoutInflater, parent: ViewGroup?): ItemLogBinding {
+        return ItemLogBinding.inflate(inflater, parent, false)
+    }
+
+    override fun bindView(binding: ItemLogBinding, payloads: List<Any>) {
+        super.bindView(binding, payloads)
+        val dataText = getDateText(data)
+        binding.tvText.text = dataText.plus(" ${data.text}")
     }
 
 }

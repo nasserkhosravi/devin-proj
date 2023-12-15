@@ -17,7 +17,7 @@ import com.khosravi.devin.present.filter.MainFilterItem
 import com.khosravi.devin.present.formatter.JsonFileReporter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.formatter.TxtFileReporter
-import com.khosravi.devin.present.log.LogItem
+import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.write.room.LogTable
 import kotlinx.coroutines.Dispatchers
@@ -82,7 +82,7 @@ class ReaderViewModel constructor(
     /**
      * Get logs and filter them
      */
-    fun getLogsByType(data: FilterUiData): Flow<List<LogItem>> {
+    fun getLogsByType(data: FilterUiData): Flow<List<LogItemData>> {
         return collectLogs().zip(getPresentableFilterList().map { it.first { it.id == data.id } }) { logs, filterItem ->
             allLogsOrByCriteria(filterItem, logs)
         }.flowOn(Dispatchers.Default)
@@ -93,8 +93,8 @@ class ReaderViewModel constructor(
         emit(result)
     }
 
-    private fun LogTable.toLogItem(): LogItem {
-        return LogItem(value, this.date)
+    private fun LogTable.toLogItem(): LogItemData {
+        return LogItemData(value, this.date)
     }
 
     private fun getContext(): Context = getApplication()
@@ -124,9 +124,9 @@ class ReaderViewModel constructor(
 
     private fun getNotCustomFilterList(): List<FilterItem> {
         return listOf(
-            MainFilterItem().apply { ui.isChecked = true },
+            MainFilterItem(),
             DefaultFilterItem(
-                FilterUiData(id = KEY_UN_TAG, title = KEY_UN_TAG.creataNotEmpty(), isChecked = false),
+                FilterUiData(id = KEY_UN_TAG, title = KEY_UN_TAG.creataNotEmpty()),
                 criteria = null
             )
         )
@@ -134,7 +134,7 @@ class ReaderViewModel constructor(
 
 
     open class FilterAndLogs(
-        val filter: FilterItem, val logList: List<LogItem>
+        val filter: FilterItem, val logList: List<LogItemData>
     )
 
     companion object {

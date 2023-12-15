@@ -56,7 +56,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         }
 
         val present = FilterUiData(
-            id, json.getJSONObject(KEY_UI).getString(KEY_UI_TITLE).creataNotEmpty(), isChecked = false
+            id, json.getJSONObject(KEY_UI).getString(KEY_UI_TITLE).creataNotEmpty()
         )
         return DefaultFilterItem(present, criteria)
     }
