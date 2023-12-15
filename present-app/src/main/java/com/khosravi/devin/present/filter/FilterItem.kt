@@ -25,12 +25,3 @@ class DefaultFilterItem(
     override val id: String
         get() = ui.title.value
 }
-
-class MainFilterItem(
-    override val id: String = "Main"
-) : FilterItem {
-
-    override val ui: FilterUiData = FilterUiData(id, title = NotEmptyString(id))
-
-    override val criteria: FilterCriteria? = null
-}

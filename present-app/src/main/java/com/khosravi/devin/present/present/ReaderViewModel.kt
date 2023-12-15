@@ -12,7 +12,7 @@ import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterUiData
-import com.khosravi.devin.present.filter.MainFilterItem
+import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.formatter.JsonFileReporter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.formatter.TxtFileReporter
@@ -116,7 +116,7 @@ class ReaderViewModel constructor(
 
     private fun getPresentableFilterList() = flow {
         val filterList = ArrayList<FilterItem>().apply {
-            add(MainFilterItem())
+            add(IndexFilterItem())
             addAll(filterRepository.getFilterList())
         }
         emit(filterList)
