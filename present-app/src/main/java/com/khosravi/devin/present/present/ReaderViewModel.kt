@@ -5,7 +5,6 @@ import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import com.khosravi.devin.present.BuildConfig
-import com.khosravi.devin.present.creataNotEmpty
 import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.fileForCache
@@ -116,30 +115,16 @@ class ReaderViewModel constructor(
     }.flowOn(Dispatchers.Default)
 
     private fun getPresentableFilterList() = flow {
-        val filterList = getNotCustomFilterList().toMutableList().apply {
+        val filterList = ArrayList<FilterItem>().apply {
+            add(MainFilterItem())
             addAll(filterRepository.getFilterList())
         }
         emit(filterList)
-    }
-
-    private fun getNotCustomFilterList(): List<FilterItem> {
-        return listOf(
-            MainFilterItem(),
-            DefaultFilterItem(
-                FilterUiData(id = KEY_UN_TAG, title = KEY_UN_TAG.creataNotEmpty()),
-                criteria = null
-            )
-        )
     }
 
 
     open class FilterAndLogs(
         val filter: FilterItem, val logList: List<LogItemData>
     )
-
-    companion object {
-        //value of LoggerImpl.LOG_TYPE_UNTAG
-        private const val KEY_UN_TAG = "untag"
-    }
 
 }
