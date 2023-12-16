@@ -56,7 +56,7 @@ class ReaderViewModel constructor(
     ) = allLogs.filter {
         val searchText = criteria.searchText
         val searchTextCondition = if (searchText.isNullOrEmpty()) true
-        else it.value.contains(searchText)
+        else it.value.contains(searchText, true)
 
         val type = criteria.type
         val typeCondition = if (type.isNullOrEmpty()) true else it.type == type
