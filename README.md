@@ -1,5 +1,7 @@
-[![](https://jitpack.io/v/nasserkhosravi/devin-proj.svg)](https://jitpack.io/#nasserkhosravi/devin-proj)
+
 # Devin project
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.nasserkhosravi.devin/write.svg)]([https://search.maven.org/artifact/io.github.libktx/ktx-module](https://search.maven.org/artifact/io.github.nasserkhosravi.devin/write))
+
 
 Devin project is intended to ease creating a solid language for QA report sharing,
 Also the project increase QA awareness from what happen in the application.
