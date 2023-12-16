@@ -2,4 +2,5 @@
 <resources>
     <item name="vh_item_log" type="id" />
     <item name="vh_item_filter" type="id" />
+    <item name="vh_item_header_log_date" type="id" />
 </resources>

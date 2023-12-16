@@ -12,7 +12,7 @@
         app:chipBackgroundColor="@color/colorOnSurface"
         android:textColor="@color/colorOnSurfaceVariant"
         android:layout_margin="?attr/spaceXSmall"
-        android:textSize="@dimen/logDaySize"
+        android:textSize="@dimen/textSizeLogHeaderDate"
         app:chipMinHeight="20dp"
         app:chipIconTint="@null"
         app:closeIconVisible="false"
