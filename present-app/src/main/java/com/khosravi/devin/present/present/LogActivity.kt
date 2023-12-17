@@ -165,7 +165,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         return when (item.itemId) {
             R.id.action_refresh -> {
                 launch {
-                    val filterItemId = filterItemAdapter.getSelectedItem().data.id
+                    val filterItemId = filterItemAdapter.optSelectedItem()?.data?.id ?: return@launch
                     requestRefreshLogItems(filterItemId).collect {
                         Toast.makeText(this@LogActivity, getString(R.string.msg_refreshed), Toast.LENGTH_SHORT).show()
                     }
@@ -198,7 +198,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun createFilter() {
-        FilterDialog.newInstance().apply {
+        FilterDialog.newInstance(filterItemAdapter.lastIndex()).apply {
             onConfirm = {
                 addFilter(it)
                 dismiss()
