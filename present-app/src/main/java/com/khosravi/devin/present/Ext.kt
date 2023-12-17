@@ -8,6 +8,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
+import androidx.core.os.bundleOf
+import androidx.fragment.app.Fragment
 import com.khosravi.devin.present.tool.NotEmptyString
 import java.io.File
 import java.util.Date
@@ -51,3 +53,8 @@ fun Int.withPadding(): String {
 }
 
 fun String.creataNotEmpty() = NotEmptyString(this)
+
+fun <T : Fragment> T.applyBundle(vararg pairs: Pair<String, Any?>): T {
+    arguments = bundleOf(*pairs)
+    return this
+}

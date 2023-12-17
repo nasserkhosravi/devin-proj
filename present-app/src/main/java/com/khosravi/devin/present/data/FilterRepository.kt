@@ -2,6 +2,7 @@ package com.khosravi.devin.present.data
 
 import android.content.Context
 import com.khosravi.devin.present.creataNotEmpty
+import com.khosravi.devin.present.filter.ChipColor
 import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
@@ -34,7 +35,10 @@ class FilterRepository @Inject constructor(appContext: Context) {
                 .put(KEY_CRITERIA_SEARCH_TEXT, it.searchText)
         }
         val uiJson = ui.let {
-            JSONObject().put(KEY_UI_TITLE, it.title.value)
+            JSONObject()
+                .put(KEY_UI_TITLE, it.title.value)
+                .put(KEY_UI_BACK_COLOR, it.chipColor.backColor)
+                .put(KEY_UI_TEXT_COLOR, it.chipColor.textColor)
         }
         return JSONObject()
             .put(KEY_ID, id)
@@ -55,8 +59,13 @@ class FilterRepository @Inject constructor(appContext: Context) {
             )
         }
 
+        val uiJson = json.getJSONObject(KEY_UI)
         val present = FilterUiData(
-            id, json.getJSONObject(KEY_UI).getString(KEY_UI_TITLE).creataNotEmpty()
+            id, uiJson.getString(KEY_UI_TITLE).creataNotEmpty(),
+            ChipColor(
+                uiJson.getInt(KEY_UI_BACK_COLOR),
+                uiJson.getInt(KEY_UI_TEXT_COLOR)
+            )
         )
         return DefaultFilterItem(present, criteria)
     }
@@ -69,7 +78,9 @@ class FilterRepository @Inject constructor(appContext: Context) {
         private const val KEY_CRITERIA_SEARCH_TEXT = "_SEARCH_TEXT"
 
         private const val KEY_UI = "_UI"
-        private const val KEY_UI_TITLE = "_UI_TITLE"
+        private const val KEY_UI_TITLE = "_TITLE"
+        private const val KEY_UI_BACK_COLOR = "_BACK_COLOR"
+        private const val KEY_UI_TEXT_COLOR = "_TEXT_COLOR"
 
         private const val PREF_NAME = "filter"
     }

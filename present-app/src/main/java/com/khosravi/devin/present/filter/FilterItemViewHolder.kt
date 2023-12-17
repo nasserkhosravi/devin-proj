@@ -1,5 +1,6 @@
 package com.khosravi.devin.present.filter
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.khosravi.devin.present.R
@@ -20,6 +21,8 @@ class FilterItemViewHolder(
         super.bindView(binding, payloads)
         binding.apply {
             chip.text = data.title.value
+            chip.setTextColor(data.chipColor.textColor)
+            chip.chipBackgroundColor = ColorStateList.valueOf(data.chipColor.backColor)
         }
     }
 

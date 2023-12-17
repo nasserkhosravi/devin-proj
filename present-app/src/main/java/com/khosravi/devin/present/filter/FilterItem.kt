@@ -15,7 +15,8 @@ class FilterCriteria(
 
 class FilterUiData(
     val id: String,
-    val title: NotEmptyString
+    val title: NotEmptyString,
+    val chipColor: ChipColor,
 )
 
 class DefaultFilterItem(
