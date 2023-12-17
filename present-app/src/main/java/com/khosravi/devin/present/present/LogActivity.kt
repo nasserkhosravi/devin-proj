@@ -11,17 +11,23 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ActivityLogBinding
+import com.khosravi.devin.present.date.CalenderProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
+import com.khosravi.devin.present.filter.IndexFilterItem
+import com.khosravi.devin.present.log.HeaderLogDateItem
+import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.LogItemData
-import com.khosravi.devin.present.log.LogItemViewHolder
+import com.khosravi.devin.present.log.TextLogItemData
+import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.shareFileIntent
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
 import com.mikepenz.fastadapter.FastAdapter
+import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
 import kotlinx.coroutines.CoroutineScope
@@ -51,6 +57,9 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     @Inject
     lateinit var vmFactory: ViewModelFactory
 
+    @Inject
+    lateinit var calendar: CalenderProxy
+
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
@@ -70,8 +79,10 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
 
         launch {
-            requestRefresh(0)
-                .collect()
+            updateFilterList().collect {
+                requestRefreshLogItems(IndexFilterItem.ID)
+                    .collect()
+            }
         }
     }
 
@@ -81,10 +92,10 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun selectNewFilter(data: FilterUiData, index: Int): Flow<List<LogItemViewHolder>> {
+    private fun selectNewFilter(data: FilterUiData, index: Int): Flow<List<GenericItem>> {
         binding.rvFilter.isEnabled = false
-        return viewModel.getLogsByType(data)
-            .map { list -> list.map { it.toItemViewHolder() } }
+        return viewModel.getLogListOfFilter(data.id)
+            .map { it.logList.map { it.toItemViewHolder() } }
             .flowOn(Dispatchers.Main)
             .onEach {
                 binding.rvFilter.isEnabled = true
@@ -105,23 +116,26 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun requestRefresh(index: Int): Flow<List<ReaderViewModel.FilterAndLogs>> {
-        return viewModel.getLogListSectioned()
-            .flowOn(Dispatchers.Main)
+    private fun updateFilterList(): Flow<Unit> {
+        return viewModel.getFlowListPresentableFilter()
             .onEach { list ->
-                val filterItems = list.map { FilterItemViewHolder(it.filter.ui) }
+                val filterItems = list.map { FilterItemViewHolder(it.ui) }
                 filterItemAdapter.set(filterItems)
-                val fIndex = if (index == -1) 0 else index
-                filterItemAdapter.selectedIndex = fIndex
+                filterItemAdapter.selectedIndex = 0
                 filterItemAdapter.checkSelection()
-                val filterAndLogs = list.getOrNull(index)
+            }.map { }
+    }
 
-                if (filterAndLogs?.logList.isNullOrEmpty()) {
+    private fun requestRefreshLogItems(filterItemId: String): Flow<Unit> {
+        return viewModel.getLogListOfFilter(filterItemId)
+            .flowOn(Dispatchers.Main)
+            .onEach { result ->
+                if (result.logList.isEmpty()) {
                     Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
                 } else {
-                    mainItemAdapter.set(filterAndLogs!!.logList.map { it.toItemViewHolder() })
+                    mainItemAdapter.set(result.logList.map { it.toItemViewHolder() })
                 }
-            }
+            }.map { }
     }
 
     private fun shareTxtFile() {
@@ -151,7 +165,8 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         return when (item.itemId) {
             R.id.action_refresh -> {
                 launch {
-                    requestRefresh(filterItemAdapter.selectedIndex).collect {
+                    val filterItemId = filterItemAdapter.getSelectedItem().data.id
+                    requestRefreshLogItems(filterItemId).collect {
                         Toast.makeText(this@LogActivity, getString(R.string.msg_refreshed), Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -210,6 +225,11 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun LogItemData.toItemViewHolder() = LogItemViewHolder(this)
+    private fun LogItemData.toItemViewHolder(): GenericItem {
+        return when (this) {
+            is DateLogItemData -> HeaderLogDateItem(calendar, this)
+            is TextLogItemData -> TextLogItem(calendar, this)
+        }
+    }
 
 }

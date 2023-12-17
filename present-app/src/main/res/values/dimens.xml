@@ -3,6 +3,8 @@
     <dimen name="dialogMinWidth">260dp</dimen>
     <dimen name="cornerRadius">12dp</dimen>
 
+    <dimen name="textSizeLogHeaderDate">11sp</dimen>
+
     <attr name="spaceXSmall" />
     <attr name="spaceSmall" />
     <attr name="borderSizeSmall"/>

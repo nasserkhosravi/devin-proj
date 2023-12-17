@@ -7,16 +7,20 @@ import androidx.lifecycle.AndroidViewModel
 import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.FilterRepository
+import com.khosravi.devin.present.date.CalenderProxy
+import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.fileForCache
 import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
-import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.formatter.JsonFileReporter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.formatter.TxtFileReporter
+import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.LogItemData
+import com.khosravi.devin.present.log.TextLogItemData
+import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.write.room.LogTable
 import kotlinx.coroutines.Dispatchers
@@ -24,30 +28,43 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.zip
 import java.lang.IllegalArgumentException
 
 class ReaderViewModel constructor(
-    application: Application, private val filterRepository: FilterRepository
+    application: Application,
+    private val filterRepository: FilterRepository,
+    private val calendar: CalenderProxy,
 ) : AndroidViewModel(application) {
 
-    fun getLogListSectioned(): Flow<List<FilterAndLogs>> {
-        return collectLogs()
-            .zip(getPresentableFilterList(), ::sectionLogs)
-            .flowOn(Dispatchers.Default)
+    fun getLogListOfFilter(filterItemId: String): Flow<FilterResult> {
+        val filterItem = getPresentableFilterList().first { it.id == filterItemId }
+        return collectLogs().map { logTables ->
+            val logs = allLogsByCriteria(filterItem, logTables)
+            val logsWithHeaders = addDateHeadersByDay(logs, calendar)
+            FilterResult(logsWithHeaders)
+        }.flowOn(Dispatchers.IO)
     }
 
-    private fun sectionLogs(allLogs: List<LogTable>, filterList: List<FilterItem>): List<FilterAndLogs> {
-        return filterList.map { filterItem ->
-            val fLogs = allLogsOrByCriteria(filterItem, allLogs)
-            FilterAndLogs(filterItem, fLogs)
+    private fun addDateHeadersByDay(logs: List<TextLogItemData>, calendar: CalenderProxy): List<LogItemData> {
+        if (logs.isEmpty()) return emptyList()
+        val result = ArrayList<LogItemData>()
+        var nextDateDifferInDayCode: Int? = null
+        logs.forEach {
+            val presentDate = calendar.initIfNeed(DatePresent(it.timePresent.timestamp))
+            val candidateCode = presentDate.dumbed.hashCode()
+            if (candidateCode != nextDateDifferInDayCode) {
+                nextDateDifferInDayCode = candidateCode
+                result.add(DateLogItemData(presentDate))
+            }
+            result.add(it)
         }
+        return result
     }
 
-    private fun allLogsOrByCriteria(
+    private fun allLogsByCriteria(
         filterItem: FilterItem,
         allLogs: List<LogTable>
-    ) = (filterItem.criteria?.let { criteria ->
+    ): List<TextLogItemData> = (filterItem.criteria?.let { criteria ->
         filterByCriteria(allLogs, criteria)
     } ?: allLogs).map { it.toLogItem() }
 
@@ -56,7 +73,7 @@ class ReaderViewModel constructor(
     ) = allLogs.filter {
         val searchText = criteria.searchText
         val searchTextCondition = if (searchText.isNullOrEmpty()) true
-        else it.value.contains(searchText)
+        else it.value.contains(searchText, true)
 
         val type = criteria.type
         val typeCondition = if (type.isNullOrEmpty()) true else it.type == type
@@ -78,22 +95,13 @@ class ReaderViewModel constructor(
         TxtFileReporter.create(BuildConfig.VERSION_NAME, it)
     }.map { createCacheShareFile(it) }
 
-    /**
-     * Get logs and filter them
-     */
-    fun getLogsByType(data: FilterUiData): Flow<List<LogItemData>> {
-        return collectLogs().zip(getPresentableFilterList().map { it.first { it.id == data.id } }) { logs, filterItem ->
-            allLogsOrByCriteria(filterItem, logs)
-        }.flowOn(Dispatchers.Default)
-    }
-
     private fun collectLogs() = flow {
         val result = ContentProviderLogsDao.getAll(getContext()).sortedByDescending { it.date }
         emit(result)
     }
 
-    private fun LogTable.toLogItem(): LogItemData {
-        return LogItemData(value, this.date)
+    private fun LogTable.toLogItem(): TextLogItemData {
+        return TextLogItemData(value, TimePresent(this.date))
     }
 
     private fun getContext(): Context = getApplication()
@@ -114,7 +122,7 @@ class ReaderViewModel constructor(
         emit(data)
     }.flowOn(Dispatchers.Default)
 
-    private fun getPresentableFilterList() = flow {
+    fun getFlowListPresentableFilter() = flow {
         val filterList = ArrayList<FilterItem>().apply {
             add(IndexFilterItem())
             addAll(filterRepository.getFilterList())
@@ -122,9 +130,11 @@ class ReaderViewModel constructor(
         emit(filterList)
     }
 
+    private fun getPresentableFilterList() = ArrayList<FilterItem>().apply {
+        add(IndexFilterItem())
+        addAll(filterRepository.getFilterList())
+    }
 
-    open class FilterAndLogs(
-        val filter: FilterItem, val logList: List<LogItemData>
-    )
+    class FilterResult(val logList: List<LogItemData>)
 
 }
