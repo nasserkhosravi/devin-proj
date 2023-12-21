@@ -31,5 +31,9 @@ class SampleActivity : AppCompatActivity() {
 
         logger.logCallerFunc(enableParentName = true)
 
+
+        logger.doIfEnable {
+            //You can do your heavy operation here like json validation or any custom execution must happen in debug
+        }
     }
 }
