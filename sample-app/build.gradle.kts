@@ -43,5 +43,6 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     implementation("androidx.fragment:fragment-ktx:1.4.0")
-    implementation(project(mapOf("path" to ":devin")))
+    debugImplementation(project(mapOf("path" to ":devin")))
+    releaseImplementation(project(mapOf("path" to ":devin-no-op")))
 }
