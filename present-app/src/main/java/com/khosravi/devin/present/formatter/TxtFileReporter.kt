@@ -1,6 +1,6 @@
 package com.khosravi.devin.present.formatter
 
-import com.khosravi.devin.write.room.LogTable
+import com.khosravi.devin.present.data.LogTable
 import java.util.Date
 
 internal object TxtFileReporter {

@@ -1,6 +1,6 @@
 package com.khosravi.devin.present.formatter
 
-import com.khosravi.devin.write.room.LogTable
+import com.khosravi.devin.present.data.LogTable
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Date
@@ -18,8 +18,8 @@ internal object JsonFileReporter {
         val jsonGroupedLogs = JSONArray()
         logs.forEach {
             val item = JSONObject()
-                .put(LogTable.COLUMN_TYPE, it.type)
-                .put(LogTable.COLUMN_VALUE, it.value)
+                .put("type", it.type)
+                .put("value", it.value)
             jsonGroupedLogs.put(item)
         }
         root.put("logs", jsonGroupedLogs)

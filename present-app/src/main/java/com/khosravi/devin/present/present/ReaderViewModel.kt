@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel
 import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.FilterRepository
+import com.khosravi.devin.present.data.LogTable
 import com.khosravi.devin.present.date.CalenderProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.fileForCache
@@ -22,7 +23,6 @@ import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.toUriByFileProvider
-import com.khosravi.devin.write.room.LogTable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
