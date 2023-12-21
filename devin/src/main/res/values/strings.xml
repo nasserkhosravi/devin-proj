@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="devin_permission_read_label">Devin read permission</string>
+    <string name="devin_permission_read_description">Read devin logs</string>
+    <string name="devin_permission_write_label">Write devin permission</string>
+    <string name="devin_permission_write_description">Write on devin logs</string>
+</resources>
