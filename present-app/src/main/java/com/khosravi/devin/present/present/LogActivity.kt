@@ -24,8 +24,11 @@ import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.IndexFilterItem
+import com.khosravi.devin.present.log.ReplicatedTextLogItem
+import com.khosravi.devin.present.log.ReplicatedTextLogItemData
 import com.khosravi.devin.present.log.HeaderLogDateItem
 import com.khosravi.devin.present.log.DateLogItemData
+import com.khosravi.devin.present.log.TextLogSubItem
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.log.TextLogItem
@@ -36,6 +39,7 @@ import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
+import com.mikepenz.fastadapter.expandable.getExpandableExtension
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -83,6 +87,21 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             onNewFilterSelected(item.data, index)
             true
         }
+        mainAdapter.onClickListener = { _, _, item, position ->
+            when (item) {
+                is ReplicatedTextLogItem -> {
+                    onReplicatedTextLogItemClick(item)
+                }
+
+                is TextLogSubItem -> {
+                    onChildReplicatedTextLogItemClick(item)
+                }
+            }
+            true
+        }
+        //this call enable being expandable
+        mainAdapter.getExpandableExtension()
+
         if (
             ContextCompat.checkSelfPermission(this, PERMISSION_READ) != PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(this, PERMISSION_WRITE) != PackageManager.PERMISSION_GRANTED
@@ -257,7 +276,28 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         return when (this) {
             is DateLogItemData -> HeaderLogDateItem(calendar, this)
             is TextLogItemData -> TextLogItem(calendar, this)
+            is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, this).apply {
+                subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
+                onItemClickListener = { _,_, item, position ->
+//                    onChildReplicatedTextLogItemClick(item,position)
+                    true
+                }
+            }
         }
+    }
+
+    private fun onReplicatedTextLogItemClick(item: ReplicatedTextLogItem) {
+//        item.isExpanded = !item.isExpanded
+    }
+
+    private fun onChildReplicatedTextLogItemClick(item: TextLogSubItem) {
+
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mainAdapter.onClickListener = null
+        filterAdapter.onClickListener = null
     }
 
 }

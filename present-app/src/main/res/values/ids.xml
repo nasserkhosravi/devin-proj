@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="vh_item_text_log" type="id" />
+    <item name="vh_item_replicated_text_log" type="id" />
     <item name="vh_item_filter" type="id" />
     <item name="vh_item_header_log_date" type="id" />
 </resources>
