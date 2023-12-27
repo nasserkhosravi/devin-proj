@@ -52,6 +52,9 @@ dependencies {
     implementation("com.google.dagger:dagger-android:2.24")
     kapt("com.google.dagger:dagger-compiler:2.24")
 
-    implementation("com.mikepenz:fastadapter:5.7.0")
-    implementation("com.mikepenz:fastadapter-extensions-binding:5.7.0")
+    val fastAdapterVersion = "5.7.0"
+    implementation("com.mikepenz:fastadapter:$fastAdapterVersion")
+    implementation("com.mikepenz:fastadapter-extensions-binding:$fastAdapterVersion")
+    implementation("com.mikepenz:fastadapter-extensions-expandable:$fastAdapterVersion")
+
 }
