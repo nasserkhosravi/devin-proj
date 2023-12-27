@@ -10,6 +10,7 @@ import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.data.LogTable
 import com.khosravi.devin.present.date.CalenderProxy
 import com.khosravi.devin.present.date.DatePresent
+import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.fileForCache
 import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
@@ -21,7 +22,7 @@ import com.khosravi.devin.present.formatter.TxtFileReporter
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
-import com.khosravi.devin.present.date.TimePresent
+import com.khosravi.devin.present.present.logic.CountingReplicatedTextLogItemDataOperation
 import com.khosravi.devin.present.toUriByFileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -41,22 +42,23 @@ class ReaderViewModel constructor(
         return collectLogs().map { logTables ->
             val logs = allLogsByCriteria(filterItem, logTables)
             val logsWithHeaders = addDateHeadersByDay(logs, calendar)
-            FilterResult(logsWithHeaders)
+            val countedItemsWithHeader = CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+            FilterResult(countedItemsWithHeader)
         }.flowOn(Dispatchers.IO)
     }
 
-    private fun addDateHeadersByDay(logs: List<TextLogItemData>, calendar: CalenderProxy): List<LogItemData> {
+    private fun addDateHeadersByDay(logs: List<LogTable>, calendar: CalenderProxy): List<LogItemData> {
         if (logs.isEmpty()) return emptyList()
         val result = ArrayList<LogItemData>()
         var nextDateDifferInDayCode: Int? = null
         logs.forEach {
-            val presentDate = calendar.initIfNeed(DatePresent(it.timePresent.timestamp))
+            val presentDate = calendar.initIfNeed(DatePresent(it.date))
             val candidateCode = presentDate.dumbed.hashCode()
             if (candidateCode != nextDateDifferInDayCode) {
                 nextDateDifferInDayCode = candidateCode
                 result.add(DateLogItemData(presentDate))
             }
-            result.add(it)
+            result.add(TextLogItemData(it.value, TimePresent(it.date)))
         }
         return result
     }
@@ -64,9 +66,9 @@ class ReaderViewModel constructor(
     private fun allLogsByCriteria(
         filterItem: FilterItem,
         allLogs: List<LogTable>
-    ): List<TextLogItemData> = (filterItem.criteria?.let { criteria ->
+    ) = (filterItem.criteria?.let { criteria ->
         filterByCriteria(allLogs, criteria)
-    } ?: allLogs).map { it.toLogItem() }
+    } ?: allLogs)
 
     private fun filterByCriteria(
         allLogs: List<LogTable>, criteria: FilterCriteria
@@ -98,10 +100,6 @@ class ReaderViewModel constructor(
     private fun collectLogs() = flow {
         val result = ContentProviderLogsDao.getAll(getContext()).sortedByDescending { it.date }
         emit(result)
-    }
-
-    private fun LogTable.toLogItem(): TextLogItemData {
-        return TextLogItemData(value, TimePresent(this.date))
     }
 
     private fun getContext(): Context = getApplication()
