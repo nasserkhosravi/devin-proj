@@ -1,11 +1,18 @@
 package com.khosravi.devin.write
 
 import android.content.Context
-import androidx.core.net.toUri
+import android.net.Uri
 
 internal class LoggerImpl(
-    private val appContext: Context
+    private val appContext: Context,
+    private val isEnable: Boolean
 ) : DevinLogger {
+
+    override fun doIfEnable(action: (DevinLogger) -> Unit) {
+        if (isEnable) {
+            action(this)
+        }
+    }
 
     override fun log(message: String) {
         sendLog(LOG_TYPE_UNTAG, message)
@@ -29,9 +36,11 @@ internal class LoggerImpl(
     }
 
     private fun sendLog(type: String?, value: String) {
+        if (isEnable.not()) return
+
         val fType = if (type.isNullOrEmpty()) LOG_TYPE_UNTAG else type
         appContext.contentResolver.insert(
-            DevinContentProvider.URI_ALL_LOG.toUri(),
+            Uri.parse(DevinContentProvider.URI_ALL_LOG),
             DevinContentProvider.contentValueLog(fType, value)
         )
     }

@@ -111,15 +111,6 @@ class DevinContentProvider : ContentProvider() {
             put(LogTable.COLUMN_DATE, date.time)
         }
 
-        fun readAsNewLogTable(cursor: Cursor): LogTable {
-            return LogTable(
-                id = cursor.getLong(0),
-                type = cursor.getString(1),
-                value = cursor.getString(2),
-                date = cursor.getLong(3)
-            )
-        }
-
 
     }
 

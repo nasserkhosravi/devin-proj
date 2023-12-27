@@ -1,3 +1,5 @@
+import java.net.URI
+
 pluginManagement {
     repositories {
         google()
@@ -10,6 +12,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = URI("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+        }
     }
 }
 
@@ -18,3 +23,4 @@ include(":sample-app")
 include(":present-app")
 include(":devin")
 include(":lib-calendar")
+include(":devin-no-op")

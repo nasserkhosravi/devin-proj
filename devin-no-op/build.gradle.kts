@@ -3,7 +3,6 @@ import java.util.Properties
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
     id("maven-publish")
     id("signing")
 }
@@ -39,16 +38,6 @@ android {
     }
 }
 
-dependencies {
-    implementation("androidx.core:core-ktx:1.9.0")
-
-    val roomVersion = "2.5.1"
-    implementation("androidx.room:room-common:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    implementation("androidx.room:room-runtime:$roomVersion")
-    kapt("androidx.room:room-compiler:$roomVersion")
-}
-
 fun Project.getRepositoryUrl(): java.net.URI {
     val isReleaseBuild = properties["POM_VERSION_NAME"]?.toString()?.contains("SNAPSHOT") == false
     val releaseRepoUrl =
@@ -57,7 +46,6 @@ fun Project.getRepositoryUrl(): java.net.URI {
         properties["SNAPSHOT_REPOSITORY_URL"]?.toString() ?: "https://oss.sonatype.org/content/repositories/snapshots/"
     return uri(if (isReleaseBuild) releaseRepoUrl else snapshotRepoUrl)
 }
-
 
 afterEvaluate {
     publishing {
@@ -101,6 +89,7 @@ afterEvaluate {
                             email.set("jobnaserkhosravi@gmail.com")
                         }
                     }
+
                     licenses {
                         license {
                             name.set(projProps.getStringOrException("POM_LICENCE_NAME"))

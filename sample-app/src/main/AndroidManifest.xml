@@ -2,9 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <permission android:name="com.khosravi.devin.permission.READ" android:protectionLevel="normal" />
-    <permission android:name="com.khosravi.devin.permission.WRITE" android:protectionLevel="normal" />
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -26,12 +23,6 @@
             </intent-filter>
         </activity>
 
-        <provider
-            android:name="com.khosravi.devin.write.DevinContentProvider"
-            android:authorities="com.khosravi.devin.provider"
-            android:exported="true"
-            android:readPermission="com.khosravi.devin.permission.READ"
-            android:writePermission="com.khosravi.devin.permission.WRITE" />
     </application>
 
 </manifest>

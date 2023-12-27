@@ -3,7 +3,8 @@ package com.khosravi.sample.devin
 import android.os.Bundle
 import android.view.LayoutInflater
 import androidx.appcompat.app.AppCompatActivity
-import com.khosravi.devin.write.devinLogger
+import com.google.android.material.snackbar.Snackbar
+import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 
 class SampleActivity : AppCompatActivity() {
@@ -14,16 +15,25 @@ class SampleActivity : AppCompatActivity() {
         setContentView(binding.root)
         binding.edCustomText.setText("Custom")
 
-        val devinLogger = devinLogger(this)
+        val devinTool = DevinTool.create(this)
+        val logger = devinTool.logger
+        if (logger == null) {
+            Snackbar.make(binding.root, "Devin is not enable", Snackbar.LENGTH_INDEFINITE).show()
+            return
+        }
         binding.btnSendDebug.setOnClickListener {
-            devinLogger.log(binding.edCustomText.text.toString())
+            logger.log(binding.edCustomText.text.toString())
         }
 
         binding.btnSendAnalytic.setOnClickListener {
-            devinLogger.log("My-Analytic", binding.edCustomText.text.toString())
+            logger.log("My-Analytic", binding.edCustomText.text.toString())
         }
 
-        devinLogger.logCallerFunc(enableParentName = true)
+        logger.logCallerFunc(enableParentName = true)
 
+
+        logger.doIfEnable {
+            //You can do your heavy operation here like json validation or any custom execution must happen in debug
+        }
     }
 }

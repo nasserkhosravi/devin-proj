@@ -39,7 +39,6 @@ android {
 }
 
 dependencies {
-    implementation("io.github.nasserkhosravi.devin:write:1.0.1")
     implementation(project(mapOf("path" to ":lib-calendar")))
 
     implementation("androidx.core:core-ktx:1.9.0")

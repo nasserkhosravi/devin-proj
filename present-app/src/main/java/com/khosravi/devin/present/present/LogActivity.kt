@@ -1,15 +1,21 @@
 package com.khosravi.devin.present.present
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_READ
+import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_WRITE
 import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalenderProxy
 import com.khosravi.devin.present.di.ViewModelFactory
@@ -77,7 +83,29 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             onNewFilterSelected(item.data, index)
             true
         }
+        if (
+            ContextCompat.checkSelfPermission(this, PERMISSION_READ) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, PERMISSION_WRITE) != PackageManager.PERMISSION_GRANTED
+        ) {
+            launchPermissionGranting()
+            return
+        }
+        doFirstFetch()
+    }
 
+    private fun launchPermissionGranting() {
+        val permissionLauncher: ActivityResultLauncher<Array<String>> =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+                if (result.all { it.value }) {
+                    doFirstFetch()
+                } else {
+                    Toast.makeText(this, "permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+        permissionLauncher.launch(arrayOf(PERMISSION_READ, PERMISSION_WRITE))
+    }
+
+    private fun doFirstFetch() {
         launch {
             updateFilterList().collect {
                 requestRefreshLogItems(IndexFilterItem.ID)
