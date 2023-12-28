@@ -18,8 +18,8 @@ internal object TraceLogger {
         val methodName = stackTraceElement.methodName
         if (enableParentName) {
             val fullClassName = stackTraceElement.className
-            val analysed = if (fullClassName.isNullOrEmpty()) {
-                AnalysedStacktrace(methodName, stackTraceElement.className!!, false)
+            val analysed = if (!fullClassName.isNullOrEmpty()) {
+                AnalysedStacktrace(methodName, stackTraceElement.className!!, true)
             } else {
                 AnalysedStacktrace(methodName, stackTraceElement.fileName!!, false)
             }

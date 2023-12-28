@@ -62,7 +62,7 @@ internal class LoggerImpl(
         require(!parenName.isNullOrEmpty())
         return if (analysed.isClassName) {
             //remove package to simplify returned class name because
-            parenName.substring(parenName.lastIndexOf("."))
+            parenName.substring(parenName.lastIndexOf(".")+1)
         } else parenName
     }
 
