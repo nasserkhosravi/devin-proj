@@ -78,7 +78,7 @@ class ReaderViewModel constructor(
         else it.value.contains(searchText, true)
 
         val type = criteria.type
-        val typeCondition = if (type.isNullOrEmpty()) true else it.type == type
+        val typeCondition = if (type.isNullOrEmpty()) true else it.type.contains(type, true)
 
         searchTextCondition && typeCondition
     }

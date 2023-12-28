@@ -40,17 +40,21 @@ class FilterDialog : BaseDialog() {
     }
 
     private fun confirmedRequested() {
+        val tag = binding.edTag.text?.toString()
         val title = binding.edTitle.text?.toString()
-        if (title.isNullOrEmpty()) {
+        if (title.isNullOrEmpty() && tag.isNullOrEmpty()) {
             binding.edTitle.error = getString(R.string.msg_title_required)
+            binding.edTag.error = getString(R.string.msg_title_required)
             return
         }
+        val fTitle = if (title.isNullOrEmpty()) tag!!
+        else title
+
         val searchText = binding.edSearchText.text.toString()
         val chipColor = ResourceHelper.getAFilterColor(context!!, requireArguments().getInt(KEY_LAST_INDEX))
         val filterItem = DefaultFilterItem(
-            ui = FilterUiData(title, title.creataNotEmpty(), chipColor),
-            //TODO: in future support filter by type
-            criteria = FilterCriteria(null, searchText)
+            ui = FilterUiData(fTitle, fTitle.creataNotEmpty(), chipColor),
+            criteria = FilterCriteria(tag, searchText)
         )
         onConfirm?.invoke(filterItem)
     }
