@@ -90,9 +90,10 @@ class DevinContentProvider : ContentProvider() {
     private fun ContentValues.readAsNewLogTable(): LogTable {
         return LogTable(
             id = 0,
-            type = getAsString(LogTable.COLUMN_TYPE),
+            tag = getAsString(LogTable.COLUMN_TAG),
             value = getAsString(LogTable.COLUMN_VALUE),
-            date = getAsLong(LogTable.COLUMN_DATE)
+            date = getAsLong(LogTable.COLUMN_DATE),
+            meta = getAsString(LogTable.COLUMN_META),
         )
     }
 
@@ -105,12 +106,12 @@ class DevinContentProvider : ContentProvider() {
 
         const val CODE_LOG_ALL = 1
 
-        fun contentValueLog(type: String, value: String, date: Date = Date()) = ContentValues().apply {
-            put(LogTable.COLUMN_TYPE, type)
+        fun contentValueLog(tag: String, value: String, meta: String?, date: Date = Date()) = ContentValues().apply {
+            put(LogTable.COLUMN_TAG, tag)
             put(LogTable.COLUMN_VALUE, value)
             put(LogTable.COLUMN_DATE, date.time)
+            put(LogTable.COLUMN_META, meta)
         }
-
 
     }
 

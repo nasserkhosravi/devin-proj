@@ -5,9 +5,11 @@ interface DevinLogger {
 
     fun doIfEnable(action: (logger: DevinLogger) -> Unit)
 
-    fun log(message: String)
-    fun log(tag: String, message: String = "")
+    fun debug(tag: String?, message: String, payload: String? = null)
+    fun info(tag: String?, message: String, payload: String? = null)
+    fun warning(tag: String?, message: String, payload: String? = null)
+    fun error(tag: String?, message: String, payload: String? = null)
+
     fun logCallerFunc()
-    fun logCallerFunc(tag: String? = null, message: String? = null, enableParentName: Boolean = true)
 }
 

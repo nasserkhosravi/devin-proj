@@ -1,5 +1,7 @@
 package com.khosravi.devin.present.date
 
+import com.khosravi.devin.present.withPadding
+
 data class TimePresent(
     val timestamp: Long,
 ) : TemporalPresent {
@@ -7,7 +9,7 @@ data class TimePresent(
 
     override fun getFormatted(): String {
         return dumbed!!.let {
-            "${it.hour}$SEPARATOR${it.minute}$SEPARATOR${it.second}"
+            "${it.hour.withPadding()}$SEPARATOR${it.minute.withPadding()}$SEPARATOR${it.second.withPadding()}"
         }
     }
 

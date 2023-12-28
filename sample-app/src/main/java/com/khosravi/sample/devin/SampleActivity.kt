@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
+import java.lang.StringBuilder
 
 class SampleActivity : AppCompatActivity() {
 
@@ -22,18 +23,31 @@ class SampleActivity : AppCompatActivity() {
             return
         }
         binding.btnSendDebug.setOnClickListener {
-            logger.log(binding.edCustomText.text.toString())
+            logger.debug(null, binding.edCustomText.text.toString())
         }
 
         binding.btnSendAnalytic.setOnClickListener {
-            logger.log("My-Analytic", binding.edCustomText.text.toString())
+            val message = listOf("Superapp", "Home", "TapOnCard").formatForAnalytic()
+            logger.info("Analytic", message)
         }
 
-        logger.logCallerFunc(enableParentName = true)
-
+        logger.logCallerFunc()
 
         logger.doIfEnable {
             //You can do your heavy operation here like json validation or any custom execution must happen in debug
         }
+    }
+
+    private fun List<String>.formatForAnalytic(): String {
+        val builder = StringBuilder()
+        val lastIndex = lastIndex
+        forEachIndexed { index, s ->
+            if (index != lastIndex) {
+                builder.append(s.plus("->"))
+            } else {
+                builder.append(s)
+            }
+        }
+        return builder.toString()
     }
 }
