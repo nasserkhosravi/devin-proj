@@ -74,13 +74,13 @@ class ReaderViewModel constructor(
         allLogs: List<LogTable>, criteria: FilterCriteria
     ) = allLogs.filter {
         val searchText = criteria.searchText
-        val searchTextCondition = if (searchText.isNullOrEmpty()) true
+        val searchTextConditionResult = if (searchText.isNullOrEmpty()) true
         else it.value.contains(searchText, true)
 
-        val type = criteria.type
-        val typeCondition = if (type.isNullOrEmpty()) true else it.type == type
+        val tag = criteria.tag
+        val tagConditionResult = if (tag.isNullOrEmpty()) true else it.tag.contains(tag, true)
 
-        searchTextCondition && typeCondition
+        searchTextConditionResult && tagConditionResult
     }
 
     fun clearLogs() = flow {
