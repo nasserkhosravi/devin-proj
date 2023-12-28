@@ -3,6 +3,7 @@ package com.khosravi.devin.present.present
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.data.ContentProviderLogsDao
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 import java.lang.IllegalArgumentException
 
 class ReaderViewModel constructor(
@@ -58,9 +60,14 @@ class ReaderViewModel constructor(
                 nextDateDifferInDayCode = candidateCode
                 result.add(DateLogItemData(presentDate))
             }
-            result.add(TextLogItemData(it.value, TimePresent(it.date)))
+            result.add(TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta))
         }
         return result
+    }
+
+    private fun getLogIdFromMetaJsonOrDefault(meta: String?): Int {
+        if (meta.isNullOrEmpty()) return Log.DEBUG
+        return JSONObject(meta).optInt("_log_level", Log.DEBUG)
     }
 
     private fun allLogsByCriteria(

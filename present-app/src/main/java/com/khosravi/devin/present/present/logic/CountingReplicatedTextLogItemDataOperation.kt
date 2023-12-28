@@ -33,6 +33,11 @@ class CountingReplicatedTextLogItemDataOperation(private val logs: List<LogItemD
                 latestItemInProcess = null
             }
         }
+        if (replicatedItems.isNotEmpty()){
+            moveReplicateItemsIfNeed(finalResult, replicatedItems)
+            latestItemInProcess = null
+        }
+
         return finalResult
     }
 

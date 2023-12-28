@@ -89,13 +89,14 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
         mainAdapter.onClickListener = { _, _, item, position ->
             when (item) {
+                is TextLogItem -> {
+                    onTextLogItemClick(item)
+                }
+
                 is ReplicatedTextLogItem -> {
                     onReplicatedTextLogItemClick(item)
                 }
 
-                is TextLogSubItem -> {
-                    onChildReplicatedTextLogItemClick(item)
-                }
             }
             true
         }
@@ -278,20 +279,16 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             is TextLogItemData -> TextLogItem(calendar, this)
             is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, this).apply {
                 subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
-                onItemClickListener = { _,_, item, position ->
-//                    onChildReplicatedTextLogItemClick(item,position)
-                    true
-                }
             }
         }
     }
 
     private fun onReplicatedTextLogItemClick(item: ReplicatedTextLogItem) {
-//        item.isExpanded = !item.isExpanded
     }
 
-    private fun onChildReplicatedTextLogItemClick(item: TextLogSubItem) {
-
+    private fun onTextLogItemClick(item: TextLogItem) {
+        LogDetailDialog.newInstance(item.data)
+            .show(supportFragmentManager, LogDetailDialog.TAG)
     }
 
     override fun onDestroy() {

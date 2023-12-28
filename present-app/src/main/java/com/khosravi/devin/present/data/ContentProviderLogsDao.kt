@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
+import androidx.core.database.getStringOrNull
 
 object ContentProviderLogsDao {
 
@@ -41,7 +42,8 @@ object ContentProviderLogsDao {
             id = cursor.getLong(0),
             tag = cursor.getString(1),
             value = cursor.getString(2),
-            date = cursor.getLong(3)
+            date = cursor.getLong(3),
+            meta = cursor.getStringOrNull(4)
         )
     }
 }
