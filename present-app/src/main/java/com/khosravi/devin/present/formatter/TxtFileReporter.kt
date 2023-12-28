@@ -15,7 +15,7 @@ internal object TxtFileReporter {
 
         logs.forEach {
             stringBuilder.append("* ")
-                .append(it.type)
+                .append(it.tag)
                 .append(": ")
                 .append(it.value)
                 .appendLine()

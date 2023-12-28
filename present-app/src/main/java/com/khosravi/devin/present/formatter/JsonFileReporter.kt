@@ -13,12 +13,12 @@ internal object JsonFileReporter {
         logs: List<LogTable>
     ): TextualReport {
         val root = JSONObject()
-            .put("version name", versionName)
+            .put("app version name", versionName)
 
         val jsonGroupedLogs = JSONArray()
         logs.forEach {
             val item = JSONObject()
-                .put("type", it.type)
+                .put("tag", it.tag)
                 .put("value", it.value)
             jsonGroupedLogs.put(item)
         }

@@ -9,7 +9,7 @@ interface FilterItem {
 }
 
 class FilterCriteria(
-    val type: String?,
+    val tag: String?,
     val searchText: String?
 )
 

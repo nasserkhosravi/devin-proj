@@ -2,7 +2,7 @@ package com.khosravi.devin.present.data
 
 class LogTable(
     val id: Long,
-    val type: String,
+    val tag: String,
     val value: String,
     val date: Long,
 ) {

@@ -33,7 +33,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
     private fun FilterItem.toJson(): JSONObject {
         val criteriaJson = criteria?.let {
-            JSONObject().put(KEY_CRITERIA_TYPE, it.type)
+            JSONObject().put(KEY_CRITERIA_TAG, it.tag)
                 .put(KEY_CRITERIA_SEARCH_TEXT, it.searchText)
         }
         val uiJson = ui.let {
@@ -58,7 +58,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         val id = json.getString(KEY_ID)
         val criteria = json.optJSONObject(KEY_CRITERIA)?.let {
             FilterCriteria(
-                it.optString(KEY_CRITERIA_TYPE), it.optString(KEY_CRITERIA_SEARCH_TEXT)
+                it.optString(KEY_CRITERIA_TAG), it.optString(KEY_CRITERIA_SEARCH_TEXT)
             )
         }
 
@@ -78,7 +78,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         private const val KEY_TIMESTAMP = "_timestamp"
 
         private const val KEY_CRITERIA = "_CRITERIA"
-        private const val KEY_CRITERIA_TYPE = "_TYPE"
+        private const val KEY_CRITERIA_TAG = "_TAG"
         private const val KEY_CRITERIA_SEARCH_TEXT = "_SEARCH_TEXT"
 
         private const val KEY_UI = "_UI"

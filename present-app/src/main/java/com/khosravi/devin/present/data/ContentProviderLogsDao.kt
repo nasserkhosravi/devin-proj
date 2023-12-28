@@ -39,7 +39,7 @@ object ContentProviderLogsDao {
         val cursor = this
         return LogTable(
             id = cursor.getLong(0),
-            type = cursor.getString(1),
+            tag = cursor.getString(1),
             value = cursor.getString(2),
             date = cursor.getLong(3)
         )
