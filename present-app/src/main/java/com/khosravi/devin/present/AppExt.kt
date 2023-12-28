@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.khosravi.devin.present.log.TextLogItemData
 
+const val KEY_DATA = "key_data"
 
 fun TextLogItemData.getLogColor(context: Context): Int {
     return when (logLevel) {

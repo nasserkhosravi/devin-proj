@@ -60,7 +60,7 @@ class ReaderViewModel constructor(
                 nextDateDifferInDayCode = candidateCode
                 result.add(DateLogItemData(presentDate))
             }
-            result.add(TextLogItemData(it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta))
+            result.add(TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta))
         }
         return result
     }
