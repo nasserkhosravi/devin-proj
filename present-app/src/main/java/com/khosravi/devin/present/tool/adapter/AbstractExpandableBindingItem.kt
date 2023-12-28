@@ -1,5 +1,6 @@
 package com.khosravi.devin.present.tool.adapter
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,6 +10,9 @@ import com.mikepenz.fastadapter.binding.BindingViewHolder
 import com.mikepenz.fastadapter.expandable.items.AbstractExpandableItem
 
 abstract class AbstractExpandableBindingItem<Binding : ViewBinding> : AbstractExpandableItem<BindingViewHolder<Binding>>() {
+
+    val ViewBinding.context: Context
+        get() = root.context
 
     override fun getViewHolder(parent: ViewGroup): BindingViewHolder<Binding> {
         val binding = createBinding(LayoutInflater.from(parent.context), parent)
