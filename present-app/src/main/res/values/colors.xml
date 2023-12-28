@@ -10,6 +10,9 @@
     <color name="green_light_1">#00DD7F</color>
     <color name="white_light_1">#ffffff</color>
     <color name="white_light_2">#EBECF2</color>
+    <color name="persian_red">#d32f2f</color>
+    <color name="denim">#1976d2</color>
+    <color name="gold_drop">#F57C00</color>
 
     <!--Theme color-->
     <color name="colorPrimary">@color/green_dark_2</color>
@@ -18,6 +21,11 @@
     <color name="colorOnSurfaceVariant">@color/white_light_2</color>
     <color name="colorOnSurface">@color/black_pearl_alpha_87</color>
     <color name="colorOnSurfaceWeak">@color/black_pearl_alpha_38</color>
+
+    <color name="colorLogDebug">@color/black_pearl_alpha_87</color>
+    <color name="colorLogError">@color/persian_red</color>
+    <color name="colorLogInfo">@color/denim</color>
+    <color name="colorLogWarning">@color/gold_drop</color>
 
     <!--Component color-->
     <color name="bg_dialog">@color/white</color>
