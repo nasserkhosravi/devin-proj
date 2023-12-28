@@ -1,24 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:padding="40dp"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="40dp">
 
-    <androidx.appcompat.widget.AppCompatEditText
-        android:id="@+id/ed_custom_text"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
-    <Button
-        android:id="@+id/btn_send_debug"
-        android:text="send as debug"
+        android:layout_height="wrap_content"
+        android:hint="@string/field_tag">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/ed_tag"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:hint="@string/field_message">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/ed_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <androidx.appcompat.widget.AppCompatSpinner
+        android:id="@+id/sp_log_level"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <CheckBox
+        android:id="@+id/cb_with_exception"
+        android:layout_marginTop="8dp"
+        android:text="@string/with_throwable"
+        android:checked="false"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
     <Button
-        android:id="@+id/btn_send_analytic"
-        android:text="send custom as analytic"
+        android:id="@+id/btn_send"
+        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:text="send" />
 
 </LinearLayout>
