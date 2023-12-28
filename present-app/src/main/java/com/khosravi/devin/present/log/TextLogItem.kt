@@ -21,8 +21,9 @@ open class TextLogItem(
 
     override fun bindView(binding: ItemLogBinding, payloads: List<Any>) {
         super.bindView(binding, payloads)
-        val dataText = calender.initIfNeed(data.timePresent).getFormatted()
-        binding.tvText.text = dataText.plus(" ${data.text}")
+        val dateText = calender.initIfNeed(data.timePresent).getFormatted()
+        binding.tvText.text = dateText.plus(" ${data.text}")
+        binding.tvText.setTextColor(data.getLogColor(binding.context))
     }
 
 }
