@@ -19,7 +19,6 @@ import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.formatter.JsonFileReporter
 import com.khosravi.devin.present.formatter.TextualReport
-import com.khosravi.devin.present.formatter.TxtFileReporter
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
@@ -98,10 +97,6 @@ class ReaderViewModel constructor(
 
     fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
         JsonFileReporter.create(BuildConfig.VERSION_NAME, it)
-    }.map { createCacheShareFile(it) }
-
-    fun getLogsInCachedTxtFile(): Flow<Uri> = collectLogs().map {
-        TxtFileReporter.create(BuildConfig.VERSION_NAME, it)
     }.map { createCacheShareFile(it) }
 
     private fun collectLogs() = flow {

@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Devin</string>
     <string name="menu_refresh">Refresh</string>
-    <string name="menu_share_txt">Share Main in plain txt</string>
+
     <string name="menu_share_json">Share Main in json</string>
     <string name="menu_clear">Clear</string>
     <string name="msg_cleared">Logs and filters cleared</string>

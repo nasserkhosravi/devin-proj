@@ -24,14 +24,14 @@ import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.IndexFilterItem
+import com.khosravi.devin.present.log.DateLogItemData
+import com.khosravi.devin.present.log.HeaderLogDateItem
+import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.ReplicatedTextLogItem
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
-import com.khosravi.devin.present.log.HeaderLogDateItem
-import com.khosravi.devin.present.log.DateLogItemData
-import com.khosravi.devin.present.log.TextLogSubItem
-import com.khosravi.devin.present.log.LogItemData
-import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.log.TextLogItem
+import com.khosravi.devin.present.log.TextLogItemData
+import com.khosravi.devin.present.log.TextLogSubItem
 import com.khosravi.devin.present.shareFileIntent
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
@@ -186,15 +186,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             }.map { }
     }
 
-    private fun shareTxtFile() {
-        launch {
-            viewModel.getLogsInCachedTxtFile().map { shareFileIntent(it, "text/plain") }
-                .collect {
-                    startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
-                }
-        }
-    }
-
     private fun shareJsonFile() {
         launch {
             viewModel.getLogsInCachedJsonFile().map { shareFileIntent(it, "application/json") }
@@ -223,11 +214,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
             R.id.action_clear -> {
                 onClearLogs()
-                true
-            }
-
-            R.id.action_share_txt -> {
-                shareTxtFile()
                 true
             }
 

@@ -14,11 +14,6 @@
         android:title="@string/menu_share_json" />
 
     <item
-        android:id="@+id/action_share_txt"
-        android:icon="@drawable/baseline_share_24"
-        android:title="@string/menu_share_txt" />
-
-    <item
         android:id="@+id/action_create_filter"
         android:title="@string/menu_create_filter" />
 
