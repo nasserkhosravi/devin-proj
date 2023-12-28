@@ -16,20 +16,20 @@ internal class LoggerImpl(
         }
     }
 
-    override fun debug(tag: String?, message: String, payload: String?) {
-        sendUserLog(tag, message, Log.DEBUG, payload)
+    override fun debug(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.DEBUG, payload, throwable)
     }
 
-    override fun info(tag: String?, message: String, payload: String?) {
-        sendUserLog(tag, message, Log.INFO, payload)
+    override fun info(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.INFO, payload, throwable)
     }
 
-    override fun error(tag: String?, message: String, payload: String?) {
-        sendUserLog(tag, message, Log.ERROR, payload)
+    override fun error(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.ERROR, payload, throwable)
     }
 
-    override fun warning(tag: String?, message: String, payload: String?) {
-        sendUserLog(tag, message, Log.WARN, payload)
+    override fun warning(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.WARN, payload, throwable)
     }
 
     override fun logCallerFunc() {
@@ -66,9 +66,9 @@ internal class LoggerImpl(
         } else parenName
     }
 
-    private fun sendUserLog(tag: String?, value: String, logLevel: Int, payload: String?) {
+    private fun sendUserLog(tag: String?, value: String, logLevel: Int, payload: String?, throwable: Throwable? = null) {
         if (isEnable.not()) return
-        sendLog(tag, value, createMetaFromUserPayload(logLevel, payload))
+        sendLog(tag, value, createMetaFromUserPayload(logLevel, payload, throwable))
     }
 
     private fun sendLog(tag: String?, value: String, meta: JSONObject? = null) {
@@ -87,10 +87,17 @@ internal class LoggerImpl(
         .put("parent_name", parenName)
         .put("is_class_name", isClassName)
 
-    private fun createMetaFromUserPayload(logLevel: Int, payload: String?) = JSONObject()
+    private fun createMetaFromUserPayload(logLevel: Int, payload: String?, throwable: Throwable?) = JSONObject()
         .put(KEY_META_TYPE, VALUE_USER_PAYLOAD)
         .put(KEY_LOG_LEVEL, logLevel)
-        .put(KEY_LOG_PAYLOAD, payload)
+        .apply {
+            if (payload != null) {
+                put(KEY_LOG_PAYLOAD, payload)
+            }
+            if (throwable != null) {
+                put(KEY_LOG_THROWABLE, Log.getStackTraceString(throwable))
+            }
+        }
 
 
     companion object {
@@ -102,5 +109,6 @@ internal class LoggerImpl(
         const val KEY_META_TYPE = "_meta_type"
         const val KEY_LOG_LEVEL = "_log_level"
         const val KEY_LOG_PAYLOAD = "_payload"
+        const val KEY_LOG_THROWABLE = "_throwable"
     }
 }
