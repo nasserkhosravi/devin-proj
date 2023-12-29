@@ -17,7 +17,7 @@ import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
-import com.khosravi.devin.present.formatter.JsonFileReporter
+import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.LogItemData
@@ -96,7 +96,7 @@ class ReaderViewModel constructor(
     }.flowOn(Dispatchers.Default)
 
     fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
-        JsonFileReporter.create(BuildConfig.VERSION_NAME, it)
+        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it, calendar)
     }.map { createCacheShareFile(it) }
 
     private fun collectLogs() = flow {
