@@ -10,5 +10,9 @@ class LogTable(
 
     companion object {
         const val TABLE_NAME = "log"
+        const val KEY_TAG = "tag"
+        const val KEY_MESSAGE = "message"
+        const val KEY_DATE = "date"
+        const val KEY_META = "meta"
     }
 }

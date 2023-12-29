@@ -6,6 +6,7 @@ import dagger.BindsInstance
 import dagger.Component
 import com.khosravi.devin.present.present.LogActivity
 import com.khosravi.devin.present.PresentApplication
+import com.khosravi.devin.present.present.ImportLogActivity
 import javax.inject.Singleton
 
 
@@ -16,6 +17,8 @@ interface AppComponent {
     fun inject(app: PresentApplication)
 
     fun inject(activity: LogActivity)
+
+    fun inject(activity: ImportLogActivity)
 
     @Component.Builder
     interface Builder {

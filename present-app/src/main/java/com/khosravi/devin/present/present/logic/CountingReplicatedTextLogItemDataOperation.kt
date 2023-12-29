@@ -28,18 +28,14 @@ class CountingReplicatedTextLogItemDataOperation(private val logs: List<LogItemD
                 }
             } else {
                 //first or new header iteration occur here
-                finalResult.add(it)
                 moveReplicateItemsIfNeed(finalResult, replicatedItems)
                 latestItemInProcess = null
+                finalResult.add(it)
             }
         }
-        if (replicatedItems.isNotEmpty()){
-            moveReplicateItemsIfNeed(finalResult, replicatedItems)
-            latestItemInProcess = null
-        }
-
         return finalResult
     }
+
 
     private fun moveReplicateItemsIfNeed(finalResult: ArrayList<LogItemData>, replicatedItems: ArrayList<TextLogItemData>) {
         if (replicatedItems.isEmpty()) {

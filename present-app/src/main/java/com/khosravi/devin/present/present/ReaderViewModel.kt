@@ -17,9 +17,8 @@ import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
-import com.khosravi.devin.present.formatter.JsonFileReporter
+import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.formatter.TextualReport
-import com.khosravi.devin.present.formatter.TxtFileReporter
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
@@ -46,6 +45,15 @@ class ReaderViewModel constructor(
             val logsWithHeaders = addDateHeadersByDay(logs, calendar)
             val countedItemsWithHeader = CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
             FilterResult(countedItemsWithHeader)
+        }.flowOn(Dispatchers.IO)
+    }
+
+    fun convertImportedLogsToPresentableLogItems(content: JSONObject): Flow<List<LogItemData>> {
+        return flow {
+            emit(InterAppJsonConverter.import(content))
+        }.map {
+            val logsWithHeaders = addDateHeadersByDay(it, calendar)
+            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
         }.flowOn(Dispatchers.IO)
     }
 
@@ -92,16 +100,20 @@ class ReaderViewModel constructor(
 
     fun clearLogs() = flow {
         ContentProviderLogsDao.clear(getContext())
+        emit(Unit)
+    }.flowOn(Dispatchers.Default)
+
+    fun clearFilters() = flow {
         filterRepository.clearSync()
         emit(Unit)
     }.flowOn(Dispatchers.Default)
 
-    fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
-        JsonFileReporter.create(BuildConfig.VERSION_NAME, it)
-    }.map { createCacheShareFile(it) }
+    fun getLogsInJson() = collectLogs().map {
+        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it)
+    }
 
-    fun getLogsInCachedTxtFile(): Flow<Uri> = collectLogs().map {
-        TxtFileReporter.create(BuildConfig.VERSION_NAME, it)
+    fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
+        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it)
     }.map { createCacheShareFile(it) }
 
     private fun collectLogs() = flow {

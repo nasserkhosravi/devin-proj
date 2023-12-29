@@ -8,12 +8,15 @@ data class TimePresent(
     var dumbed: DumbTime? = null
 
     override fun getFormatted(): String {
-        return dumbed!!.let {
-            "${it.hour.withPadding()}$SEPARATOR${it.minute.withPadding()}$SEPARATOR${it.second.withPadding()}"
-        }
+        return Companion.getFormatted(dumbed!!)
     }
 
     companion object {
+
+        fun getFormatted(value: DumbTime): String {
+            return "${value.hour.withPadding()}$SEPARATOR${value.minute.withPadding()}$SEPARATOR${value.second.withPadding()}"
+        }
+
         private const val SEPARATOR = ":"
     }
 

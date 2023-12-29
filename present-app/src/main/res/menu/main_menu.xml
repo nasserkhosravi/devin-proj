@@ -9,22 +9,31 @@
         android:title="@string/menu_refresh" />
 
     <item
+        android:id="@+id/action_import_json"
+        android:icon="@drawable/baseline_input_24"
+        android:title="@string/menu_import_json" />
+
+    <item
+        android:id="@+id/action_export_json"
+        android:icon="@drawable/baseline_save_24"
+        android:title="@string/menu_export_json" />
+
+    <item
         android:id="@+id/action_share_json"
         android:icon="@drawable/baseline_share_24"
         android:title="@string/menu_share_json" />
-
-    <item
-        android:id="@+id/action_share_txt"
-        android:icon="@drawable/baseline_share_24"
-        android:title="@string/menu_share_txt" />
 
     <item
         android:id="@+id/action_create_filter"
         android:title="@string/menu_create_filter" />
 
     <item
-        android:id="@+id/action_clear"
+        android:id="@+id/action_clear_logs"
         android:icon="@drawable/baseline_clear_24"
-        android:title="@string/menu_clear" />
+        android:title="@string/menu_clear_logs" />
+
+    <item
+        android:id="@+id/action_clear_filters"
+        android:title="@string/menu_clear_filters" />
 
 </menu>

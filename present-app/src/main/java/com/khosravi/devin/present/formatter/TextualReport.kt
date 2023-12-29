@@ -1,6 +1,6 @@
 package com.khosravi.devin.present.formatter
 
-internal class TextualReport(
+class TextualReport(
     val fileName: String,
     val content: String
 )

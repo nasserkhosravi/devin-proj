@@ -10,12 +10,12 @@ data class DatePresent(
 ) : TemporalPresent {
 
     override fun getFormatted(): String {
-        return dumbed!!.let {
-            "${it.year}$SEPARATOR${it.month}$SEPARATOR${it.day}"
-        }
+        return getFormatted(dumbed!!)
     }
 
     companion object {
+
+        fun getFormatted(value: DumbDate) = "${value.year}$SEPARATOR${value.month}$SEPARATOR${value.day}"
         private const val SEPARATOR = "-"
     }
 }
