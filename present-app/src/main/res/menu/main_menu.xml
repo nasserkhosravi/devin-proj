@@ -28,8 +28,12 @@
         android:title="@string/menu_create_filter" />
 
     <item
-        android:id="@+id/action_clear"
+        android:id="@+id/action_clear_logs"
         android:icon="@drawable/baseline_clear_24"
-        android:title="@string/menu_clear" />
+        android:title="@string/menu_clear_logs" />
+
+    <item
+        android:id="@+id/action_clear_filters"
+        android:title="@string/menu_clear_filters" />
 
 </menu>

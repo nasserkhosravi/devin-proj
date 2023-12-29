@@ -5,8 +5,8 @@
     <string name="menu_share_json">Share Main in json</string>
     <string name="menu_import_json">Import logs as json</string>
     <string name="menu_export_json">Export logs as json</string>
-    <string name="menu_clear">Clear</string>
-    <string name="msg_cleared">Logs and filters cleared</string>
+    <string name="menu_clear_logs">Clear logs</string>
+    <string name="menu_clear_filters">Clear filters</string>
     <string name="msg_empty_filter">Empty filter</string>
     <string name="msg_refreshed">refreshed</string>
     <string name="title_of_share">Share file with</string>

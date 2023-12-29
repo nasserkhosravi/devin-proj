@@ -53,7 +53,7 @@ class ReaderViewModel constructor(
             emit(InterAppJsonConverter.import(content))
         }.map {
             val logsWithHeaders = addDateHeadersByDay(it, calendar)
-             CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
         }.flowOn(Dispatchers.IO)
     }
 
@@ -100,6 +100,10 @@ class ReaderViewModel constructor(
 
     fun clearLogs() = flow {
         ContentProviderLogsDao.clear(getContext())
+        emit(Unit)
+    }.flowOn(Dispatchers.Default)
+
+    fun clearFilters() = flow {
         filterRepository.clearSync()
         emit(Unit)
     }.flowOn(Dispatchers.Default)

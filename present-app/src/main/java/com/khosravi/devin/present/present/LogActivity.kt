@@ -27,7 +27,6 @@ import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
-import com.khosravi.devin.present.log.ReplicatedTextLogItem
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toItemViewHolder
@@ -182,12 +181,24 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             }
     }
 
-    private fun onClearLogs() {
+    private fun clearLogs() {
         launch {
             viewModel.clearLogs().flowOn(Dispatchers.Main).collect {
-                filterItemAdapter.clear()
                 mainItemAdapter.clear()
-                Toast.makeText(this@LogActivity, getString(R.string.msg_cleared), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun clearFilters() {
+        launch {
+            viewModel.clearFilters().flowOn(Dispatchers.Main).collect {
+                val itemCount = filterItemAdapter.adapterItemCount
+                if (itemCount > 1) {
+                    filterItemAdapter.removeRange(1, itemCount - 1)
+                    filterItemAdapter.selectedIndex = 0
+                    filterItemAdapter.checkSelection()
+                    requestRefreshLogItems(IndexFilterItem.ID).collect()
+                }
             }
         }
     }
@@ -241,8 +252,13 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 true
             }
 
-            R.id.action_clear -> {
-                onClearLogs()
+            R.id.action_clear_logs -> {
+                clearLogs()
+                true
+            }
+
+            R.id.action_clear_filters -> {
+                clearFilters()
                 true
             }
 
