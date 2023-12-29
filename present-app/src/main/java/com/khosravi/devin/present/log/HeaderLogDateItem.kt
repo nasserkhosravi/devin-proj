@@ -4,11 +4,11 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemHeaderLogDateBinding
-import com.khosravi.devin.present.date.CalenderProxy
+import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.tool.adapter.FastBindingItem
 
 class HeaderLogDateItem(
-    private val calender: CalenderProxy,
+    private val calender: CalendarProxy,
     private val date: DateLogItemData
 ) : FastBindingItem<ItemHeaderLogDateBinding>() {
 

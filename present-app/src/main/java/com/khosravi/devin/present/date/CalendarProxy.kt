@@ -6,7 +6,7 @@ import io.github.nasserkhosravi.calendar.iranian.PersianCalendar
 import java.util.Calendar
 import java.util.Date
 
-class CalenderProxy(implType: CalendarType) {
+class CalendarProxy(implType: CalendarType) {
 
     var calendar = createCalendarImpl(implType)
         private set

@@ -19,7 +19,7 @@ import com.khosravi.devin.present.R
 import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_READ
 import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_WRITE
 import com.khosravi.devin.present.databinding.ActivityLogBinding
-import com.khosravi.devin.present.date.CalenderProxy
+import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.filter.DefaultFilterItem
@@ -68,7 +68,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     lateinit var vmFactory: ViewModelFactory
 
     @Inject
-    lateinit var calendar: CalenderProxy
+    lateinit var calendar: CalendarProxy
 
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]

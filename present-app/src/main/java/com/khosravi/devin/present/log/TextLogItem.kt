@@ -4,12 +4,12 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemLogBinding
-import com.khosravi.devin.present.date.CalenderProxy
+import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.getLogColor
 import com.khosravi.devin.present.tool.adapter.FastBindingItem
 
 open class TextLogItem(
-    private val calender: CalenderProxy,
+    private val calender: CalendarProxy,
     val data: TextLogItemData,
 ) : FastBindingItem<ItemLogBinding>() {
 

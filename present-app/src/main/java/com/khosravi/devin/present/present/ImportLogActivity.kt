@@ -14,7 +14,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.KEY_DATA
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ActivityImportLogBinding
-import com.khosravi.devin.present.date.CalenderProxy
+import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.getParcelableExtraSupport
@@ -46,7 +46,7 @@ class ImportLogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private var searchTextWatcher: TextWatcher? = null
 
     @Inject
-    lateinit var calendar: CalenderProxy
+    lateinit var calendar: CalendarProxy
 
     @Inject
     lateinit var vmFactory: ViewModelFactory

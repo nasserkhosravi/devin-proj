@@ -5,7 +5,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.khosravi.devin.present.date.CalenderProxy
+import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.DumbDate
 import com.khosravi.devin.present.date.DumbTime
@@ -52,7 +52,7 @@ fun TextLogItemData.getLogColor(context: Context): Int {
     }
 }
 
-fun List<LogItemData>.toItemViewHolder(calendar: CalenderProxy): List<GenericItem> {
+fun List<LogItemData>.toItemViewHolder(calendar: CalendarProxy): List<GenericItem> {
     return map { item ->
         when (item) {
             is DateLogItemData -> HeaderLogDateItem(calendar, item)

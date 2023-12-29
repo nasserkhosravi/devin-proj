@@ -5,7 +5,7 @@ import android.view.View
 import android.view.ViewGroup
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemReplicatedTextLogBinding
-import com.khosravi.devin.present.date.CalenderProxy
+import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.getLogColor
 import com.khosravi.devin.present.tool.adapter.AbstractExpandableBindingItem
 import com.mikepenz.fastadapter.ClickListener
@@ -13,7 +13,7 @@ import com.mikepenz.fastadapter.IAdapter
 import com.mikepenz.fastadapter.IClickable
 
 class ReplicatedTextLogItem(
-    private val calender: CalenderProxy,
+    private val calender: CalendarProxy,
     val data: ReplicatedTextLogItemData,
 ) : AbstractExpandableBindingItem<ItemReplicatedTextLogBinding>(), IClickable<ReplicatedTextLogItem> {
 

@@ -9,7 +9,7 @@ import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.data.LogTable
-import com.khosravi.devin.present.date.CalenderProxy
+import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.fileForCache
@@ -35,7 +35,7 @@ import java.lang.IllegalArgumentException
 class ReaderViewModel constructor(
     application: Application,
     private val filterRepository: FilterRepository,
-    private val calendar: CalenderProxy,
+    private val calendar: CalendarProxy,
 ) : AndroidViewModel(application) {
 
     fun getLogListOfFilter(filterItemId: String): Flow<FilterResult> {
@@ -57,7 +57,7 @@ class ReaderViewModel constructor(
         }.flowOn(Dispatchers.IO)
     }
 
-    private fun addDateHeadersByDay(logs: List<LogTable>, calendar: CalenderProxy): List<LogItemData> {
+    private fun addDateHeadersByDay(logs: List<LogTable>, calendar: CalendarProxy): List<LogItemData> {
         if (logs.isEmpty()) return emptyList()
         val result = ArrayList<LogItemData>()
         var nextDateDifferInDayCode: Int? = null
