@@ -1,17 +1,31 @@
 package com.khosravi.devin.present
 
+import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.content.Context
+import android.net.Uri
 import android.util.Log
+import com.khosravi.devin.present.date.CalenderProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.DumbDate
 import com.khosravi.devin.present.date.DumbTime
 import com.khosravi.devin.present.date.TimePresent
+import com.khosravi.devin.present.log.DateLogItemData
+import com.khosravi.devin.present.log.HeaderLogDateItem
+import com.khosravi.devin.present.log.LogItemData
+import com.khosravi.devin.present.log.ReplicatedTextLogItem
+import com.khosravi.devin.present.log.ReplicatedTextLogItemData
+import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.log.TextLogItemData
+import com.khosravi.devin.present.log.TextLogSubItem
+import com.mikepenz.fastadapter.GenericItem
 import io.github.nasserkhosravi.calendar.iranian.PersianCalendar
+import java.io.FileNotFoundException
 import java.util.Calendar
 import java.util.Date
 
 const val KEY_DATA = "key_data"
+const val MIME_APP_JSON = "application/json"
 
 fun getPersianDateTimeFormatted(timestamp: Long): String {
     val persianCalendar = PersianCalendar.getInstance().createNewInstance(timestamp)
@@ -35,5 +49,30 @@ fun TextLogItemData.getLogColor(context: Context): Int {
         Log.INFO -> context.getColor(R.color.colorLogInfo)
         Log.WARN -> context.getColor(R.color.colorLogWarning)
         else -> context.getColor(R.color.colorOnSurface)
+    }
+}
+
+fun List<LogItemData>.toItemViewHolder(calendar: CalenderProxy): List<GenericItem> {
+    return map { item ->
+        when (item) {
+            is DateLogItemData -> HeaderLogDateItem(calendar, item)
+            is TextLogItemData -> TextLogItem(calendar, item)
+            is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, item).apply {
+                subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
+            }
+        }
+    }
+}
+
+
+@SuppressLint("Recycle")
+fun ContentResolver.writeTextToUri(uri: Uri, text: String): Boolean {
+    try {
+        val outputStream = openOutputStream(uri) ?: return false
+        outputStream.writeTextAndClose(text)
+        return true
+    } catch (e: FileNotFoundException) {
+        e.printStackTrace()
+        return false
     }
 }

@@ -8,7 +8,7 @@ import com.khosravi.devin.present.KEY_DATA
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.applyBundle
 import com.khosravi.devin.present.databinding.DialogLogDetailBinding
-import com.khosravi.devin.present.getParcelableSupport
+import com.khosravi.devin.present.getSerializableSupport
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.toSafeJSONObject
 import com.khosravi.devin.present.tool.BaseDialog
@@ -32,7 +32,7 @@ class LogDetailDialog : BaseDialog() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val data = requireArguments().getParcelableSupport(KEY_DATA, TextLogItemData::class.java)!!
+        val data = requireArguments().getSerializableSupport(KEY_DATA, TextLogItemData::class.java)!!
         binding.tvTag.text = data.tag
         binding.tvMessage.text = data.text
         binding.tvMeta.text = data.meta?.toSafeJSONObject()?.toString(3) ?: ""

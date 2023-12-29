@@ -8,11 +8,13 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_READ
 import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_WRITE
@@ -24,17 +26,15 @@ import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.IndexFilterItem
-import com.khosravi.devin.present.log.DateLogItemData
-import com.khosravi.devin.present.log.HeaderLogDateItem
-import com.khosravi.devin.present.log.LogItemData
+import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.ReplicatedTextLogItem
-import com.khosravi.devin.present.log.ReplicatedTextLogItemData
 import com.khosravi.devin.present.log.TextLogItem
-import com.khosravi.devin.present.log.TextLogItemData
-import com.khosravi.devin.present.log.TextLogSubItem
-import com.khosravi.devin.present.shareFileIntent
+import com.khosravi.devin.present.sendOrShareFileIntent
+import com.khosravi.devin.present.toItemViewHolder
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
+import com.khosravi.devin.present.writeOrSaveFileIntent
+import com.khosravi.devin.present.writeTextToUri
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.util.Date
 import javax.inject.Inject
 
 
@@ -74,6 +75,9 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
 
+    private lateinit var importIntentLauncher: ActivityResultLauncher<Intent>
+    private lateinit var exportIntentLauncher: ActivityResultLauncher<Intent>
+
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
@@ -81,22 +85,23 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
 
+        importIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            onImportFileIntentResult(it)
+        }
+        exportIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            onExportFileIntentResult(it)
+        }
         binding.rvFilter.adapter = filterAdapter
         binding.rvMain.adapter = mainAdapter
         filterAdapter.onClickListener = { _: View?, _: IAdapter<FilterItemViewHolder>, item: FilterItemViewHolder, index: Int ->
             onNewFilterSelected(item.data, index)
             true
         }
-        mainAdapter.onClickListener = { _, _, item, position ->
+        mainAdapter.onClickListener = { _, _, item, _ ->
             when (item) {
                 is TextLogItem -> {
                     onTextLogItemClick(item)
                 }
-
-                is ReplicatedTextLogItem -> {
-                    onReplicatedTextLogItemClick(item)
-                }
-
             }
             true
         }
@@ -113,13 +118,41 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         doFirstFetch()
     }
 
+    private fun onExportFileIntentResult(activityResult: ActivityResult) {
+        val returnedIntent = activityResult.data
+        val uriData = returnedIntent?.data
+        if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
+            launch {
+                viewModel.getLogsInJson()
+                    .flowOn(Dispatchers.Main)
+                    .map {
+                        contentResolver.writeTextToUri(uriData, it.content)
+                    }
+                    .collect {
+                        val msg = if (it) getString(R.string.msg_export_done)
+                        else getString(R.string.error_msg_something_went_wrong)
+
+                        Toast.makeText(this@LogActivity, msg, Toast.LENGTH_LONG).show()
+                    }
+            }
+        }
+    }
+
+    private fun onImportFileIntentResult(activityResult: ActivityResult) {
+        val returnedIntent = activityResult.data
+        val uriData = returnedIntent?.data
+        if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
+            startActivity(ImportLogActivity.intent(this, uriData))
+        }
+    }
+
     private fun launchPermissionGranting() {
         val permissionLauncher: ActivityResultLauncher<Array<String>> =
             registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
                 if (result.all { it.value }) {
                     doFirstFetch()
                 } else {
-                    Toast.makeText(this, "permission denied", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.msg_permission_denied), Toast.LENGTH_SHORT).show()
                 }
             }
         permissionLauncher.launch(arrayOf(PERMISSION_READ, PERMISSION_WRITE))
@@ -128,8 +161,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun doFirstFetch() {
         launch {
             updateFilterList().collect {
-                requestRefreshLogItems(IndexFilterItem.ID)
-                    .collect()
+                requestRefreshLogItems(IndexFilterItem.ID).collect()
             }
         }
     }
@@ -142,9 +174,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun selectNewFilter(data: FilterUiData, index: Int): Flow<List<GenericItem>> {
         binding.rvFilter.isEnabled = false
-        return viewModel.getLogListOfFilter(data.id)
-            .map { it.logList.map { it.toItemViewHolder() } }
-            .flowOn(Dispatchers.Main)
+        return viewModel.getLogListOfFilter(data.id).map { it.logList.toItemViewHolder(calendar) }.flowOn(Dispatchers.Main)
             .onEach {
                 binding.rvFilter.isEnabled = true
                 filterItemAdapter.changeState(index)
@@ -154,45 +184,44 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun onClearLogs() {
         launch {
-            viewModel.clearLogs()
-                .flowOn(Dispatchers.Main)
-                .collect {
-                    filterItemAdapter.clear()
-                    mainItemAdapter.clear()
-                    Toast.makeText(this@LogActivity, getString(R.string.msg_cleared), Toast.LENGTH_SHORT).show()
-                }
+            viewModel.clearLogs().flowOn(Dispatchers.Main).collect {
+                filterItemAdapter.clear()
+                mainItemAdapter.clear()
+                Toast.makeText(this@LogActivity, getString(R.string.msg_cleared), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     private fun updateFilterList(): Flow<Unit> {
-        return viewModel.getFlowListPresentableFilter()
-            .onEach { list ->
-                val filterItems = list.map { FilterItemViewHolder(it.ui) }
-                filterItemAdapter.set(filterItems)
-                filterItemAdapter.selectedIndex = 0
-                filterItemAdapter.checkSelection()
-            }.map { }
+        return viewModel.getFlowListPresentableFilter().onEach { list ->
+            val filterItems = list.map { FilterItemViewHolder(it.ui) }
+            filterItemAdapter.set(filterItems)
+            filterItemAdapter.selectedIndex = 0
+            filterItemAdapter.checkSelection()
+        }.map { }
     }
 
     private fun requestRefreshLogItems(filterItemId: String): Flow<Unit> {
-        return viewModel.getLogListOfFilter(filterItemId)
-            .flowOn(Dispatchers.Main)
-            .onEach { result ->
-                if (result.logList.isEmpty()) {
-                    Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
-                } else {
-                    mainItemAdapter.set(result.logList.map { it.toItemViewHolder() })
-                }
-            }.map { }
+        return viewModel.getLogListOfFilter(filterItemId).flowOn(Dispatchers.Main).onEach { result ->
+            if (result.logList.isEmpty()) {
+                Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
+            } else {
+                mainItemAdapter.set(result.logList.toItemViewHolder(calendar))
+            }
+        }.map { }
     }
 
     private fun shareJsonFile() {
         launch {
-            viewModel.getLogsInCachedJsonFile().map { shareFileIntent(it, "application/json") }
-                .collect {
-                    startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
-                }
+            viewModel.getLogsInCachedJsonFile().map { sendOrShareFileIntent(it, MIME_APP_JSON) }.collect {
+                startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
+            }
         }
+    }
+
+    private fun exportJsonFile() {
+        val intent = writeOrSaveFileIntent("Devin_${Date()}.json", MIME_APP_JSON)
+        exportIntentLauncher.launch(Intent.createChooser(intent, getString(R.string.menu_export_json)))
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -217,6 +246,16 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 true
             }
 
+            R.id.action_import_json -> {
+                importJsonFile()
+                true
+            }
+
+            R.id.action_export_json -> {
+                exportJsonFile()
+                true
+            }
+
             R.id.action_share_json -> {
                 shareJsonFile()
                 true
@@ -229,6 +268,11 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun importJsonFile() {
+        val chooserIntent = Intent.createChooser(importFileIntent(MIME_APP_JSON), getString(R.string.choosing_intent_title))
+        importIntentLauncher.launch(chooserIntent)
     }
 
     private fun createFilter() {
@@ -254,22 +298,8 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun onNewFilterCreated(data: FilterUiData, lastIndex: Int) {
         launch {
-            selectNewFilter(data, lastIndex)
-                .collect()
+            selectNewFilter(data, lastIndex).collect()
         }
-    }
-
-    private fun LogItemData.toItemViewHolder(): GenericItem {
-        return when (this) {
-            is DateLogItemData -> HeaderLogDateItem(calendar, this)
-            is TextLogItemData -> TextLogItem(calendar, this)
-            is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, this).apply {
-                subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
-            }
-        }
-    }
-
-    private fun onReplicatedTextLogItemClick(item: ReplicatedTextLogItem) {
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {

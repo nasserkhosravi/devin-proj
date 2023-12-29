@@ -48,6 +48,15 @@ class ReaderViewModel constructor(
         }.flowOn(Dispatchers.IO)
     }
 
+    fun convertImportedLogsToPresentableLogItems(content: JSONObject): Flow<List<LogItemData>> {
+        return flow {
+            emit(InterAppJsonConverter.import(content))
+        }.map {
+            val logsWithHeaders = addDateHeadersByDay(it, calendar)
+             CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+        }.flowOn(Dispatchers.IO)
+    }
+
     private fun addDateHeadersByDay(logs: List<LogTable>, calendar: CalenderProxy): List<LogItemData> {
         if (logs.isEmpty()) return emptyList()
         val result = ArrayList<LogItemData>()
@@ -95,8 +104,12 @@ class ReaderViewModel constructor(
         emit(Unit)
     }.flowOn(Dispatchers.Default)
 
+    fun getLogsInJson() = collectLogs().map {
+        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it)
+    }
+
     fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
-        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it, calendar)
+        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it)
     }.map { createCacheShareFile(it) }
 
     private fun collectLogs() = flow {
