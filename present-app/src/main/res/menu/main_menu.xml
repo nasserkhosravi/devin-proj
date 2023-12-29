@@ -9,6 +9,16 @@
         android:title="@string/menu_refresh" />
 
     <item
+        android:id="@+id/action_import_json"
+        android:icon="@drawable/baseline_input_24"
+        android:title="@string/menu_import_json" />
+
+    <item
+        android:id="@+id/action_export_json"
+        android:icon="@drawable/baseline_save_24"
+        android:title="@string/menu_export_json" />
+
+    <item
         android:id="@+id/action_share_json"
         android:icon="@drawable/baseline_share_24"
         android:title="@string/menu_share_json" />

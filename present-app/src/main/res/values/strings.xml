@@ -3,6 +3,8 @@
     <string name="menu_refresh">Refresh</string>
 
     <string name="menu_share_json">Share Main in json</string>
+    <string name="menu_import_json">Import logs as json</string>
+    <string name="menu_export_json">Export logs as json</string>
     <string name="menu_clear">Clear</string>
     <string name="msg_cleared">Logs and filters cleared</string>
     <string name="msg_empty_filter">Empty filter</string>
@@ -14,4 +16,9 @@
     <string name="field_search_text">search text</string>
     <string name="confirm">confirm</string>
     <string name="msg_title_required">tag or title required</string>
+    <string name="choosing_intent_title">Choose a file</string>
+    <string name="error_msg_empty_file_text">Empty file text!</string>
+    <string name="error_msg_something_went_wrong">Something went wrong!</string>
+    <string name="msg_export_done">Export done</string>
+    <string name="msg_permission_denied">permission denied</string>
 </resources>
