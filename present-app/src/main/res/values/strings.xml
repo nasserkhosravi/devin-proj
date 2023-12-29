@@ -2,7 +2,7 @@
     <string name="app_name">Devin</string>
     <string name="menu_refresh">Refresh</string>
 
-    <string name="menu_share_json">Share Main in json</string>
+    <string name="menu_share_json">Share logs in json</string>
     <string name="menu_import_json">Import logs as json</string>
     <string name="menu_export_json">Export logs as json</string>
     <string name="menu_clear_logs">Clear logs</string>
