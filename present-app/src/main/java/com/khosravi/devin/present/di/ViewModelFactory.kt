@@ -4,16 +4,18 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.data.FilterRepository
+import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.present.ReaderViewModel
 import java.lang.IllegalArgumentException
 
 class ViewModelFactory(
     private val application: Application,
-    private val filterRepository: FilterRepository
+    private val filterRepository: FilterRepository,
+    val calendar: CalendarProxy,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ReaderViewModel::class.java)) {
-            return ReaderViewModel(application, filterRepository) as T
+            return ReaderViewModel(application, filterRepository, calendar) as T
         }
         throw IllegalArgumentException()
     }

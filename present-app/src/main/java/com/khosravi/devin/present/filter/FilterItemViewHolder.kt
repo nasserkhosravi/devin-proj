@@ -1,20 +1,39 @@
 package com.khosravi.devin.present.filter
 
-import androidx.recyclerview.widget.RecyclerView
+import android.content.res.ColorStateList
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemFilterBinding
+import com.khosravi.devin.present.tool.adapter.SelectableBindingItem
 
 class FilterItemViewHolder(
-    private val view: ItemFilterBinding,
-    private val onClick: (data: FilterUiData) -> Unit
-) : RecyclerView.ViewHolder(view.root) {
+    val data: FilterUiData,
+) : SelectableBindingItem<ItemFilterBinding>() {
 
-    fun bind(data: FilterUiData) = view.apply {
-        chip.text = data.title.value
-        chip.isSelected = data.isChecked
+    override val type: Int = R.id.vh_item_filter
 
-        chip.setOnClickListener {
-            onClick(data)
+    override fun createBinding(inflater: LayoutInflater, parent: ViewGroup?): ItemFilterBinding {
+        return ItemFilterBinding.inflate(inflater, parent, false)
+    }
+
+    override fun bindView(binding: ItemFilterBinding, payloads: List<Any>) {
+        super.bindView(binding, payloads)
+        binding.apply {
+            chip.text = data.title.value
+            chip.setTextColor(data.chipColor.textColor)
+            chip.chipBackgroundColor = ColorStateList.valueOf(data.chipColor.backColor)
         }
+    }
+
+    override fun onBindSelected(binding: ItemFilterBinding) {
+        super.onBindSelected(binding)
+        binding.chip.isSelected = true
+    }
+
+    override fun onBindNotSelected(binding: ItemFilterBinding) {
+        super.onBindNotSelected(binding)
+        binding.chip.isSelected = false
     }
 
 }

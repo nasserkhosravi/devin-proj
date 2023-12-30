@@ -4,7 +4,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.khosravi.devin.present.ResourceHelper
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.applyBundle
 import com.khosravi.devin.present.creataNotEmpty
 import com.khosravi.devin.present.databinding.DialogFilterBinding
 import com.khosravi.devin.present.filter.DefaultFilterItem
@@ -38,16 +40,21 @@ class FilterDialog : BaseDialog() {
     }
 
     private fun confirmedRequested() {
+        val tag = binding.edTag.text?.toString()
         val title = binding.edTitle.text?.toString()
-        if (title.isNullOrEmpty()) {
+        if (title.isNullOrEmpty() && tag.isNullOrEmpty()) {
             binding.edTitle.error = getString(R.string.msg_title_required)
+            binding.edTag.error = getString(R.string.msg_title_required)
             return
         }
+        val fTitle = if (title.isNullOrEmpty()) tag!!
+        else title
+
         val searchText = binding.edSearchText.text.toString()
+        val chipColor = ResourceHelper.getAFilterColor(context!!, requireArguments().getInt(KEY_LAST_INDEX))
         val filterItem = DefaultFilterItem(
-            ui = FilterUiData(title, title.creataNotEmpty(), true),
-            //TODO: in future support filter by type
-            criteria = FilterCriteria(null, searchText)
+            ui = FilterUiData(fTitle, fTitle.creataNotEmpty(), chipColor),
+            criteria = FilterCriteria(tag, searchText)
         )
         onConfirm?.invoke(filterItem)
     }
@@ -59,7 +66,8 @@ class FilterDialog : BaseDialog() {
 
     companion object {
         const val TAG = "FilterDialog"
-        fun newInstance() = FilterDialog()
+        private const val KEY_LAST_INDEX = "_last_index"
+        fun newInstance(lastIndex: Int) = FilterDialog().applyBundle(KEY_LAST_INDEX to lastIndex)
     }
 
 }

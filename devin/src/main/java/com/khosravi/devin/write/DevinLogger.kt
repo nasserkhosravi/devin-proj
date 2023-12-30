@@ -3,9 +3,13 @@ package com.khosravi.devin.write
 
 interface DevinLogger {
 
-    fun log(message: String)
-    fun log(tag: String, message: String = "")
+    fun doIfEnable(action: (logger: DevinLogger) -> Unit)
+
+    fun debug(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
+    fun info(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
+    fun warning(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
+    fun error(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
+
     fun logCallerFunc()
-    fun logCallerFunc(tag: String? = null, message: String? = null, enableParentName: Boolean = true)
 }
 

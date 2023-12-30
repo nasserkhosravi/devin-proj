@@ -9,14 +9,14 @@ interface FilterItem {
 }
 
 class FilterCriteria(
-    val type: String?,
+    val tag: String?,
     val searchText: String?
 )
 
 class FilterUiData(
     val id: String,
     val title: NotEmptyString,
-    var isChecked: Boolean = false
+    val chipColor: ChipColor,
 )
 
 class DefaultFilterItem(
@@ -25,13 +25,4 @@ class DefaultFilterItem(
 ) : FilterItem {
     override val id: String
         get() = ui.title.value
-}
-
-class MainFilterItem(
-    override val id: String = "Main"
-) : FilterItem {
-
-    override val ui: FilterUiData = FilterUiData(id, title = NotEmptyString(id))
-
-    override val criteria: FilterCriteria? = null
 }

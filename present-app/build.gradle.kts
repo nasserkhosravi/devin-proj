@@ -39,7 +39,7 @@ android {
 }
 
 dependencies {
-    implementation("io.github.nasserkhosravi.devin:write:1.0.1")
+    implementation(project(mapOf("path" to ":lib-calendar")))
 
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
@@ -51,4 +51,10 @@ dependencies {
 
     implementation("com.google.dagger:dagger-android:2.24")
     kapt("com.google.dagger:dagger-compiler:2.24")
+
+    val fastAdapterVersion = "5.7.0"
+    implementation("com.mikepenz:fastadapter:$fastAdapterVersion")
+    implementation("com.mikepenz:fastadapter-extensions-binding:$fastAdapterVersion")
+    implementation("com.mikepenz:fastadapter-extensions-expandable:$fastAdapterVersion")
+
 }

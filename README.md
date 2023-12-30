@@ -17,7 +17,7 @@ Devin write library published in mavenCentral.
 ```groovy
 
 dependencies {
-    implementation 'io.github.nasserkhosravi.devin:write:1.0.1'
+    implementation 'io.github.nasserkhosravi.devin:write:1.1.0'
 }
 ```
 
