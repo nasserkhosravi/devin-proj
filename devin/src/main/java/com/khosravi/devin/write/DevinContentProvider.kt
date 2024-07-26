@@ -159,7 +159,7 @@ class DevinContentProvider : ContentProvider() {
 
         fun uriOfClient(): Uri = Uri.parse(URI_ROOT_CLIENT)
 
-        fun uriOfAllLog(clientId: String = ""): Uri = Uri.parse(URI_ALL_LOG.plus("?$KEY_CLIENT_ID=$clientId"))
+        fun uriOfAllLog(clientId: String): Uri = Uri.parse(URI_ALL_LOG.plus("?$KEY_CLIENT_ID=$clientId"))
 
     }
 
