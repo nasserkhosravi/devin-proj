@@ -13,7 +13,7 @@
         android:theme="@style/Theme.Devin"
         tools:targetApi="31">
         <activity
-            android:name="com.khosravi.devin.present.present.LogActivity"
+            android:name="com.khosravi.devin.present.present.StarterActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -21,6 +21,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".present.LogActivity"
+            android:exported="false" />
 
         <activity
             android:name=".present.ImportLogActivity"

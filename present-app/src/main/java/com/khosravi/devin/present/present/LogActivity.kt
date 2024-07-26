@@ -16,8 +16,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
-import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_READ
-import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_WRITE
 import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
@@ -107,13 +105,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         //this call enable being expandable
         mainAdapter.getExpandableExtension()
 
-        if (
-            ContextCompat.checkSelfPermission(this, PERMISSION_READ) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, PERMISSION_WRITE) != PackageManager.PERMISSION_GRANTED
-        ) {
-            launchPermissionGranting()
-            return
-        }
         doFirstFetch()
     }
 
@@ -143,18 +134,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
             startActivity(ImportLogActivity.intent(this, uriData))
         }
-    }
-
-    private fun launchPermissionGranting() {
-        val permissionLauncher: ActivityResultLauncher<Array<String>> =
-            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-                if (result.all { it.value }) {
-                    doFirstFetch()
-                } else {
-                    Toast.makeText(this, getString(R.string.msg_permission_denied), Toast.LENGTH_SHORT).show()
-                }
-            }
-        permissionLauncher.launch(arrayOf(PERMISSION_READ, PERMISSION_WRITE))
     }
 
     private fun doFirstFetch() {
