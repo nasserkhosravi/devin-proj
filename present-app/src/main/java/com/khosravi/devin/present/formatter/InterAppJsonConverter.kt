@@ -10,23 +10,35 @@ import java.util.Date
 
 internal object InterAppJsonConverter {
 
-    private const val KEY_ROOT = "logs"
-    private const val KEY_JAVA_DATE = "java_date_time"
-    private const val KEY_PERSIAN_DATE_TIME = "persian_date_time"
+    //agent
+    private const val KEY_AGENT = "agent"
+    private const val KEY_EXPORTER_ID = "name"
+    private const val KEY_VERSION_NAME = "version_name"
 
+    //log data
+    private const val KEY_ROOT = "logs"
     private const val KEY_TAG = "tag"
     private const val KEY_MESSAGE = "message"
     private const val KEY_DATE = "date"
     private const val KEY_META = "meta"
     private const val KEY_CLIENT_ID = LogTable.COLUMN_CLIENT_ID
 
+    //provided presenter data
+    private const val KEY_JAVA_DATE = "java_date_time"
+    private const val KEY_PERSIAN_DATE_TIME = "persian_date_time"
+
     fun export(
+        exporterId: String,
         versionName: String,
         logs: List<LogData>
     ): TextualReport {
         //TODO: Add version name and app name, with package id.
         val root = JSONObject()
-            .put("app version name", versionName)
+            .put(KEY_AGENT, JSONObject().apply {
+                put(KEY_EXPORTER_ID, exporterId)
+                put(KEY_VERSION_NAME, versionName)
+            })
+
 
         val jsonGroupedLogs = JSONArray()
         logs.forEach {

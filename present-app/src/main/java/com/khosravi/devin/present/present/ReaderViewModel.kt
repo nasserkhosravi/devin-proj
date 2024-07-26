@@ -114,11 +114,11 @@ class ReaderViewModel constructor(
     }.flowOn(Dispatchers.Default)
 
     fun getLogsInJson() = collectLogs().map {
-        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it)
+        InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
     }
 
     fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
-        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it)
+        InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
     }.map { createCacheShareFile(it) }
 
     fun getClientList() = flow {
