@@ -1,25 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <permission
-        android:name="com.khosravi.devin.permission.READ"
-        android:description="@string/devin_permission_read_description"
-        android:label="@string/devin_permission_read_label"
-        android:protectionLevel="normal" />
-
-    <permission
-        android:name="com.khosravi.devin.permission.WRITE"
-        android:description="@string/devin_permission_write_description"
-        android:label="@string/devin_permission_write_label"
-        android:protectionLevel="normal" />
-
-    <application>
-        <provider
-            android:name=".DevinContentProvider"
-            android:authorities="com.khosravi.devin.provider"
-            android:enabled="true"
-            android:exported="true"
-            android:readPermission="com.khosravi.devin.permission.READ"
-            android:writePermission="com.khosravi.devin.permission.WRITE" />
-    </application>
 </manifest>
