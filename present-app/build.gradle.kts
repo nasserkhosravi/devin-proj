@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.khosravi.devin.present"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 26
