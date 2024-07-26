@@ -19,6 +19,11 @@
         android:title="@string/menu_export_json" />
 
     <item
+        android:id="@+id/action_export_json_in_clipboard"
+        android:icon="@drawable/baseline_content_copy_24"
+        android:title="@string/menu_export_json_clipboard" />
+
+    <item
         android:id="@+id/action_share_json"
         android:icon="@drawable/baseline_share_24"
         android:title="@string/menu_share_json" />

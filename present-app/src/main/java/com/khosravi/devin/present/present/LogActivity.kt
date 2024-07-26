@@ -27,6 +27,7 @@ import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.sendOrShareFileIntent
+import com.khosravi.devin.present.setClipboard
 import com.khosravi.devin.present.toItemViewHolder
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
@@ -261,6 +262,11 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 true
             }
 
+            R.id.action_export_json_in_clipboard -> {
+                shareJsonInClipboard()
+                true
+            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -268,6 +274,15 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun importJsonFile() {
         val chooserIntent = Intent.createChooser(importFileIntent(MIME_APP_JSON), getString(R.string.choosing_intent_title))
         importIntentLauncher.launch(chooserIntent)
+    }
+
+    private fun shareJsonInClipboard() {
+        launch {
+            viewModel.getLogsInJson().collect {
+                application.setClipboard(it.content)
+                Toast.makeText(this@LogActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun createFilter() {
