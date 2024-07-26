@@ -3,6 +3,7 @@ package com.khosravi.devin.present.formatter
 import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.getPersianDateTimeFormatted
 import com.khosravi.devin.present.mapNotNull
+import com.khosravi.devin.write.room.LogTable
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Date
@@ -12,6 +13,12 @@ internal object InterAppJsonConverter {
     private const val KEY_ROOT = "logs"
     private const val KEY_JAVA_DATE = "java_date_time"
     private const val KEY_PERSIAN_DATE_TIME = "persian_date_time"
+
+    private const val KEY_TAG = "tag"
+    private const val KEY_MESSAGE = "message"
+    private const val KEY_DATE = "date"
+    private const val KEY_META = "meta"
+    private const val KEY_CLIENT_ID = LogTable.COLUMN_CLIENT_ID
 
     fun export(
         versionName: String,
@@ -24,13 +31,13 @@ internal object InterAppJsonConverter {
         val jsonGroupedLogs = JSONArray()
         logs.forEach {
             val item = JSONObject()
-                .put(LogData.KEY_TAG, it.tag)
-                .put(LogData.KEY_MESSAGE, it.value)
-                .put(LogData.KEY_DATE, it.date)
+                .put(KEY_TAG, it.tag)
+                .put(KEY_MESSAGE, it.value)
+                .put(KEY_DATE, it.date)
                 .put(KEY_JAVA_DATE, Date(it.date).toString())
                 .put(KEY_PERSIAN_DATE_TIME, getPersianDateTimeFormatted(it.date))
-                .put(LogData.KEY_META, it.meta)
-                .put(LogData.KEY_CLIENT_ID, it.packageId)
+                .put(KEY_META, it.meta)
+                .put(KEY_CLIENT_ID, it.packageId)
             jsonGroupedLogs.put(item)
         }
         root.put(KEY_ROOT, jsonGroupedLogs)
@@ -42,11 +49,11 @@ internal object InterAppJsonConverter {
         return json.getJSONArray(KEY_ROOT).mapNotNull {
             if (it is JSONObject) {
                 LogData(
-                    0L, it.getString(LogData.KEY_TAG),
-                    it.getString(LogData.KEY_MESSAGE),
-                    it.getLong(LogData.KEY_DATE),
-                    it.getString(LogData.KEY_META),
-                    it.optString(LogData.KEY_CLIENT_ID) ?: "No client id",
+                    0L, it.getString(KEY_TAG),
+                    it.getString(KEY_MESSAGE),
+                    it.getLong(KEY_DATE),
+                    it.getString(KEY_META),
+                    it.optString(KEY_CLIENT_ID) ?: "No client id",
                 )
             } else null
         }
