@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--color palate-->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-
-    <!--Raw color-->
     <color name="black_pearl_alpha_87">#DE040A1F</color>
     <color name="black_pearl_alpha_38">#61040A1F</color>
     <color name="green_dark_2">#22A958</color>
@@ -13,8 +12,9 @@
     <color name="persian_red">#d32f2f</color>
     <color name="denim">#1976d2</color>
     <color name="gold_drop">#F57C00</color>
+    <color name="gallery">#EFEFEF</color>
 
-    <!--Theme color-->
+    <!--scheme color-->
     <color name="colorPrimary">@color/green_dark_2</color>
     <color name="colorPrimaryVariant">@color/green_light_1</color>
     <color name="colorSurface">@color/white_light_1</color>
@@ -22,11 +22,12 @@
     <color name="colorOnSurface">@color/black_pearl_alpha_87</color>
     <color name="colorOnSurfaceWeak">@color/black_pearl_alpha_38</color>
 
+    <!--component color-->
     <color name="colorLogDebug">@color/black_pearl_alpha_87</color>
     <color name="colorLogError">@color/persian_red</color>
     <color name="colorLogInfo">@color/denim</color>
     <color name="colorLogWarning">@color/gold_drop</color>
 
-    <!--Component color-->
     <color name="bg_dialog">@color/white</color>
+    <color name="colorItemBack">@color/gallery</color>
 </resources>

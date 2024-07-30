@@ -6,9 +6,13 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import com.khosravi.devin.present.BuildConfig
+import com.khosravi.devin.present.data.CacheRepository
+import com.khosravi.devin.present.data.ClientContentProvider
+import com.khosravi.devin.present.client.ClientData
+import com.khosravi.devin.present.data.ClientLoadedState
 import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.FilterRepository
-import com.khosravi.devin.present.data.LogTable
+import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.TimePresent
@@ -34,8 +38,9 @@ import java.lang.IllegalArgumentException
 
 class ReaderViewModel constructor(
     application: Application,
-    private val filterRepository: FilterRepository,
     private val calendar: CalendarProxy,
+    private val filterRepository: FilterRepository,
+    private val cacheRepo: CacheRepository,
 ) : AndroidViewModel(application) {
 
     fun getLogListOfFilter(filterItemId: String): Flow<FilterResult> {
@@ -57,7 +62,7 @@ class ReaderViewModel constructor(
         }.flowOn(Dispatchers.IO)
     }
 
-    private fun addDateHeadersByDay(logs: List<LogTable>, calendar: CalendarProxy): List<LogItemData> {
+    private fun addDateHeadersByDay(logs: List<LogData>, calendar: CalendarProxy): List<LogItemData> {
         if (logs.isEmpty()) return emptyList()
         val result = ArrayList<LogItemData>()
         var nextDateDifferInDayCode: Int? = null
@@ -80,13 +85,13 @@ class ReaderViewModel constructor(
 
     private fun allLogsByCriteria(
         filterItem: FilterItem,
-        allLogs: List<LogTable>
+        allLogs: List<LogData>
     ) = (filterItem.criteria?.let { criteria ->
         filterByCriteria(allLogs, criteria)
     } ?: allLogs)
 
     private fun filterByCriteria(
-        allLogs: List<LogTable>, criteria: FilterCriteria
+        allLogs: List<LogData>, criteria: FilterCriteria
     ) = allLogs.filter {
         val searchText = criteria.searchText
         val searchTextConditionResult = if (searchText.isNullOrEmpty()) true
@@ -99,7 +104,7 @@ class ReaderViewModel constructor(
     }
 
     fun clearLogs() = flow {
-        ContentProviderLogsDao.clear(getContext())
+        ContentProviderLogsDao.clear(getContext(), clientId = requireSelectedClientId())
         emit(Unit)
     }.flowOn(Dispatchers.Default)
 
@@ -109,19 +114,42 @@ class ReaderViewModel constructor(
     }.flowOn(Dispatchers.Default)
 
     fun getLogsInJson() = collectLogs().map {
-        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it)
+        InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
     }
 
     fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
-        InterAppJsonConverter.export(BuildConfig.VERSION_NAME, it)
+        InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
     }.map { createCacheShareFile(it) }
 
+    fun getClientList() = flow {
+        val result = ClientContentProvider.getClientList(getContext())
+        emit(result)
+    }.map {
+        if (it.isEmpty()) ClientLoadedState.Zero
+        else if (it.size == 1) ClientLoadedState.Single(it.first())
+        else ClientLoadedState.Multi(it)
+    }
+
     private fun collectLogs() = flow {
-        val result = ContentProviderLogsDao.getAll(getContext()).sortedByDescending { it.date }
+        val selectedClientId = getSelectedClientId()
+        if (selectedClientId.isNullOrEmpty()) {
+            emit(emptyList())
+            return@flow
+        }
+        val result = ContentProviderLogsDao.getAll(getContext(), selectedClientId).sortedByDescending { it.date }
         emit(result)
     }
 
-    private fun getContext(): Context = getApplication()
+    private fun getSelectedClientId() = cacheRepo.getSelectedClientId()
+
+    private fun requireSelectedClientId(): String {
+        val clientId = cacheRepo.getSelectedClientId()
+        return requireNotNull(clientId)
+    }
+
+    fun setSelectedClientId(clientData: ClientData) = cacheRepo.setSelectedClientId(clientData)
+
+    private fun getContext(): Context = getApplication<Application>().applicationContext
 
     private fun createCacheShareFile(textualReport: TextualReport): Uri {
         val file = getContext().fileForCache(textualReport.fileName)

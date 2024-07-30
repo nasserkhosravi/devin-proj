@@ -8,13 +8,13 @@ import androidx.room.Query
 @Dao
 interface LogDao {
 
-    @Query("SELECT * FROM " + LogTable.TABLE_NAME)
-    fun getAllAsCursor(): Cursor
+    @Query("SELECT * FROM " + LogTable.TABLE_NAME + " WHERE _clientId = :clientId ")
+    fun getAllAsCursor(clientId: String): Cursor
 
     @Insert
     fun insert(log: LogTable): Long
 
-    @Query("DELETE FROM ${LogTable.TABLE_NAME}")
-    fun nukeTable()
+    @Query("DELETE FROM ${LogTable.TABLE_NAME} WHERE _clientId = :clientId")
+    fun removeLogs(clientId: String)
 
 }

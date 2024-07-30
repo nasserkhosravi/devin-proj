@@ -12,12 +12,14 @@ class LogTable(
     val id: Long,
     @ColumnInfo(index = true, name = COLUMN_TAG)
     val tag: String,
-    @ColumnInfo(index = true, name = COLUMN_VALUE)
+    @ColumnInfo(name = COLUMN_VALUE)
     val value: String,
-    @ColumnInfo(index = true, name = COLUMN_DATE)
+    @ColumnInfo(name = COLUMN_DATE)
     val date: Long,
-    @ColumnInfo(index = true, name = COLUMN_META)
-    val meta: String?
+    @ColumnInfo(name = COLUMN_META)
+    val meta: String?,
+    @ColumnInfo(index = true, name = COLUMN_CLIENT_ID)
+    val clientId: String,
 ) {
 
     companion object {
@@ -28,5 +30,6 @@ class LogTable(
         const val COLUMN_VALUE = "_value"
         const val COLUMN_DATE = "_date"
         const val COLUMN_META = "_meta"
+        const val COLUMN_CLIENT_ID = "_clientId"
     }
 }

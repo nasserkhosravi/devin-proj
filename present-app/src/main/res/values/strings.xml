@@ -21,4 +21,8 @@
     <string name="error_msg_something_went_wrong">Something went wrong!</string>
     <string name="msg_export_done">Export done</string>
     <string name="msg_permission_denied">permission denied</string>
+    <string name="loading">loading</string>
+    <string name="no_client_found">No client found, run client app or send logs by devin</string>
+    <string name="one_client_found">One client found</string>
+    <string name="choose_client">Choose client app</string>
 </resources>

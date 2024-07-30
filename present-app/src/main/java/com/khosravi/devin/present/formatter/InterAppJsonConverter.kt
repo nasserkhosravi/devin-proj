@@ -1,34 +1,55 @@
 package com.khosravi.devin.present.formatter
 
-import com.khosravi.devin.present.data.LogTable
+import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.getPersianDateTimeFormatted
 import com.khosravi.devin.present.mapNotNull
+import com.khosravi.devin.write.room.LogTable
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Date
 
 internal object InterAppJsonConverter {
 
+    //agent
+    private const val KEY_AGENT = "agent"
+    private const val KEY_EXPORTER_ID = "name"
+    private const val KEY_VERSION_NAME = "version_name"
+
+    //log data
     private const val KEY_ROOT = "logs"
+    private const val KEY_TAG = "tag"
+    private const val KEY_MESSAGE = "message"
+    private const val KEY_DATE = "date"
+    private const val KEY_META = "meta"
+    private const val KEY_CLIENT_ID = LogTable.COLUMN_CLIENT_ID
+
+    //provided presenter data
     private const val KEY_JAVA_DATE = "java_date_time"
     private const val KEY_PERSIAN_DATE_TIME = "persian_date_time"
 
     fun export(
+        exporterId: String,
         versionName: String,
-        logs: List<LogTable>
+        logs: List<LogData>
     ): TextualReport {
+        //TODO: Add version name and app name, with package id.
         val root = JSONObject()
-            .put("app version name", versionName)
+            .put(KEY_AGENT, JSONObject().apply {
+                put(KEY_EXPORTER_ID, exporterId)
+                put(KEY_VERSION_NAME, versionName)
+            })
+
 
         val jsonGroupedLogs = JSONArray()
         logs.forEach {
             val item = JSONObject()
-                .put(LogTable.KEY_TAG, it.tag)
-                .put(LogTable.KEY_MESSAGE, it.value)
-                .put(LogTable.KEY_DATE, it.date)
+                .put(KEY_TAG, it.tag)
+                .put(KEY_MESSAGE, it.value)
+                .put(KEY_DATE, it.date)
                 .put(KEY_JAVA_DATE, Date(it.date).toString())
                 .put(KEY_PERSIAN_DATE_TIME, getPersianDateTimeFormatted(it.date))
-                .put(LogTable.KEY_META, it.meta)
+                .put(KEY_META, it.meta)
+                .put(KEY_CLIENT_ID, it.packageId)
             jsonGroupedLogs.put(item)
         }
         root.put(KEY_ROOT, jsonGroupedLogs)
@@ -36,14 +57,15 @@ internal object InterAppJsonConverter {
         return TextualReport("Devin_${Date()}.json", root.toString())
     }
 
-    fun import(json: JSONObject): List<LogTable> {
+    fun import(json: JSONObject): List<LogData> {
         return json.getJSONArray(KEY_ROOT).mapNotNull {
             if (it is JSONObject) {
-                LogTable(
-                    0L, it.getString(LogTable.KEY_TAG),
-                    it.getString(LogTable.KEY_MESSAGE),
-                    it.getLong(LogTable.KEY_DATE),
-                    it.getString(LogTable.KEY_META)
+                LogData(
+                    0L, it.getString(KEY_TAG),
+                    it.getString(KEY_MESSAGE),
+                    it.getLong(KEY_DATE),
+                    it.getString(KEY_META),
+                    it.optString(KEY_CLIENT_ID) ?: "No client id",
                 )
             } else null
         }
