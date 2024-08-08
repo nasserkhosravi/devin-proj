@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         minSdk = 26
-
+        versionCode = 2
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     val versionName = "\"2.0.0\""
