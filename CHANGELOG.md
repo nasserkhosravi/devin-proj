@@ -1,4 +1,7 @@
 # Changelog
+## 2.0.0
+- Support multi app client (Content provider moved to presenter)
+- Add copy export in clipboard to ease sharing
 
 ## 1.1.0
 - Support filter by tag
