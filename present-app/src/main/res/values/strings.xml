@@ -5,6 +5,7 @@
     <string name="menu_share_json">Share logs in json</string>
     <string name="menu_import_json">Import logs as json</string>
     <string name="menu_export_json">Export logs as json</string>
+    <string name="menu_export_json_clipboard">Copy logs as json in clipboard</string>
     <string name="menu_clear_logs">Clear logs</string>
     <string name="menu_clear_filters">Clear filters</string>
     <string name="msg_empty_filter">Empty filter</string>
@@ -21,4 +22,9 @@
     <string name="error_msg_something_went_wrong">Something went wrong!</string>
     <string name="msg_export_done">Export done</string>
     <string name="msg_permission_denied">permission denied</string>
+    <string name="loading">loading</string>
+    <string name="no_client_found">No client found, run client app or send logs by devin</string>
+    <string name="one_client_found">One client found</string>
+    <string name="choose_client">Choose client app</string>
+    <string name="copied">Copied</string>
 </resources>

@@ -1,7 +1,6 @@
 package com.khosravi.devin.present
 
 import android.content.ClipData
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
@@ -10,7 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
-import android.widget.Toast
+import android.text.ClipboardManager
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -116,4 +115,10 @@ fun OutputStream.writeTextAndClose(text: String) {
     bw.write(text)
     bw.flush()
     bw.close()
+}
+
+fun Context.setClipboard(text: String) {
+    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+    val clip = ClipData.newPlainText("Copied Text", text)
+    clipboard.setPrimaryClip(clip)
 }

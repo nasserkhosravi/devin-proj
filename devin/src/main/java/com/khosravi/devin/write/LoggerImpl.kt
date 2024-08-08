@@ -10,6 +10,8 @@ internal class LoggerImpl(
     private val isEnable: Boolean
 ) : DevinLogger {
 
+    private val appId = appContext.packageName
+
     override fun doIfEnable(action: (DevinLogger) -> Unit) {
         if (isEnable) {
             action(this)
@@ -77,7 +79,7 @@ internal class LoggerImpl(
         val fTag = if (tag.isNullOrEmpty()) LOG_TAG_UNTAG else tag
         appContext.contentResolver.insert(
             Uri.parse(DevinContentProvider.URI_ALL_LOG),
-            DevinContentProvider.contentValueLog(fTag, value, meta?.toString())
+            DevinContentProvider.contentValueLog(appId, fTag, value, meta?.toString())
         )
     }
 

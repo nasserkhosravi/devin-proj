@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.khosravi.devin.present"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 26
-
+        versionCode = 2
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    val versionName = "\"1.0.0\""
+    val versionName = "\"2.0.0\""
 
     buildTypes {
         debug {
@@ -40,6 +40,7 @@ android {
 
 dependencies {
     implementation(project(mapOf("path" to ":lib-calendar")))
+    implementation(project(mapOf("path" to ":devin")))
 
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.6.1")

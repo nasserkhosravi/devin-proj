@@ -16,8 +16,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
-import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_READ
-import com.khosravi.devin.present.data.ContentProviderLogsDao.PERMISSION_WRITE
 import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
@@ -29,6 +27,7 @@ import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.sendOrShareFileIntent
+import com.khosravi.devin.present.setClipboard
 import com.khosravi.devin.present.toItemViewHolder
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
@@ -107,13 +106,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         //this call enable being expandable
         mainAdapter.getExpandableExtension()
 
-        if (
-            ContextCompat.checkSelfPermission(this, PERMISSION_READ) != PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(this, PERMISSION_WRITE) != PackageManager.PERMISSION_GRANTED
-        ) {
-            launchPermissionGranting()
-            return
-        }
         doFirstFetch()
     }
 
@@ -143,18 +135,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
             startActivity(ImportLogActivity.intent(this, uriData))
         }
-    }
-
-    private fun launchPermissionGranting() {
-        val permissionLauncher: ActivityResultLauncher<Array<String>> =
-            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-                if (result.all { it.value }) {
-                    doFirstFetch()
-                } else {
-                    Toast.makeText(this, getString(R.string.msg_permission_denied), Toast.LENGTH_SHORT).show()
-                }
-            }
-        permissionLauncher.launch(arrayOf(PERMISSION_READ, PERMISSION_WRITE))
     }
 
     private fun doFirstFetch() {
@@ -282,6 +262,11 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 true
             }
 
+            R.id.action_export_json_in_clipboard -> {
+                shareJsonInClipboard()
+                true
+            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -289,6 +274,15 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun importJsonFile() {
         val chooserIntent = Intent.createChooser(importFileIntent(MIME_APP_JSON), getString(R.string.choosing_intent_title))
         importIntentLauncher.launch(chooserIntent)
+    }
+
+    private fun shareJsonInClipboard() {
+        launch {
+            viewModel.getLogsInJson().collect {
+                application.setClipboard(it.content)
+                Toast.makeText(this@LogActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun createFilter() {

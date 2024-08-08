@@ -5,21 +5,18 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import androidx.core.database.getStringOrNull
+import com.khosravi.devin.write.DevinContentProvider
 
 object ContentProviderLogsDao {
 
-    const val PERMISSION_READ = "com.khosravi.devin.permission.READ"
-    const val PERMISSION_WRITE = "com.khosravi.devin.permission.WRITE"
-
-    private fun getAllLogUri(): Uri {
-        //TODO: dynamic it to support multi app
-        return Uri.parse("content://com.khosravi.devin.provider/log")
+    private fun getAllLogUri(clientId: String): Uri {
+        return DevinContentProvider.uriOfAllLog(clientId)
     }
 
-    fun getAll(context: Context): List<LogTable> {
+    fun getAll(context: Context, clientId: String): List<LogData> {
         val cursor =
-            context.contentResolver.query(getAllLogUri(), null, null, null, null) ?: return emptyList()
-        val result = ArrayList<LogTable>()
+            context.contentResolver.query(getAllLogUri(clientId), null, null, arrayOf(clientId), null) ?: return emptyList()
+        val result = ArrayList<LogData>()
         while (cursor.moveToNext()) {
             val element = cursor.asLogModel()
             result.add(element)
@@ -27,8 +24,8 @@ object ContentProviderLogsDao {
         return result
     }
 
-    fun clear(context: Context) {
-        val uri = getAllLogUri()
+    fun clear(context: Context, clientId: String) {
+        val uri = getAllLogUri(clientId)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             context.contentResolver.delete(uri, null)
         } else {
@@ -36,14 +33,15 @@ object ContentProviderLogsDao {
         }
     }
 
-    private fun Cursor.asLogModel(): LogTable {
+    private fun Cursor.asLogModel(): LogData {
         val cursor = this
-        return LogTable(
+        return LogData(
             id = cursor.getLong(0),
             tag = cursor.getString(1),
             value = cursor.getString(2),
             date = cursor.getLong(3),
-            meta = cursor.getStringOrNull(4)
+            meta = cursor.getStringOrNull(4),
+            packageId = cursor.getString(5),
         )
     }
 }
