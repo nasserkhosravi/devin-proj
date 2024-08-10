@@ -41,6 +41,7 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.9.0")
+    api(project(mapOf("path" to ":devin-api")))
 
     val roomVersion = "2.5.1"
     implementation("androidx.room:room-common:$roomVersion")

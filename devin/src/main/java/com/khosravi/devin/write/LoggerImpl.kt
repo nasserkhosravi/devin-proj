@@ -3,6 +3,7 @@ package com.khosravi.devin.write
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import io.nasser.devin.api.DevinLogger
 import org.json.JSONObject
 
 internal class LoggerImpl(

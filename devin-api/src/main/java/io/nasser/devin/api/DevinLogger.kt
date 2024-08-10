@@ -1,4 +1,4 @@
-package com.khosravi.devin.write
+package io.nasser.devin.api
 
 
 interface DevinLogger {
