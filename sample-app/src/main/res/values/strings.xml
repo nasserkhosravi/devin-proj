@@ -2,5 +2,7 @@
     <string name="app_name">Devin-Sample</string>
     <string name="field_tag">tag</string>
     <string name="field_message">message</string>
+    <string name="field_fetch_image">URL to fetch image</string>
     <string name="with_throwable">with throwable</string>
+    <string name="fetch_image">Fetch image</string>
 </resources>

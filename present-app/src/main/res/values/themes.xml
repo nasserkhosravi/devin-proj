@@ -10,6 +10,7 @@
         <item name="spaceXSmall">4dp</item>
         <item name="spaceSmall">8dp</item>
         <item name="borderSizeSmall">1dp</item>
+        <item name="borderSizeSmall2">2dp</item>
     </style>
 
     <style name="DialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog"/>

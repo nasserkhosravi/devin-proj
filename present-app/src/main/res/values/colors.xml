@@ -13,6 +13,7 @@
     <color name="denim">#1976d2</color>
     <color name="gold_drop">#F57C00</color>
     <color name="gallery">#EFEFEF</color>
+    <color name="alto">#DCDCDC</color>
 
     <!--scheme color-->
     <color name="colorPrimary">@color/green_dark_2</color>
@@ -30,4 +31,5 @@
 
     <color name="bg_dialog">@color/white</color>
     <color name="colorItemBack">@color/gallery</color>
+    <color name="colorSurfaceDisparate">@color/alto</color>
 </resources>

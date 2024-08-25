@@ -12,6 +12,8 @@ import com.khosravi.devin.present.date.DumbTime
 import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HeaderLogDateItem
+import com.khosravi.devin.present.log.ImageLogItem
+import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.ReplicatedTextLogItem
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
@@ -57,6 +59,7 @@ fun List<LogItemData>.toItemViewHolder(calendar: CalendarProxy): List<GenericIte
         when (item) {
             is DateLogItemData -> HeaderLogDateItem(calendar, item)
             is TextLogItemData -> TextLogItem(calendar, item)
+            is ImageLogItemData -> ImageLogItem(calendar, item)
             is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, item).apply {
                 subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
             }

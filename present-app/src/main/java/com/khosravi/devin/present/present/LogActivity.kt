@@ -12,7 +12,6 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
@@ -23,6 +22,7 @@ import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
+import com.khosravi.devin.present.filter.ImageFilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.TextLogItem
@@ -153,6 +153,16 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun selectNewFilter(data: FilterUiData, index: Int): Flow<List<GenericItem>> {
         binding.rvFilter.isEnabled = false
+        if (data.id == ImageFilterItem.ID) {
+            return viewModel.getImageLogs()
+                .map { it.toItemViewHolder(calendar) }
+                .flowOn(Dispatchers.Main)
+                .onEach {
+                    binding.rvFilter.isEnabled = true
+                    filterItemAdapter.changeState(index)
+                    mainItemAdapter.set(it)
+                }
+        }
         return viewModel.getLogListOfFilter(data.id).map { it.logList.toItemViewHolder(calendar) }.flowOn(Dispatchers.Main)
             .onEach {
                 binding.rvFilter.isEnabled = true
