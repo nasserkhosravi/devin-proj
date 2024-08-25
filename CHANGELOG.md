@@ -1,4 +1,11 @@
 # Changelog
+
+## 3.0.0
+- Implement dedicate presenter and image logger 
+- Implement general exception logging
+- Disable log counting feature
+- Create devin-api module to share codes between operation and no-operation module
+
 ## 2.0.0
 - Support multi app client (Content provider moved to presenter)
 - Add copy export in clipboard to ease sharing
@@ -12,12 +19,12 @@
 - Support import exporting logs
 - Separate clearing logs and filters
 - Change share text format
-- Support different log level, payload and throwabl when log.
+- Support different log level, payload and throwable when log.
 - Fix some bug
 - Add no-op version
 - Show log details
-- Migrate to fastadapter
-- Move devin content provider delcaring to write module
+- Migrate to fast-adapter
+- Move devin content provider declaring to write module
 - Add snapshot repository
 
 ## 1.0.1 
