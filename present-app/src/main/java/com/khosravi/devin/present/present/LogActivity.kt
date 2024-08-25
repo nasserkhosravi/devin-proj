@@ -202,13 +202,23 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun requestRefreshLogItems(filterItemId: String): Flow<Unit> {
-        return viewModel.getLogListOfFilter(filterItemId).flowOn(Dispatchers.Main).onEach { result ->
-            if (result.logList.isEmpty()) {
-                Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
-            } else {
-                mainItemAdapter.set(result.logList.toItemViewHolder(calendar))
-            }
-        }.map { }
+        if (filterItemId == ImageFilterItem.ID) {
+            return viewModel.getDetermineImageLogs()
+                .map { it.toItemViewHolder(calendar) }
+                .flowOn(Dispatchers.Main)
+                .onEach {
+                    binding.rvFilter.isEnabled = true
+                    mainItemAdapter.set(it)
+                }.map { }
+        }
+        return viewModel.getLogListOfFilter(filterItemId)
+            .flowOn(Dispatchers.Main).onEach { result ->
+                if (result.logList.isEmpty()) {
+                    Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
+                } else {
+                    mainItemAdapter.set(result.logList.toItemViewHolder(calendar))
+                }
+            }.map { }
     }
 
     private fun shareJsonFile() {
