@@ -5,4 +5,5 @@
     <item name="vh_item_filter" type="id" />
     <item name="vh_item_header_log_date" type="id" />
     <item name="vh_item_client" type="id" />
+    <item name="vh_item_image_log" type="id" />
 </resources>
