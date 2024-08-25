@@ -5,8 +5,10 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.util.Log
 import io.nasser.devin.api.DevinImageLogger
 import io.nasser.devin.api.DevinLogger
+import java.lang.Exception
 
 class DevinTool private constructor(
     val logger: DevinLogger?,
@@ -14,14 +16,20 @@ class DevinTool private constructor(
 ) {
 
     private fun putClient(appContext: Context, packageName: String) {
-        //TODO: check if devin presenter is installed.
-        appContext.contentResolver.insert(
-            Uri.parse(DevinContentProvider.URI_ROOT_CLIENT),
-            DevinContentProvider.contentValuePutClient(packageName)
-        )
+        try {
+            appContext.contentResolver.insert(
+                Uri.parse(DevinContentProvider.URI_ROOT_CLIENT),
+                DevinContentProvider.contentValuePutClient(packageName)
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "No Devin receiver found. Please ensure a devin presenter application is installed.")
+            e.printStackTrace()
+        }
     }
 
     companion object {
+
+        private const val TAG = "DevinTool"
 
         fun create(appContext: Context): DevinTool {
             val isDebuggable = (appContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
