@@ -3,6 +3,7 @@ package com.khosravi.devin.write
 import android.util.Log
 import com.khosravi.devin.write.api.DevinImageFlagsApi
 import io.nasser.devin.api.DevinImageLogger
+import java.lang.IllegalArgumentException
 import java.net.URI
 
 internal class DevinImageLoggerImpl(
@@ -30,13 +31,25 @@ internal class DevinImageLoggerImpl(
         throwable: Throwable?
     ) {
         if (logger.isEnable.not()) return
-        val fName = name.takeIf { !it.isNullOrEmpty() } ?: URI(url).path
+        val fName = (name.takeIf { !it.isNullOrEmpty() } ?: URI(url).path)
+            .let {
+                statusToText(status).plus(" $it")
+            }
         val meta = LoggerImpl.createMetaForComponentLogs(
             DevinImageFlagsApi.VALUE_IMAGE_META_TYPE, logLevel, payload, throwable
         ).put(DevinImageFlagsApi.KEY_IMAGE_URL, url)
             .put(DevinImageFlagsApi.KEY_IMAGE_STATUS, status)
 
         logger.sendLog(DevinImageFlagsApi.LOG_TAG, fName, meta)
+    }
+
+    private fun statusToText(status: Int): String {
+        return when (status) {
+            DevinImageFlagsApi.Status.DOWNLOADING -> "Downloading"
+            DevinImageFlagsApi.Status.SUCCEED -> "Succeed"
+            DevinImageFlagsApi.Status.FAILED -> "Failed"
+            else -> throw IllegalArgumentException("unsupported status")
+        }
     }
 
 }
