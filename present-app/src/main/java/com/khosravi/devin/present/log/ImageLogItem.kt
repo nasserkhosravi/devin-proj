@@ -7,7 +7,6 @@ import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -21,7 +20,6 @@ import com.khosravi.devin.write.api.DevinImageFlagsApi
 import com.wcabral.spantastic.bold
 import com.wcabral.spantastic.foreground
 import com.wcabral.spantastic.spantastic
-import com.wcabral.spantastic.style
 import java.io.File
 
 
@@ -64,7 +62,7 @@ open class ImageLogItem(
 
                     override fun onLoadFailed(errorDrawable: Drawable?) {
                         super.onLoadFailed(errorDrawable)
-                        tvInfo.text = buildImageInfo(false,)
+                        tvInfo.text = buildImageInfo(false,null,null)
                     }
                 })
         }
@@ -102,15 +100,17 @@ open class ImageLogItem(
         }
         text(calendar.initIfNeed(data.timePresent).getFormatted().plus("\n"))
 
-        text("Image size: ") {
-            bold()
-        }
-        text("${resource!!.width}x${resource.height} \n")
+        if (resource!=null && fileLength!=null){
+            text("Image size: ") {
+                bold()
+            }
+            text("${resource.width}x${resource.height} \n")
 
-        text("File size: ") {
-            bold()
+            text("File size: ") {
+                bold()
+            }
+            text(humanReadableByteCountSI(fileLength))
         }
-        text(humanReadableByteCountSI(fileLength!!))
     }
 
     private fun ItemImageLogBinding.getTextAndItsColor(): Pair<String, Int> {
