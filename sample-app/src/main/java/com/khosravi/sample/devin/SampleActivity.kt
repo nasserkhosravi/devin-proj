@@ -4,11 +4,18 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
+import coil.load
+import coil.request.ErrorResult
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.google.android.material.snackbar.Snackbar
 import io.nasser.devin.api.DevinLogger
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
+import java.lang.Exception
 import java.lang.StringBuilder
 
 class SampleActivity : AppCompatActivity() {
@@ -33,6 +40,36 @@ class SampleActivity : AppCompatActivity() {
 
         logger.doIfEnable {
             //You can do your heavy operation here like json validation or any custom execution must happen in debug
+        }
+
+        binding.btnFetchImage.setOnClickListener {
+            val urlString = binding.edUrlImage.text.toString()
+            if (urlString.isEmpty()) {
+                return@setOnClickListener
+            }
+            try {
+                //test if [urlString] is a valid url
+                urlString.toUri()
+
+                binding.img.load(urlString) {
+                    listener(CoilCompositeListener().apply {
+                        addDevinImageLogger(urlString, devinTool)
+                        addListener(onStart = {
+                            Toast.makeText(this@SampleActivity, "start", Toast.LENGTH_SHORT).show()
+                        }, onError = { _, r ->
+                            r.throwable.printStackTrace()
+                            Toast.makeText(this@SampleActivity, "failed", Toast.LENGTH_SHORT).show()
+                            binding.img.setImageDrawable(null)
+                        }, onSuccess = { a, r ->
+                            binding.img.setImageDrawable(r.drawable)
+                            Toast.makeText(this@SampleActivity, "succeed", Toast.LENGTH_SHORT).show()
+                        })
+                    })
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Toast.makeText(this, "Exception, maybe not a valid URL", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -73,6 +110,17 @@ class SampleActivity : AppCompatActivity() {
             // Apply the adapter to the spinner.
             binding.spLogLevel.adapter = adapter
         }
+    }
+
+    private fun CoilCompositeListener.addDevinImageLogger(url: String, devinTool: DevinTool) {
+        addListener(onStart = {
+            devinTool.imageLogger?.downloading(url = url)
+        }, onError = { _: ImageRequest, errorResult: ErrorResult ->
+            devinTool.imageLogger?.failed(url = url, throwable = errorResult.throwable)
+            errorResult.throwable.printStackTrace()
+        }, onSuccess = { _: ImageRequest, _: SuccessResult ->
+            devinTool.imageLogger?.succeed(url = url)
+        })
     }
 
     private fun List<String>.formatForAnalytic(): String {
