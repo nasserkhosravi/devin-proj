@@ -2,23 +2,27 @@ package com.khosravi.devin.present.log
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemImageLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.humanReadableByteCountSI
 import com.khosravi.devin.present.setClipboard
 import com.khosravi.devin.present.tool.adapter.FastBindingItem
+import com.khosravi.devin.write.api.DevinImageFlagsApi
 import com.wcabral.spantastic.bold
+import com.wcabral.spantastic.foreground
 import com.wcabral.spantastic.spantastic
+import com.wcabral.spantastic.style
 import java.io.File
-import java.text.CharacterIterator
-import java.text.StringCharacterIterator
 
 
 open class ImageLogItem(
@@ -35,7 +39,7 @@ open class ImageLogItem(
     override fun bindView(binding: ItemImageLogBinding, payloads: List<Any>) {
         super.bindView(binding, payloads)
         binding.apply {
-            tvInfo.text = buildImageInfo()
+            tvInfo.text = buildImageInfo(true)
 
             tvUrlCopy.text = spantastic {
                 text("URL: ") { bold() }
@@ -45,57 +49,44 @@ open class ImageLogItem(
                 Toast.makeText(it.context, "URL Copied", Toast.LENGTH_SHORT).show()
                 it.context.setClipboard(data.data.url)
             }
-//            root.setOnClickListener {
-//                Toast.makeText(it.context, "Item Copied", Toast.LENGTH_SHORT).show()
-//                it.context.setClipboard(data.data)
-//            }
-//            Glide.with(context).asBitmap().load(data.data.url).into(object : CustomTarget<Bitmap>() {
-//                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-//                    tvInfo.text = buildImageInfo(resource)
-//                    imgView.setImageBitmap(resource)
-//                }
-//
-//                override fun onLoadCleared(placeholder: Drawable?) {}
-//
-//                override fun onLoadFailed(errorDrawable: Drawable?) {
-//                    super.onLoadFailed(errorDrawable)
-//                }
-//            })
+
             Glide.with(context).asFile().load(data.data.url)
-//                .addListener()
-//                .preload()
                 .into(object : CustomTarget<File>() {
                     override fun onResourceReady(resource: File, transition: Transition<in File>?) {
                         val filePath: String = resource.path
                         val bitmap = BitmapFactory.decodeFile(filePath)
                         imgView.setImageBitmap(bitmap)
-                        tvInfo.text = buildImageInfo(bitmap, resource.length())
+                        tvInfo.text = buildImageInfo(false, bitmap, resource.length())
                     }
 
                     override fun onLoadCleared(placeholder: Drawable?) {
                     }
 
+                    override fun onLoadFailed(errorDrawable: Drawable?) {
+                        super.onLoadFailed(errorDrawable)
+                        tvInfo.text = buildImageInfo(false,)
+                    }
                 })
-
-//            imgView.load(data.data.url) {
-//                listener(onError = { _, r ->
-//                    r.throwable.printStackTrace()
-//                }, onSuccess = { _, r ->
-//                    r.request.sizeResolver.size()
-//                })
-//            }
-
         }
     }
 
-    private fun ItemImageLogBinding.buildImageInfo(resource: Bitmap? = null, fileLength: Long? = null) = spantastic {
-        val isLoading = resource == null
+    private fun ItemImageLogBinding.buildImageInfo(isLoading:Boolean, resource: Bitmap? = null, fileLength: Long? = null) = spantastic {
         if (isLoading) {
             text("Loading") {
                 bold()
             }
             return@spantastic
         }
+        text("Status: ") {
+            bold()
+        }
+
+        val (text: String, textColor: Int) = getTextAndItsColor()
+        text(text.plus("\n")) {
+            bold()
+            foreground(textColor)
+        }
+
         text("Name: ") {
             bold()
         }
@@ -122,24 +113,20 @@ open class ImageLogItem(
         text(humanReadableByteCountSI(fileLength!!))
     }
 
-//    fun byteSizeOf(bitmap: Bitmap): Int {
-//        return bitmap.getAllocationByteCount()
-//    }
+    private fun ItemImageLogBinding.getTextAndItsColor(): Pair<String, Int> {
+        return when (data.data.status) {
+            DevinImageFlagsApi.Status.SUCCEED -> {
+                "Succeed" to getColor(R.color.colorStatusSuccess)
+            }
 
-    private fun sizeOf(data: Bitmap): Int {
-        return data.getByteCount()
+            DevinImageFlagsApi.Status.FAILED -> {
+                "Failed" to getColor(R.color.colorStatusError)
+            }
+
+            else -> {
+                "" to Color.BLACK
+            }
+        }
     }
 
-    private fun humanReadableByteCountSI(bytes: Long): String {
-        var mBytes = bytes
-        if (-1000 < mBytes && mBytes < 1000) {
-            return "$mBytes B"
-        }
-        val ci: CharacterIterator = StringCharacterIterator("kMGTPE")
-        while (mBytes <= -999950 || mBytes >= 999950) {
-            mBytes /= 1000
-            ci.next()
-        }
-        return String.format("%.1f %cB", mBytes / 1000.0, ci.current())
-    }
 }

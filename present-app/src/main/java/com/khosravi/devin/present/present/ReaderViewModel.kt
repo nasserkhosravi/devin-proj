@@ -144,8 +144,9 @@ class ReaderViewModel constructor(
         emit(result)
     }
 
-    fun getImageLogs() = collectImageLogs().map { list ->
-        list.map { ImageLogItemData(it, DatePresent(it.date), TimePresent(it.date)) }
+    fun getDetermineImageLogs() = collectImageLogs().map { list ->
+        list.filter { it.status != DevinImageFlagsApi.Status.DOWNLOADING }
+            .map { ImageLogItemData(it, DatePresent(it.date), TimePresent(it.date)) }
     }
 
     private fun collectImageLogs() = flow {
@@ -156,7 +157,6 @@ class ReaderViewModel constructor(
         }
         val result = ContentProviderLogsDao.getLogImages(getContext(), selectedClientId)
             .sortedByDescending { it.date }
-            .filter { it.status == DevinImageFlagsApi.Status.SUCCEED }
         emit(result)
     }
 

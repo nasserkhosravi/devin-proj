@@ -1,7 +1,6 @@
 package com.khosravi.devin.present.present
 
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -154,7 +153,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun selectNewFilter(data: FilterUiData, index: Int): Flow<List<GenericItem>> {
         binding.rvFilter.isEnabled = false
         if (data.id == ImageFilterItem.ID) {
-            return viewModel.getImageLogs()
+            return viewModel.getDetermineImageLogs()
                 .map { it.toItemViewHolder(calendar) }
                 .flowOn(Dispatchers.Main)
                 .onEach {

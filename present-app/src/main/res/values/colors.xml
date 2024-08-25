@@ -28,6 +28,8 @@
     <color name="colorLogError">@color/persian_red</color>
     <color name="colorLogInfo">@color/denim</color>
     <color name="colorLogWarning">@color/gold_drop</color>
+    <color name="colorStatusSuccess">@color/green_dark_2</color>
+    <color name="colorStatusError">@color/persian_red</color>
 
     <color name="bg_dialog">@color/white</color>
     <color name="colorItemBack">@color/gallery</color>

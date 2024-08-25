@@ -23,6 +23,8 @@ import com.khosravi.devin.present.log.TextLogSubItem
 import com.mikepenz.fastadapter.GenericItem
 import io.github.nasserkhosravi.calendar.iranian.PersianCalendar
 import java.io.FileNotFoundException
+import java.text.CharacterIterator
+import java.text.StringCharacterIterator
 import java.util.Calendar
 import java.util.Date
 
@@ -78,4 +80,18 @@ fun ContentResolver.writeTextToUri(uri: Uri, text: String): Boolean {
         e.printStackTrace()
         return false
     }
+}
+
+
+fun humanReadableByteCountSI(bytes: Long): String {
+    var mBytes = bytes
+    if (-1000 < mBytes && mBytes < 1000) {
+        return "$mBytes B"
+    }
+    val ci: CharacterIterator = StringCharacterIterator("kMGTPE")
+    while (mBytes <= -999950 || mBytes >= 999950) {
+        mBytes /= 1000
+        ci.next()
+    }
+    return String.format("%.1f %cB", mBytes / 1000.0, ci.current())
 }
