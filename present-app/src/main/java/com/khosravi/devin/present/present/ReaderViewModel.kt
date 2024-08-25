@@ -52,8 +52,9 @@ class ReaderViewModel constructor(
         return collectLogs().map { logTables ->
             val logs = allLogsByCriteria(filterItem, logTables)
             val logsWithHeaders = addDateHeadersByDay(logs, calendar)
-            val countedItemsWithHeader = CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
-            FilterResult(countedItemsWithHeader)
+            //TODO: temporary disabled, use a setting flag
+//            val countedItemsWithHeader = CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+            FilterResult(logsWithHeaders)
         }.flowOn(Dispatchers.IO)
     }
 
@@ -62,7 +63,9 @@ class ReaderViewModel constructor(
             emit(InterAppJsonConverter.import(content))
         }.map {
             val logsWithHeaders = addDateHeadersByDay(it, calendar)
-            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+            //TODO: temporary disabled, use a setting flag
+//            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+            logsWithHeaders
         }.flowOn(Dispatchers.IO)
     }
 
