@@ -2,12 +2,15 @@ package com.khosravi.devin.write
 
 import android.util.Log
 import com.khosravi.devin.write.api.DevinLogFlagsApi
+import com.khosravi.devin.write.exception.TwinUncaughtExceptionHandler
 import io.nasser.devin.api.DevinLogger
 import org.json.JSONObject
 
 internal class LoggerImpl(
     private val logCore: LogCore,
 ) : DevinLogger {
+
+    private val devinExceptionLogger: DevinExceptionLogger by lazy { DevinExceptionLogger(logCore) }
 
     override fun doIfEnable(action: (DevinLogger) -> Unit) {
         if (logCore.isEnable) {
@@ -50,6 +53,10 @@ internal class LoggerImpl(
         } else {
             sendLog(LOG_TAG_FUNC_TRACE, result.exceptionOrNull()!!.message!!, null)
         }
+    }
+
+    override fun generalUncaughtExceptionLogging(isEnable: Boolean) {
+        devinExceptionLogger.generalUncaughtExceptionLogging(isEnable)
     }
 
     private fun sendLog(tag: String?, value: String, meta: JSONObject? = null) {
@@ -101,7 +108,7 @@ internal class LoggerImpl(
         private const val KEY_LOG_FUNC_TRACE_CLASS_NAME = "is_class_name"
 
         /**
-         * the logs that their source are devin components such as devin_image
+         * the logs that their source are devin components.
          */
         fun createMetaForComponentLogs(metaTypeId: String, logLevel: Int, payload: String?, throwable: Throwable?) = JSONObject()
             .put(KEY_META_TYPE, metaTypeId)

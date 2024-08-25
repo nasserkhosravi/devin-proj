@@ -16,6 +16,7 @@ import io.nasser.devin.api.DevinLogger
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 import java.lang.Exception
+import java.lang.IllegalStateException
 import java.lang.StringBuilder
 
 class SampleActivity : AppCompatActivity() {
@@ -35,6 +36,15 @@ class SampleActivity : AppCompatActivity() {
         binding.btnSend.setOnClickListener {
             sendLog(binding, logger)
         }
+
+        binding.btnCauseCrash.setOnClickListener {
+            throw IllegalStateException("My message from exception that appears in UncaughtExceptionHandler")
+        }
+
+        Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
+            paramThread
+        }
+        logger.generalUncaughtExceptionLogging(true)
 
         logger.logCallerFunc()
 
