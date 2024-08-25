@@ -6,6 +6,8 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.database.getStringOrNull
 import com.khosravi.devin.write.DevinContentProvider
+import com.khosravi.devin.write.api.DevinImageFlagsApi
+import org.json.JSONObject
 
 object ContentProviderLogsDao {
 
@@ -43,5 +45,15 @@ object ContentProviderLogsDao {
             meta = cursor.getStringOrNull(4),
             packageId = cursor.getString(5),
         )
+    }
+
+    fun getLogImages(context: Context, clientId: String): List<ImageLogData> {
+        //TODO: do direct operation to contentResolver.query.
+        return getAll(context, clientId).filter { it.tag == DevinImageFlagsApi.LOG_TAG }.map {
+            val imageMetaJson = JSONObject(it.meta!!)
+            val url = imageMetaJson.getString(DevinImageFlagsApi.KEY_IMAGE_URL)
+            val status = imageMetaJson.getInt(DevinImageFlagsApi.KEY_IMAGE_STATUS)
+            ImageLogData(it.value, url = url, status = status, it.date)
+        }
     }
 }
