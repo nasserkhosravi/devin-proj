@@ -6,10 +6,9 @@ import android.view.LayoutInflater
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
-import com.khosravi.devin.write.DevinLogger
+import io.nasser.devin.api.DevinLogger
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
-import java.lang.Exception
 import java.lang.StringBuilder
 
 class SampleActivity : AppCompatActivity() {

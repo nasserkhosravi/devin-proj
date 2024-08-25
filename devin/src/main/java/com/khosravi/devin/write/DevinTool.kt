@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import io.nasser.devin.api.DevinLogger
 
 class DevinTool private constructor(
     val logger: DevinLogger?
