@@ -1,19 +1,19 @@
 package com.khosravi.devin.write
 
-import android.content.Context
-import android.net.Uri
 import android.util.Log
+import com.khosravi.devin.write.api.DevinLogFlagsApi
+import com.khosravi.devin.write.exception.TwinUncaughtExceptionHandler
+import io.nasser.devin.api.DevinLogger
 import org.json.JSONObject
 
 internal class LoggerImpl(
-    private val appContext: Context,
-    private val isEnable: Boolean
+    private val logCore: LogCore,
 ) : DevinLogger {
 
-    private val appId = appContext.packageName
+    private val devinExceptionLogger: DevinExceptionLogger by lazy { DevinExceptionLogger(logCore) }
 
     override fun doIfEnable(action: (DevinLogger) -> Unit) {
-        if (isEnable) {
+        if (logCore.isEnable) {
             action(this)
         }
     }
@@ -35,7 +35,7 @@ internal class LoggerImpl(
     }
 
     override fun logCallerFunc() {
-        if (!isEnable) {
+        if (!logCore.isEnable) {
             return
         }
         // One for logCallerFunc parent
@@ -55,6 +55,14 @@ internal class LoggerImpl(
         }
     }
 
+    override fun generalUncaughtExceptionLogging(isEnable: Boolean) {
+        devinExceptionLogger.generalUncaughtExceptionLogging(isEnable)
+    }
+
+    private fun sendLog(tag: String?, value: String, meta: JSONObject? = null) {
+        logCore.sendLog(tag, value, meta)
+    }
+
     /**
      * @return simplified version of parent name because stacktrace classname is full package
      * For example: the function get com.example.abc.HelloWord.kt then return HelloWord.kt
@@ -64,53 +72,58 @@ internal class LoggerImpl(
         require(!parenName.isNullOrEmpty())
         return if (analysed.isClassName) {
             //remove package to simplify returned class name because
-            parenName.substring(parenName.lastIndexOf(".")+1)
+            parenName.substring(parenName.lastIndexOf(".") + 1)
         } else parenName
     }
 
     private fun sendUserLog(tag: String?, value: String, logLevel: Int, payload: String?, throwable: Throwable? = null) {
-        if (isEnable.not()) return
+        if (logCore.isEnable.not()) return
         sendLog(tag, value, createMetaFromUserPayload(logLevel, payload, throwable))
-    }
-
-    private fun sendLog(tag: String?, value: String, meta: JSONObject? = null) {
-        if (isEnable.not()) return
-
-        val fTag = if (tag.isNullOrEmpty()) LOG_TAG_UNTAG else tag
-        appContext.contentResolver.insert(
-            Uri.parse(DevinContentProvider.URI_ALL_LOG),
-            DevinContentProvider.contentValueLog(appId, fTag, value, meta?.toString())
-        )
     }
 
     private fun TraceLogger.AnalysedStacktrace.toJsonString() = JSONObject()
         .put(KEY_META_TYPE, LOG_TAG_FUNC_TRACE)
-        .put("method_name", methodName)
-        .put("parent_name", parenName)
-        .put("is_class_name", isClassName)
+        .put(KEY_LOG_FUNC_TRACE_METHOD_NAME, methodName)
+        .put(KEY_LOG_FUNC_TRACE_PARENT_NAME, parenName)
+        .put(KEY_LOG_FUNC_TRACE_CLASS_NAME, isClassName)
 
     private fun createMetaFromUserPayload(logLevel: Int, payload: String?, throwable: Throwable?) = JSONObject()
-        .put(KEY_META_TYPE, VALUE_USER_PAYLOAD)
-        .put(KEY_LOG_LEVEL, logLevel)
-        .apply {
-            if (payload != null) {
-                put(KEY_LOG_PAYLOAD, payload)
-            }
-            if (throwable != null) {
-                put(KEY_LOG_THROWABLE, Log.getStackTraceString(throwable))
-            }
-        }
-
+        .put(KEY_META_TYPE, VALUE_LOG_META_TYPE)
+        .commonMeta(logLevel, payload, throwable)
 
     companion object {
 
         const val LOG_TAG_UNTAG = "untag"
-        const val LOG_TAG_FUNC_TRACE = "devin trace"
+        const val KEY_META_TYPE = "meta_type"
 
-        const val VALUE_USER_PAYLOAD = "_user_payload"
-        const val KEY_META_TYPE = "_meta_type"
-        const val KEY_LOG_LEVEL = "_log_level"
-        const val KEY_LOG_PAYLOAD = "_payload"
-        const val KEY_LOG_THROWABLE = "_throwable"
+        //log
+        const val VALUE_LOG_META_TYPE = "user_log"
+        const val KEY_LOG_PAYLOAD = "payload"
+        const val KEY_LOG_THROWABLE = "throwable"
+
+        //log trace
+        const val LOG_TAG_FUNC_TRACE = "devin_trace"
+        private const val KEY_LOG_FUNC_TRACE_METHOD_NAME = "method_name"
+        private const val KEY_LOG_FUNC_TRACE_PARENT_NAME = "parent_name"
+        private const val KEY_LOG_FUNC_TRACE_CLASS_NAME = "is_class_name"
+
+        /**
+         * the logs that their source are devin components.
+         */
+        fun createMetaForComponentLogs(metaTypeId: String, logLevel: Int, payload: String?, throwable: Throwable?) = JSONObject()
+            .put(KEY_META_TYPE, metaTypeId)
+            .commonMeta(logLevel, payload, throwable)
+
+        private fun JSONObject.commonMeta(logLevel: Int, payload: String?, throwable: Throwable?): JSONObject {
+            return put(DevinLogFlagsApi.KEY_LOG_LEVEL, logLevel)
+                .apply {
+                    if (payload != null) {
+                        put(KEY_LOG_PAYLOAD, payload)
+                    }
+                    if (throwable != null) {
+                        put(KEY_LOG_THROWABLE, Log.getStackTraceString(throwable))
+                    }
+                }
+        }
     }
 }

@@ -1,7 +1,6 @@
 package com.khosravi.devin.present.present
 
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -12,7 +11,6 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
@@ -23,6 +21,7 @@ import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
+import com.khosravi.devin.present.filter.ImageFilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.TextLogItem
@@ -153,6 +152,16 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun selectNewFilter(data: FilterUiData, index: Int): Flow<List<GenericItem>> {
         binding.rvFilter.isEnabled = false
+        if (data.id == ImageFilterItem.ID) {
+            return viewModel.getDetermineImageLogs()
+                .map { it.toItemViewHolder(calendar) }
+                .flowOn(Dispatchers.Main)
+                .onEach {
+                    binding.rvFilter.isEnabled = true
+                    filterItemAdapter.changeState(index)
+                    mainItemAdapter.set(it)
+                }
+        }
         return viewModel.getLogListOfFilter(data.id).map { it.logList.toItemViewHolder(calendar) }.flowOn(Dispatchers.Main)
             .onEach {
                 binding.rvFilter.isEnabled = true
@@ -193,13 +202,23 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun requestRefreshLogItems(filterItemId: String): Flow<Unit> {
-        return viewModel.getLogListOfFilter(filterItemId).flowOn(Dispatchers.Main).onEach { result ->
-            if (result.logList.isEmpty()) {
-                Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
-            } else {
-                mainItemAdapter.set(result.logList.toItemViewHolder(calendar))
-            }
-        }.map { }
+        if (filterItemId == ImageFilterItem.ID) {
+            return viewModel.getDetermineImageLogs()
+                .map { it.toItemViewHolder(calendar) }
+                .flowOn(Dispatchers.Main)
+                .onEach {
+                    binding.rvFilter.isEnabled = true
+                    mainItemAdapter.set(it)
+                }.map { }
+        }
+        return viewModel.getLogListOfFilter(filterItemId)
+            .flowOn(Dispatchers.Main).onEach { result ->
+                if (result.logList.isEmpty()) {
+                    Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
+                } else {
+                    mainItemAdapter.set(result.logList.toItemViewHolder(calendar))
+                }
+            }.map { }
     }
 
     private fun shareJsonFile() {

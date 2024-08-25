@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         minSdk = 26
-        versionCode = 2
+        versionCode = 3
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     val versionName = "\"2.0.0\""
@@ -45,7 +45,6 @@ dependencies {
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.9.0")
-    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
     implementation("androidx.fragment:fragment-ktx:1.4.0")
 
     implementation("androidx.room:room-runtime:2.5.1")
@@ -57,5 +56,7 @@ dependencies {
     implementation("com.mikepenz:fastadapter:$fastAdapterVersion")
     implementation("com.mikepenz:fastadapter-extensions-binding:$fastAdapterVersion")
     implementation("com.mikepenz:fastadapter-extensions-expandable:$fastAdapterVersion")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation ("com.github.wellingtoncabral:android-spantastic:1.0.0")
 
 }

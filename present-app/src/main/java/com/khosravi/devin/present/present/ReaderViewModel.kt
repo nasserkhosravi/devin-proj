@@ -20,14 +20,18 @@ import com.khosravi.devin.present.fileForCache
 import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
+import com.khosravi.devin.present.filter.ImageFilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.log.DateLogItemData
+import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.present.logic.CountingReplicatedTextLogItemDataOperation
 import com.khosravi.devin.present.toUriByFileProvider
+import com.khosravi.devin.write.api.DevinImageFlagsApi
+import com.khosravi.devin.write.api.DevinLogFlagsApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -48,8 +52,9 @@ class ReaderViewModel constructor(
         return collectLogs().map { logTables ->
             val logs = allLogsByCriteria(filterItem, logTables)
             val logsWithHeaders = addDateHeadersByDay(logs, calendar)
-            val countedItemsWithHeader = CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
-            FilterResult(countedItemsWithHeader)
+            //TODO: temporary disabled, use a setting flag
+//            val countedItemsWithHeader = CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+            FilterResult(logsWithHeaders)
         }.flowOn(Dispatchers.IO)
     }
 
@@ -58,7 +63,9 @@ class ReaderViewModel constructor(
             emit(InterAppJsonConverter.import(content))
         }.map {
             val logsWithHeaders = addDateHeadersByDay(it, calendar)
-            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+            //TODO: temporary disabled, use a setting flag
+//            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+            logsWithHeaders
         }.flowOn(Dispatchers.IO)
     }
 
@@ -80,7 +87,7 @@ class ReaderViewModel constructor(
 
     private fun getLogIdFromMetaJsonOrDefault(meta: String?): Int {
         if (meta.isNullOrEmpty()) return Log.DEBUG
-        return JSONObject(meta).optInt("_log_level", Log.DEBUG)
+        return JSONObject(meta).optInt(DevinLogFlagsApi.KEY_LOG_LEVEL, Log.DEBUG)
     }
 
     private fun allLogsByCriteria(
@@ -140,6 +147,22 @@ class ReaderViewModel constructor(
         emit(result)
     }
 
+    fun getDetermineImageLogs() = collectImageLogs().map { list ->
+        list.filter { it.status != DevinImageFlagsApi.Status.DOWNLOADING }
+            .map { ImageLogItemData(it, DatePresent(it.date), TimePresent(it.date)) }
+    }
+
+    private fun collectImageLogs() = flow {
+        val selectedClientId = getSelectedClientId()
+        if (selectedClientId.isNullOrEmpty()) {
+            emit(emptyList())
+            return@flow
+        }
+        val result = ContentProviderLogsDao.getLogImages(getContext(), selectedClientId)
+            .sortedByDescending { it.date }
+        emit(result)
+    }
+
     private fun getSelectedClientId() = cacheRepo.getSelectedClientId()
 
     private fun requireSelectedClientId(): String {
@@ -170,6 +193,7 @@ class ReaderViewModel constructor(
     fun getFlowListPresentableFilter() = flow {
         val filterList = ArrayList<FilterItem>().apply {
             add(IndexFilterItem())
+            add(ImageFilterItem())
             addAll(filterRepository.getFilterList())
         }
         emit(filterList)

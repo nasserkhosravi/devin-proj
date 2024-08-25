@@ -5,25 +5,40 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.util.Log
+import io.nasser.devin.api.DevinImageLogger
+import io.nasser.devin.api.DevinLogger
+import java.lang.Exception
 
 class DevinTool private constructor(
-    val logger: DevinLogger?
+    val logger: DevinLogger?,
+    val imageLogger: DevinImageLogger?
 ) {
 
     private fun putClient(appContext: Context, packageName: String) {
-        appContext.contentResolver.insert(
-            Uri.parse(DevinContentProvider.URI_ROOT_CLIENT),
-            DevinContentProvider.contentValuePutClient(packageName)
-        )
+        try {
+            appContext.contentResolver.insert(
+                Uri.parse(DevinContentProvider.URI_ROOT_CLIENT),
+                DevinContentProvider.contentValuePutClient(packageName)
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "No Devin receiver found. Please ensure a devin presenter application is installed.")
+            e.printStackTrace()
+        }
     }
 
     companion object {
 
+        private const val TAG = "DevinTool"
+
         fun create(appContext: Context): DevinTool {
             val isDebuggable = (appContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-            val logger: DevinLogger? = if (isDebuggable) LoggerImpl(appContext, true) else null
             val packageName = appContext.packageName
-            val devinTool = DevinTool(logger)
+            val devinTool = if (isDebuggable) {
+                val logCore = LogCore(appContext, true)
+                DevinTool(LoggerImpl(logCore), DevinImageLoggerImpl(logCore))
+            } else DevinTool(null, null)
+
             if (!isDebuggable) {
                 disableComponent(appContext, packageName, DevinContentProvider::class.java.name)
             } else {

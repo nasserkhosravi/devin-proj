@@ -15,4 +15,5 @@
     <attr name="spaceXSmall" />
     <attr name="spaceSmall" />
     <attr name="borderSizeSmall" />
+    <attr name="borderSizeSmall2" />
 </resources>

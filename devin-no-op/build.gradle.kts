@@ -38,6 +38,10 @@ android {
     }
 }
 
+dependencies {
+    api(project(mapOf("path" to ":devin-api")))
+}
+
 fun Project.getRepositoryUrl(): java.net.URI {
     val isReleaseBuild = properties["POM_VERSION_NAME"]?.toString()?.contains("SNAPSHOT") == false
     val releaseRepoUrl =

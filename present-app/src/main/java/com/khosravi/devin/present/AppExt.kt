@@ -12,6 +12,8 @@ import com.khosravi.devin.present.date.DumbTime
 import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HeaderLogDateItem
+import com.khosravi.devin.present.log.ImageLogItem
+import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.ReplicatedTextLogItem
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
@@ -21,6 +23,8 @@ import com.khosravi.devin.present.log.TextLogSubItem
 import com.mikepenz.fastadapter.GenericItem
 import io.github.nasserkhosravi.calendar.iranian.PersianCalendar
 import java.io.FileNotFoundException
+import java.text.CharacterIterator
+import java.text.StringCharacterIterator
 import java.util.Calendar
 import java.util.Date
 
@@ -57,6 +61,7 @@ fun List<LogItemData>.toItemViewHolder(calendar: CalendarProxy): List<GenericIte
         when (item) {
             is DateLogItemData -> HeaderLogDateItem(calendar, item)
             is TextLogItemData -> TextLogItem(calendar, item)
+            is ImageLogItemData -> ImageLogItem(calendar, item)
             is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, item).apply {
                 subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
             }
@@ -75,4 +80,18 @@ fun ContentResolver.writeTextToUri(uri: Uri, text: String): Boolean {
         e.printStackTrace()
         return false
     }
+}
+
+
+fun humanReadableByteCountSI(bytes: Long): String {
+    var mBytes = bytes
+    if (-1000 < mBytes && mBytes < 1000) {
+        return "$mBytes B"
+    }
+    val ci: CharacterIterator = StringCharacterIterator("kMGTPE")
+    while (mBytes <= -999950 || mBytes >= 999950) {
+        mBytes /= 1000
+        ci.next()
+    }
+    return String.format("%.1f %cB", mBytes / 1000.0, ci.current())
 }

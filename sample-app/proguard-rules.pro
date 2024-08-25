@@ -19,6 +19,4 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
--assumenosideeffects class com.khosravi.devin.write.LoggerImpl {
-   public *;
-}
+

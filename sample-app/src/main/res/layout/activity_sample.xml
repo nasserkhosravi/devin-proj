@@ -32,23 +32,56 @@
 
     <androidx.appcompat.widget.AppCompatSpinner
         android:id="@+id/sp_log_level"
-        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" />
 
     <CheckBox
         android:id="@+id/cb_with_exception"
-        android:layout_marginTop="8dp"
-        android:text="@string/with_throwable"
-        android:checked="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:checked="false"
+        android:text="@string/with_throwable" />
 
     <Button
         android:id="@+id/btn_send"
-        android:layout_marginTop="8dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="send" />
+        android:layout_marginTop="8dp"
+        android:text="send log" />
+
+    <Button
+        android:id="@+id/btn_cause_crash"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Cause crash" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:hint="@string/field_fetch_image">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/ed_url_image"
+            android:inputType="textUri"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+        android:id="@+id/btn_fetch_image"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/fetch_image" />
+
+    <ImageView
+        android:id="@+id/img"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

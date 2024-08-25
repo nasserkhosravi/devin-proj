@@ -15,6 +15,7 @@ dependencyResolutionManagement {
         maven {
             url = URI("https://s01.oss.sonatype.org/content/repositories/snapshots/")
         }
+        maven { url = URI("https://jitpack.io") }
     }
 }
 
@@ -22,5 +23,6 @@ rootProject.name = "DevinProj"
 include(":sample-app")
 include(":present-app")
 include(":devin")
-include(":lib-calendar")
+include(":devin-api")
 include(":devin-no-op")
+include(":lib-calendar")
