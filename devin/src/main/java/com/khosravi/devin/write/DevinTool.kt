@@ -28,10 +28,12 @@ class DevinTool private constructor(
     }
 
     companion object {
-
+        //sync API to no-op version
         private const val TAG = "DevinTool"
 
-        fun create(appContext: Context): DevinTool {
+        private var instance: DevinTool? = null
+
+        private fun create(appContext: Context): DevinTool {
             val isDebuggable = (appContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
             val packageName = appContext.packageName
             val devinTool = if (isDebuggable) {
@@ -45,6 +47,15 @@ class DevinTool private constructor(
                 devinTool.putClient(appContext, packageName)
             }
             return devinTool
+        }
+
+        fun get(): DevinTool? = instance
+
+        fun getOrCreate(context: Context): DevinTool? {
+            if (instance == null) {
+                instance = create(context)
+            }
+            return instance
         }
 
         private fun disableComponent(context: Context, packageName: String, componentClassName: String) {
