@@ -16,15 +16,10 @@ class DevinTool private constructor(
 ) {
 
     private fun putClient(appContext: Context, packageName: String) {
-        try {
-            appContext.contentResolver.insert(
-                Uri.parse(DevinContentProvider.URI_ROOT_CLIENT),
-                DevinContentProvider.contentValuePutClient(packageName)
-            )
-        } catch (e: Exception) {
-            Log.e(TAG, "No Devin receiver found. Please ensure a devin presenter application is installed.")
-            e.printStackTrace()
-        }
+        appContext.contentResolver.insert(
+            Uri.parse(DevinContentProvider.URI_ROOT_CLIENT),
+            DevinContentProvider.contentValuePutClient(packageName)
+        )
     }
 
     companion object {
@@ -44,7 +39,13 @@ class DevinTool private constructor(
             if (!isDebuggable) {
                 disableComponent(appContext, packageName, DevinContentProvider::class.java.name)
             } else {
-                devinTool.putClient(appContext, packageName)
+                try {
+                    devinTool.putClient(appContext, packageName)
+                } catch (e: Exception) {
+                    Log.e(TAG, "No Devin receiver found. Please ensure a devin presenter application is installed.")
+                    e.printStackTrace()
+                    return DevinTool(null, null)
+                }
             }
             return devinTool
         }
