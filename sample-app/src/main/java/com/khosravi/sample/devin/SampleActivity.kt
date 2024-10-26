@@ -22,7 +22,12 @@ class SampleActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val binding = ActivitySampleBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
-        val devinTool : DevinTool?= DevinTool.getOrCreate(this)
+        val devinTool: DevinTool? = DevinTool.getOrCreate(this)
+
+        devinTool?.customValue?.getOrNull("abc") {
+            Toast.makeText(this, "abc $it", Toast.LENGTH_SHORT).show()
+        }
+
         val logger = devinTool?.logger
         if (logger == null) {
             Snackbar.make(binding.root, "Devin is not available", Snackbar.LENGTH_INDEFINITE).show()

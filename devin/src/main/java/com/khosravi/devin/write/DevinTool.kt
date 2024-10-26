@@ -6,13 +6,14 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
+import io.nasser.devin.api.DevinCustomValue
 import io.nasser.devin.api.DevinImageLogger
 import io.nasser.devin.api.DevinLogger
-import java.lang.Exception
 
 class DevinTool private constructor(
     val logger: DevinLogger?,
-    val imageLogger: DevinImageLogger?
+    val imageLogger: DevinImageLogger?,
+    val customValue: DevinCustomValue?,
 ) {
 
     private fun putClient(appContext: Context, packageName: String) {
@@ -33,18 +34,21 @@ class DevinTool private constructor(
             val packageName = appContext.packageName
             val devinTool = if (isDebuggable) {
                 val logCore = LogCore(appContext, true)
-                DevinTool(LoggerImpl(logCore), DevinImageLoggerImpl(logCore))
-            } else DevinTool(null, null)
+                DevinTool(LoggerImpl(logCore), DevinImageLoggerImpl(logCore), DevinCustomValueImpl(logCore.isEnable))
+            } else DevinTool(null, null, null)
 
             if (!isDebuggable) {
-                disableComponent(appContext, packageName, DevinContentProvider::class.java.name)
+                //TODO: it crashes when devin-op is release, it should be remove because DevinContentProvider does not belong
+                // to its user.
+//                disableComponent(appContext, packageName, DevinContentProvider::class.java.name)
+                return devinTool
             } else {
                 try {
                     devinTool.putClient(appContext, packageName)
                 } catch (e: Exception) {
                     Log.e(TAG, "No Devin receiver found. Please ensure a devin presenter application is installed.")
                     e.printStackTrace()
-                    return DevinTool(null, null)
+                    return DevinTool(null, null, null)
                 }
             }
             return devinTool

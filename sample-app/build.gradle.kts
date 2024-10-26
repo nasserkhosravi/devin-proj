@@ -46,5 +46,6 @@ dependencies {
 
     implementation("androidx.fragment:fragment-ktx:1.4.0")
     debugImplementation(project(mapOf("path" to ":devin")))
+//    releaseImplementation(project(mapOf("path" to ":devin")))
     releaseImplementation(project(mapOf("path" to ":devin-no-op")))
 }

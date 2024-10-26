@@ -8,10 +8,16 @@ Also the project increase QA awareness from what happen in the application.
 
 The project consist two main module, one for writing logs and other one for presenting logs.
 
-##  Logging sample:
+Devin safety:
+- Devin-op public functions will be removed in release variant.
+- Devin-op is only available in debuggable variant.
+- Devin-no-op has null implementation, no operation effect on release. 
+- Devin-no-op has very tiny size (near to nothing).
+
+## Sample:
 You can see an example in [SampleActivity](https://github.com/nasserkhosravi/devin-proj/blob/main/sample-app/src/main/java/ir/khosravi/sample/devin/SampleActivity.kt)
 
-## To use Devin:
+## Dependency:
 Devin write library published in mavenCentral.
 
 ```groovy
@@ -21,4 +27,3 @@ dependencies {
     releaseImplementation "io.github.nasserkhosravi.devin:write-no-op:$VERSION"
 }
 ```
-

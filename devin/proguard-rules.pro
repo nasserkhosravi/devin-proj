@@ -26,3 +26,7 @@
 -assumenosideeffects class com.khosravi.devin.write.DevinImageLoggerImpl {
    public *;
 }
+
+-assumenosideeffects class com.khosravi.devin.write.DevinCustomValueImpl {
+   public *;
+}
