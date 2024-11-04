@@ -12,12 +12,9 @@ import coil.request.ErrorResult
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.google.android.material.snackbar.Snackbar
-import io.nasser.devin.api.DevinLogger
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
-import java.lang.Exception
-import java.lang.IllegalStateException
-import java.lang.StringBuilder
+import io.nasser.devin.api.DevinLogger
 
 class SampleActivity : AppCompatActivity() {
 
@@ -25,10 +22,10 @@ class SampleActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val binding = ActivitySampleBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
-        val devinTool = DevinTool.create(this)
-        val logger = devinTool.logger
+        val devinTool : DevinTool?= DevinTool.getOrCreate(this)
+        val logger = devinTool?.logger
         if (logger == null) {
-            Snackbar.make(binding.root, "Devin is not enable", Snackbar.LENGTH_INDEFINITE).show()
+            Snackbar.make(binding.root, "Devin is not available", Snackbar.LENGTH_INDEFINITE).show()
             return
         }
         setupSpinnerAdapter(binding)
@@ -41,6 +38,7 @@ class SampleActivity : AppCompatActivity() {
             throw IllegalStateException("My message from exception that appears in UncaughtExceptionHandler")
         }
 
+        //you can have you UncaughtExceptionHandler here without conflict to devin general exception handler.
         Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
             paramThread
         }

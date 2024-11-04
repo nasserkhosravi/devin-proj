@@ -39,7 +39,7 @@ android {
 }
 
 dependencies {
-    api(project(mapOf("path" to ":devin-api")))
+    implementation(project(mapOf("path" to ":devin-api")))
 }
 
 fun Project.getRepositoryUrl(): java.net.URI {

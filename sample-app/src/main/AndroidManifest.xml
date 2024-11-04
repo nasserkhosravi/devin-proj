@@ -29,4 +29,8 @@
 
     </application>
 
+    <queries>
+        <provider android:authorities="com.khosravi.devin.provider" />
+    </queries>
+
 </manifest>
