@@ -1,8 +1,8 @@
 package com.khosravi.devin.write
 
 import android.util.Log
+import com.khosravi.devin.api.DevinImageLogger
 import com.khosravi.devin.write.api.DevinImageFlagsApi
-import io.nasser.devin.api.DevinImageLogger
 import java.lang.IllegalArgumentException
 import java.net.URI
 

@@ -14,7 +14,7 @@ val localProps = Properties().apply {
 
 android {
     namespace = "com.khosravi.devin.write"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         minSdk = 21
@@ -39,7 +39,6 @@ android {
 }
 
 dependencies {
-    api(project(mapOf("path" to ":devin-api")))
 }
 
 fun Project.getRepositoryUrl(): java.net.URI {

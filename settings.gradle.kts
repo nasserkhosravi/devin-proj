@@ -23,6 +23,6 @@ rootProject.name = "DevinProj"
 include(":sample-app")
 include(":present-app")
 include(":devin")
-include(":devin-api")
+//include(":devin-api")
 include(":devin-no-op")
 include(":lib-calendar")
