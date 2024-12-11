@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.1.0
+- Make DevinTool as singleton instance
+- Disable devin-api module
+
 ## 3.0.0
 - Implement dedicate presenter and image logger 
 - Implement general exception logging

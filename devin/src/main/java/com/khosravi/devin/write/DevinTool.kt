@@ -6,8 +6,8 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
-import io.nasser.devin.api.DevinImageLogger
-import io.nasser.devin.api.DevinLogger
+import com.khosravi.devin.api.DevinImageLogger
+import com.khosravi.devin.api.DevinLogger
 import java.lang.Exception
 
 class DevinTool private constructor(
