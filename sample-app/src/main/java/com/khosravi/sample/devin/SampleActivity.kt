@@ -12,9 +12,9 @@ import coil.request.ErrorResult
 import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.google.android.material.snackbar.Snackbar
+import com.khosravi.devin.api.DevinLogger
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
-import io.nasser.devin.api.DevinLogger
 
 class SampleActivity : AppCompatActivity() {
 
