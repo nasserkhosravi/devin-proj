@@ -1,6 +1,11 @@
 # Changelog
 
+## 3.1.1
+**Write module:**
+- Fix devin content provider visibility access that may cause some problem in android 30 and above   
+
 ## 3.1.0
+**Write module:**
 - Make DevinTool as singleton instance
 - Disable devin-api module
 
