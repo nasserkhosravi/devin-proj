@@ -7,6 +7,7 @@ import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterUiData
+import com.khosravi.devin.present.filter.TagFilterItem
 import org.json.JSONObject
 import java.util.Date
 import javax.inject.Inject
@@ -72,6 +73,21 @@ class FilterRepository @Inject constructor(appContext: Context) {
         )
         return DefaultFilterItem(present, criteria)
     }
+
+    fun createFilterFromTags(logs: List<LogData>, userFilterList: List<FilterItem>): HashMap<String, FilterItem> {
+        val userFilterListId = userFilterList.map { it.id }
+        val result = HashMap<String, FilterItem>()
+        logs.filter {
+            val key = it.tag
+            //first see if the tag exist in user tags
+            //second see if the tag already added to [result] for removing duplicate tags
+            !userFilterListId.contains(key) && !result.contains(key)
+        }.forEach {
+            result[it.tag] = TagFilterItem(it.tag)
+        }
+        return result
+    }
+
 
     companion object {
         private const val KEY_ID = "_id"
