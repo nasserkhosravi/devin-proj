@@ -48,23 +48,28 @@ open class ImageLogItem(
                 it.context.setClipboard(data.data.url)
             }
 
-            Glide.with(context).asFile().load(data.data.url)
-                .into(object : CustomTarget<File>() {
-                    override fun onResourceReady(resource: File, transition: Transition<in File>?) {
-                        val filePath: String = resource.path
-                        val bitmap = BitmapFactory.decodeFile(filePath)
-                        imgView.setImageBitmap(bitmap)
-                        tvInfo.text = buildImageInfo(false, bitmap, resource.length())
-                    }
+            if (data.data.isFailed()) {
+                imgView.setImageBitmap(null)
+            } else {
+                Glide.with(context).asFile().load(data.data.url)
+                    .into(object : CustomTarget<File>() {
+                        override fun onResourceReady(resource: File, transition: Transition<in File>?) {
+                            val filePath: String = resource.path
+                            val bitmap = BitmapFactory.decodeFile(filePath)
+                            imgView.setImageBitmap(bitmap)
+                            tvInfo.text = buildImageInfo(false, bitmap, resource.length())
+                        }
 
-                    override fun onLoadCleared(placeholder: Drawable?) {
-                    }
+                        override fun onLoadCleared(placeholder: Drawable?) {
+                        }
 
-                    override fun onLoadFailed(errorDrawable: Drawable?) {
-                        super.onLoadFailed(errorDrawable)
-                        tvInfo.text = buildImageInfo(false,null,null)
-                    }
-                })
+                        override fun onLoadFailed(errorDrawable: Drawable?) {
+                            super.onLoadFailed(errorDrawable)
+                            tvInfo.text = buildImageInfo(false, null, null)
+                            imgView.setImageBitmap(null)
+                        }
+                    })
+            }
         }
     }
 
