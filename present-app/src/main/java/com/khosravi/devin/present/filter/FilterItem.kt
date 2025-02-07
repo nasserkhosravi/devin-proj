@@ -19,7 +19,7 @@ class FilterUiData(
     val chipColor: ChipColor,
 )
 
-class DefaultFilterItem(
+class CustomFilterItem(
     override val ui: FilterUiData,
     override val criteria: FilterCriteria?
 ) : FilterItem {

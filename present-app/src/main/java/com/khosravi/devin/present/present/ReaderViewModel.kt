@@ -19,7 +19,7 @@ import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.fileForCache
-import com.khosravi.devin.present.filter.DefaultFilterItem
+import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.ImageFilterItem
@@ -217,7 +217,7 @@ class ReaderViewModel constructor(
         return getContext().toUriByFileProvider(file)
     }
 
-    fun addFilter(data: DefaultFilterItem, callbackId: String? = null) {
+    fun addFilter(data: CustomFilterItem, callbackId: String? = null) {
         viewModelScope.launch {
             flow<FilterItem> {
                 val result = filterRepository.saveFilter(data)

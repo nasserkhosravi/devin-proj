@@ -3,7 +3,7 @@ package com.khosravi.devin.present.data
 import android.content.Context
 import com.khosravi.devin.present.creataNotEmpty
 import com.khosravi.devin.present.filter.ChipColor
-import com.khosravi.devin.present.filter.DefaultFilterItem
+import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterUiData
@@ -71,7 +71,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
                 uiJson.getInt(KEY_UI_TEXT_COLOR)
             )
         )
-        return DefaultFilterItem(present, criteria)
+        return CustomFilterItem(present, criteria)
     }
 
     fun createFilterFromTags(logs: List<LogData>, userFilterList: List<FilterItem>): HashMap<String, FilterItem> {
