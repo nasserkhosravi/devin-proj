@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import com.khosravi.devin.present.BuildConfig
+import com.khosravi.devin.present.data.UserSettings
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.ClientContentProvider
 import com.khosravi.devin.present.client.ClientData
@@ -45,6 +46,7 @@ class ReaderViewModel constructor(
     private val calendar: CalendarProxy,
     private val filterRepository: FilterRepository,
     private val cacheRepo: CacheRepository,
+    private val userSettings: UserSettings
 ) : AndroidViewModel(application) {
 
     fun getLogListOfFilter(filterItemId: String): Flow<FilterResult> {
