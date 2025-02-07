@@ -188,6 +188,8 @@ class ReaderViewModel constructor(
 
     private fun getSelectedClientId() = cacheRepo.getSelectedClientId()
 
+    private fun getSelectedClientIdOrError() = getSelectedClientId()!!
+
     private fun requireSelectedClientId(): String {
         val clientId = cacheRepo.getSelectedClientId()
         return requireNotNull(clientId)
@@ -208,7 +210,7 @@ class ReaderViewModel constructor(
     fun addFilter(data: CustomFilterItem, callbackId: String? = null) {
         viewModelScope.launch {
             flow<FilterItem> {
-                val result = filterRepository.saveFilter(data)
+                val result = filterRepository.saveFilter(data, getSelectedClientIdOrError())
                 if (result.not()) {
                     throw IllegalArgumentException()
                 }
@@ -251,7 +253,7 @@ class ReaderViewModel constructor(
     }
 
     private suspend fun provideAllComputableFilters(): List<FilterItem> {
-        val userDefinedFilterList = filterRepository.getCustomFilterItemList()
+        val userDefinedFilterList = filterRepository.getCustomFilterItemList(getSelectedClientIdOrError())
         val result = ArrayList<FilterItem>(userDefinedFilterList)
         if (userSettings.isEnableTagAsFilter) {
             //we consider developer tag as filter

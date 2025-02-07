@@ -16,23 +16,29 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
     private val pref = appContext.applicationContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
-    fun getCustomFilterItemList(): List<FilterItem> {
+    fun getCustomFilterItemList(clientId: String): List<FilterItem> {
         return pref.all.map {
             val jsonString = it.value as String
             JSONObject(jsonString)
+        }.filter {
+            val savedClientId = it.optString(KEY_CLIENT_ID)
+            if (savedClientId.isEmpty()) {
+                //consider not saved client id as a global filter item.
+                true
+            } else savedClientId == clientId
         }.sortedBy { it.getLong(KEY_TIMESTAMP) }
             .map { createCustomFilterItem(it) }
     }
 
-    fun saveFilter(data: CustomFilterItem): Boolean {
+    fun saveFilter(data: CustomFilterItem, clientId: String): Boolean {
         if (data.id.isEmpty()) {
             return false
         }
 
-        return pref.edit().putString(data.id, data.toJson().toString()).commit()
+        return pref.edit().putString(data.id, data.toJson(clientId).toString()).commit()
     }
 
-    private fun CustomFilterItem.toJson(): JSONObject {
+    private fun CustomFilterItem.toJson(clientId: String): JSONObject {
         val criteriaJson = criteria?.let {
             JSONObject().put(KEY_CRITERIA_TAG, it.tag)
                 .put(KEY_CRITERIA_SEARCH_TEXT, it.searchText)
@@ -45,6 +51,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         }
         return JSONObject()
             .put(KEY_ID, id)
+            .put(KEY_CLIENT_ID, clientId)
             .put(KEY_TIMESTAMP, Date().time)
             .put(KEY_CRITERIA, criteriaJson)
             .put(KEY_UI, uiJson)
@@ -92,6 +99,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
     companion object {
         private const val KEY_ID = "_id"
         private const val KEY_TIMESTAMP = "_timestamp"
+        private const val KEY_CLIENT_ID = "_client_id"
 
         private const val KEY_CRITERIA = "_CRITERIA"
         private const val KEY_CRITERIA_TAG = "_TAG"
