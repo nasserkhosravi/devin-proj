@@ -263,12 +263,12 @@ class ReaderViewModel constructor(
     }
 
     private suspend fun provideAllComputableFilters(): List<FilterItem> {
-        val userDefinedFilterList = filterRepository.getFilterList()
+        val userDefinedFilterList = filterRepository.getCustomFilterItemList()
         val result = ArrayList<FilterItem>(userDefinedFilterList)
         if (userSettings.isEnableTagAsFilter) {
             //we consider developer tag as filter
             collectLogs().firstOrNull()?.let {
-                val developerTags = filterRepository.createFilterFromTags(it,userDefinedFilterList).values
+                val developerTags = filterRepository.createTagFilterList(it,userDefinedFilterList).values
                 result.addAll(developerTags)
             }
         }

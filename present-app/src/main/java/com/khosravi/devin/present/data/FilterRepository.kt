@@ -16,15 +16,15 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
     private val pref = appContext.applicationContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
-    fun getFilterList(): List<FilterItem> {
+    fun getCustomFilterItemList(): List<FilterItem> {
         return pref.all.map {
             val jsonString = it.value as String
             JSONObject(jsonString)
         }.sortedBy { it.getLong(KEY_TIMESTAMP) }
-            .map { filterItem(it) }
+            .map { createCustomFilterItem(it) }
     }
 
-    fun saveFilter(data: FilterItem): Boolean {
+    fun saveFilter(data: CustomFilterItem): Boolean {
         if (data.id.isEmpty()) {
             return false
         }
@@ -55,7 +55,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         return pref.edit().clear().commit()
     }
 
-    private fun filterItem(json: JSONObject): FilterItem {
+    private fun createCustomFilterItem(json: JSONObject): FilterItem {
         val id = json.getString(KEY_ID)
         val criteria = json.optJSONObject(KEY_CRITERIA)?.let {
             FilterCriteria(
@@ -74,7 +74,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         return CustomFilterItem(present, criteria)
     }
 
-    fun createFilterFromTags(logs: List<LogData>, userFilterList: List<FilterItem>): HashMap<String, FilterItem> {
+    fun createTagFilterList(logs: List<LogData>, userFilterList: List<FilterItem>): HashMap<String, FilterItem> {
         val userFilterListId = userFilterList.map { it.id }
         val result = HashMap<String, FilterItem>()
         logs.filter {
