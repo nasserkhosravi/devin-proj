@@ -3,10 +3,11 @@ package com.khosravi.devin.present.data
 import android.content.Context
 import com.khosravi.devin.present.creataNotEmpty
 import com.khosravi.devin.present.filter.ChipColor
-import com.khosravi.devin.present.filter.DefaultFilterItem
-import com.khosravi.devin.present.filter.FilterCriteria
+import com.khosravi.devin.present.filter.CustomFilterCriteria
+import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterUiData
+import com.khosravi.devin.present.filter.TagFilterItem
 import org.json.JSONObject
 import java.util.Date
 import javax.inject.Inject
@@ -15,23 +16,29 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
     private val pref = appContext.applicationContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
 
-    fun getFilterList(): List<FilterItem> {
+    fun getCustomFilterItemList(clientId: String): List<FilterItem> {
         return pref.all.map {
             val jsonString = it.value as String
             JSONObject(jsonString)
+        }.filter {
+            val savedClientId = it.optString(KEY_CLIENT_ID)
+            if (savedClientId.isEmpty()) {
+                //consider not saved client id as a global filter item.
+                true
+            } else savedClientId == clientId
         }.sortedBy { it.getLong(KEY_TIMESTAMP) }
-            .map { filterItem(it) }
+            .map { createCustomFilterItem(it) }
     }
 
-    fun saveFilter(data: FilterItem): Boolean {
+    fun saveFilter(data: CustomFilterItem, clientId: String): Boolean {
         if (data.id.isEmpty()) {
             return false
         }
 
-        return pref.edit().putString(data.id, data.toJson().toString()).commit()
+        return pref.edit().putString(data.id, data.toJson(clientId).toString()).commit()
     }
 
-    private fun FilterItem.toJson(): JSONObject {
+    private fun CustomFilterItem.toJson(clientId: String): JSONObject {
         val criteriaJson = criteria?.let {
             JSONObject().put(KEY_CRITERIA_TAG, it.tag)
                 .put(KEY_CRITERIA_SEARCH_TEXT, it.searchText)
@@ -44,6 +51,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         }
         return JSONObject()
             .put(KEY_ID, id)
+            .put(KEY_CLIENT_ID, clientId)
             .put(KEY_TIMESTAMP, Date().time)
             .put(KEY_CRITERIA, criteriaJson)
             .put(KEY_UI, uiJson)
@@ -54,10 +62,10 @@ class FilterRepository @Inject constructor(appContext: Context) {
         return pref.edit().clear().commit()
     }
 
-    private fun filterItem(json: JSONObject): FilterItem {
+    private fun createCustomFilterItem(json: JSONObject): FilterItem {
         val id = json.getString(KEY_ID)
         val criteria = json.optJSONObject(KEY_CRITERIA)?.let {
-            FilterCriteria(
+            CustomFilterCriteria(
                 it.optString(KEY_CRITERIA_TAG), it.optString(KEY_CRITERIA_SEARCH_TEXT)
             )
         }
@@ -70,12 +78,28 @@ class FilterRepository @Inject constructor(appContext: Context) {
                 uiJson.getInt(KEY_UI_TEXT_COLOR)
             )
         )
-        return DefaultFilterItem(present, criteria)
+        return CustomFilterItem(present, criteria)
     }
+
+    fun createTagFilterList(logs: List<LogData>, userFilterList: List<FilterItem>): HashMap<String, FilterItem> {
+        val userFilterListId = userFilterList.map { it.id }
+        val result = HashMap<String, FilterItem>()
+        logs.filter {
+            val key = it.tag
+            //first see if the tag exist in user tags
+            //second see if the tag already added to [result] for removing duplicate tags
+            !userFilterListId.contains(key) && !result.contains(key)
+        }.forEach {
+            result[it.tag] = TagFilterItem(it.tag)
+        }
+        return result
+    }
+
 
     companion object {
         private const val KEY_ID = "_id"
         private const val KEY_TIMESTAMP = "_timestamp"
+        private const val KEY_CLIENT_ID = "_client_id"
 
         private const val KEY_CRITERIA = "_CRITERIA"
         private const val KEY_CRITERIA_TAG = "_TAG"

@@ -5,13 +5,7 @@ import com.khosravi.devin.present.tool.NotEmptyString
 interface FilterItem {
     val id: String
     val ui: FilterUiData
-    val criteria: FilterCriteria?
 }
-
-class FilterCriteria(
-    val tag: String?,
-    val searchText: String?
-)
 
 class FilterUiData(
     val id: String,
@@ -19,9 +13,9 @@ class FilterUiData(
     val chipColor: ChipColor,
 )
 
-class DefaultFilterItem(
+class CustomFilterItem(
     override val ui: FilterUiData,
-    override val criteria: FilterCriteria?
+    val criteria: CustomFilterCriteria?
 ) : FilterItem {
     override val id: String
         get() = ui.title.value

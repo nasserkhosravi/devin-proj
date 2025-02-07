@@ -12,16 +12,15 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
-import com.khosravi.devin.present.filter.DefaultFilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
-import com.khosravi.devin.present.filter.ImageFilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.TextLogItem
@@ -33,18 +32,15 @@ import com.khosravi.devin.present.tool.adapter.lastIndex
 import com.khosravi.devin.present.writeOrSaveFileIntent
 import com.khosravi.devin.present.writeTextToUri
 import com.mikepenz.fastadapter.FastAdapter
-import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
 import com.mikepenz.fastadapter.expandable.getExpandableExtension
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
@@ -91,7 +87,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         binding.rvFilter.adapter = filterAdapter
         binding.rvMain.adapter = mainAdapter
         filterAdapter.onClickListener = { _: View?, _: IAdapter<FilterItemViewHolder>, item: FilterItemViewHolder, index: Int ->
-            onNewFilterSelected(item.data, index)
+            selectNewFilter(item.data)
             true
         }
         mainAdapter.onClickListener = { _, _, item, _ ->
@@ -106,6 +102,48 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         mainAdapter.getExpandableExtension()
 
         doFirstFetch()
+
+        lifecycleScope.launch {
+            viewModel.uiState.collect { result ->
+                if (_binding == null) {
+                    return@collect
+                }
+                result.filterList?.let {
+                    if (!result.updateInfo.skipFilterList) {
+                        filterItemAdapter.set(it.map { FilterItemViewHolder(it.ui) })
+                    }
+                }
+                result.logList?.let {
+                    mainItemAdapter.set(it.toItemViewHolder(calendar))
+                }
+                getIndexOfFilter(result.updateInfo.filterIdSelection)?.let {
+                    filterItemAdapter.selectOrCheck(it)
+                }
+                binding.rvFilter.isEnabled = true
+                result.updateInfo.callbackId?.let {
+                    if (it == CALLBACK_ID_REFRESH) {
+                        if (result.logList?.isNotEmpty() == true) {
+                            Toast.makeText(this@LogActivity, getString(R.string.msg_refreshed), Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
+                        }
+                    } else if (it == CALLBACK_ID_ADD_FILTER) {
+                        result.filterList?.let {
+                            selectNewFilter(result.filterList.last().ui)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getIndexOfFilter(id: String?): Int? {
+        val index = filterItemAdapter.adapterItems.indexOfFirst { it.data.id == id }
+        return if (index == -1) {
+            null
+        } else {
+            index
+        }
     }
 
     private fun onExportFileIntentResult(activityResult: ActivityResult) {
@@ -113,17 +151,14 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val uriData = returnedIntent?.data
         if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
             launch {
-                viewModel.getLogsInJson()
-                    .flowOn(Dispatchers.Main)
-                    .map {
-                        contentResolver.writeTextToUri(uriData, it.content)
-                    }
-                    .collect {
-                        val msg = if (it) getString(R.string.msg_export_done)
-                        else getString(R.string.error_msg_something_went_wrong)
+                viewModel.getLogsInJson().flowOn(Dispatchers.Main).map {
+                    contentResolver.writeTextToUri(uriData, it.content)
+                }.collect {
+                    val msg = if (it) getString(R.string.msg_export_done)
+                    else getString(R.string.error_msg_something_went_wrong)
 
-                        Toast.makeText(this@LogActivity, msg, Toast.LENGTH_LONG).show()
-                    }
+                    Toast.makeText(this@LogActivity, msg, Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
@@ -138,87 +173,23 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun doFirstFetch() {
         launch {
-            updateFilterList().collect {
-                requestRefreshLogItems(IndexFilterItem.ID).collect()
-            }
+            viewModel.refreshLogsAndFilters(IndexFilterItem.ID).collect()
         }
     }
 
-    private fun onNewFilterSelected(data: FilterUiData, index: Int) {
-        launch {
-            selectNewFilter(data, index).collect()
-        }
-    }
-
-    private fun selectNewFilter(data: FilterUiData, index: Int): Flow<List<GenericItem>> {
+    private fun selectNewFilter(data: FilterUiData) {
         binding.rvFilter.isEnabled = false
-        if (data.id == ImageFilterItem.ID) {
-            return viewModel.getDetermineImageLogs()
-                .map { it.toItemViewHolder(calendar) }
-                .flowOn(Dispatchers.Main)
-                .onEach {
-                    binding.rvFilter.isEnabled = true
-                    filterItemAdapter.changeState(index)
-                    mainItemAdapter.set(it)
-                }
-        }
-        return viewModel.getLogListOfFilter(data.id).map { it.logList.toItemViewHolder(calendar) }.flowOn(Dispatchers.Main)
-            .onEach {
-                binding.rvFilter.isEnabled = true
-                filterItemAdapter.changeState(index)
-                mainItemAdapter.set(it)
-            }
-    }
-
-    private fun clearLogs() {
         launch {
-            viewModel.clearLogs().flowOn(Dispatchers.Main).collect {
-                mainItemAdapter.clear()
-            }
+            viewModel.refreshOnlyLogs(data.id).collect()
         }
     }
 
-    private fun clearFilters() {
-        launch {
-            viewModel.clearFilters().flowOn(Dispatchers.Main).collect {
-                val itemCount = filterItemAdapter.adapterItemCount
-                if (itemCount > 1) {
-                    filterItemAdapter.removeRange(1, itemCount - 1)
-                    filterItemAdapter.selectedIndex = 0
-                    filterItemAdapter.checkSelection()
-                    requestRefreshLogItems(IndexFilterItem.ID).collect()
-                }
-            }
-        }
+    private fun clearAllLogs() {
+        viewModel.clearLogs()
     }
 
-    private fun updateFilterList(): Flow<Unit> {
-        return viewModel.getFlowListPresentableFilter().onEach { list ->
-            val filterItems = list.map { FilterItemViewHolder(it.ui) }
-            filterItemAdapter.set(filterItems)
-            filterItemAdapter.selectedIndex = 0
-            filterItemAdapter.checkSelection()
-        }.map { }
-    }
-
-    private fun requestRefreshLogItems(filterItemId: String): Flow<Unit> {
-        if (filterItemId == ImageFilterItem.ID) {
-            return viewModel.getDetermineImageLogs()
-                .map { it.toItemViewHolder(calendar) }
-                .flowOn(Dispatchers.Main)
-                .onEach {
-                    binding.rvFilter.isEnabled = true
-                    mainItemAdapter.set(it)
-                }.map { }
-        }
-        return viewModel.getLogListOfFilter(filterItemId)
-            .flowOn(Dispatchers.Main).onEach { result ->
-                if (result.logList.isEmpty()) {
-                    Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
-                } else {
-                    mainItemAdapter.set(result.logList.toItemViewHolder(calendar))
-                }
-            }.map { }
+    private fun clearCustomFilters() {
+        viewModel.clearCustomFilters()
     }
 
     private fun shareJsonFile() {
@@ -242,22 +213,18 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_refresh -> {
-                launch {
-                    val filterItemId = filterItemAdapter.optSelectedItem()?.data?.id ?: return@launch
-                    requestRefreshLogItems(filterItemId).collect {
-                        Toast.makeText(this@LogActivity, getString(R.string.msg_refreshed), Toast.LENGTH_SHORT).show()
-                    }
-                }
+                val filterItemId = filterItemAdapter.optSelectedItem()?.data?.id ?: return true
+                refreshLogsAndFilters(filterItemId)
                 true
             }
 
             R.id.action_clear_logs -> {
-                clearLogs()
+                clearAllLogs()
                 true
             }
 
             R.id.action_clear_filters -> {
-                clearFilters()
+                clearCustomFilters()
                 true
             }
 
@@ -290,6 +257,13 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
+    private fun refreshLogsAndFilters(filterItemId: String) {
+        binding.rvFilter.isEnabled = false
+        launch {
+            viewModel.refreshLogsAndFilters(filterItemId, callbackId = CALLBACK_ID_REFRESH).collect()
+        }
+    }
+
     private fun importJsonFile() {
         val chooserIntent = Intent.createChooser(importFileIntent(MIME_APP_JSON), getString(R.string.choosing_intent_title))
         importIntentLauncher.launch(chooserIntent)
@@ -307,39 +281,27 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun createFilter() {
         FilterDialog.newInstance(filterItemAdapter.lastIndex()).apply {
             onConfirm = {
-                addFilter(it)
+                viewModel.addFilter(it, CALLBACK_ID_ADD_FILTER)
                 dismiss()
             }
             show(supportFragmentManager, FilterDialog.TAG)
         }
     }
 
-    private fun addFilter(data: DefaultFilterItem) {
-        launch {
-            viewModel.addFilter(data)
-                .flowOn(Dispatchers.Main)
-                .collect {
-                    filterItemAdapter.add(FilterItemViewHolder(it.ui))
-                    onNewFilterCreated(it.ui, filterItemAdapter.lastIndex())
-                }
-        }
-    }
-
-    private fun onNewFilterCreated(data: FilterUiData, lastIndex: Int) {
-        launch {
-            selectNewFilter(data, lastIndex).collect()
-        }
-    }
-
     private fun onTextLogItemClick(item: TextLogItem) {
-        LogDetailDialog.newInstance(item.data)
-            .show(supportFragmentManager, LogDetailDialog.TAG)
+        LogDetailDialog.newInstance(item.data).show(supportFragmentManager, LogDetailDialog.TAG)
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        _binding = null
         mainAdapter.onClickListener = null
         filterAdapter.onClickListener = null
+    }
+
+    companion object {
+        private const val CALLBACK_ID_REFRESH = "refresh"
+        private const val CALLBACK_ID_ADD_FILTER = "filter_add"
     }
 
 }
