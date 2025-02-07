@@ -13,5 +13,4 @@ class ImageFilterItem(
     }
 
     override val ui: FilterUiData = FilterUiData(id, title = NotEmptyString("Image"), Defaults.filterColor)
-    override val criteria: FilterCriteria? = null
 }

@@ -9,8 +9,8 @@ import com.khosravi.devin.present.R
 import com.khosravi.devin.present.applyBundle
 import com.khosravi.devin.present.creataNotEmpty
 import com.khosravi.devin.present.databinding.DialogFilterBinding
+import com.khosravi.devin.present.filter.CustomFilterCriteria
 import com.khosravi.devin.present.filter.CustomFilterItem
-import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.tool.BaseDialog
 
@@ -54,7 +54,7 @@ class FilterDialog : BaseDialog() {
         val chipColor = ResourceHelper.getAFilterColor(context!!, requireArguments().getInt(KEY_LAST_INDEX))
         val filterItem = CustomFilterItem(
             ui = FilterUiData(fTitle, fTitle.creataNotEmpty(), chipColor),
-            criteria = FilterCriteria(tag, searchText)
+            criteria = CustomFilterCriteria(tag, searchText)
         )
         onConfirm?.invoke(filterItem)
     }

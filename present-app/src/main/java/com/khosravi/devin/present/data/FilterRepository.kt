@@ -3,8 +3,8 @@ package com.khosravi.devin.present.data
 import android.content.Context
 import com.khosravi.devin.present.creataNotEmpty
 import com.khosravi.devin.present.filter.ChipColor
+import com.khosravi.devin.present.filter.CustomFilterCriteria
 import com.khosravi.devin.present.filter.CustomFilterItem
-import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.TagFilterItem
@@ -32,7 +32,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         return pref.edit().putString(data.id, data.toJson().toString()).commit()
     }
 
-    private fun FilterItem.toJson(): JSONObject {
+    private fun CustomFilterItem.toJson(): JSONObject {
         val criteriaJson = criteria?.let {
             JSONObject().put(KEY_CRITERIA_TAG, it.tag)
                 .put(KEY_CRITERIA_SEARCH_TEXT, it.searchText)
@@ -58,7 +58,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
     private fun createCustomFilterItem(json: JSONObject): FilterItem {
         val id = json.getString(KEY_ID)
         val criteria = json.optJSONObject(KEY_CRITERIA)?.let {
-            FilterCriteria(
+            CustomFilterCriteria(
                 it.optString(KEY_CRITERIA_TAG), it.optString(KEY_CRITERIA_SEARCH_TEXT)
             )
         }

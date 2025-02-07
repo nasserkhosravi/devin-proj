@@ -24,6 +24,8 @@ import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.ImageFilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
+import com.khosravi.devin.present.filter.TagFilterItem
+import com.khosravi.devin.present.filter.createCriteria
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.log.DateLogItemData
@@ -107,22 +109,8 @@ class ReaderViewModel constructor(
         criteria: FilterCriteria?,
         allLogs: List<LogData>
     ) = (criteria?.let {
-        filterByCriteria(allLogs, criteria)
+        criteria.applyCriteria(allLogs)
     } ?: allLogs)
-
-    private fun filterByCriteria(
-        allLogs: List<LogData>, criteria: FilterCriteria
-    ) = allLogs.filter {
-        val searchText = criteria.searchText
-        val searchTextConditionResult = if (searchText.isNullOrEmpty()) true
-        else it.value.contains(searchText, true)
-
-        //TODO: move these logics to [FilterCriteria]
-        val tag = criteria.tag
-        val tagConditionResult = if (tag.isNullOrEmpty()) true else it.tag.contains(tag, true)
-
-        searchTextConditionResult && tagConditionResult
-    }
 
     fun clearLogs() {
         viewModelScope.launch {
@@ -268,7 +256,7 @@ class ReaderViewModel constructor(
         if (userSettings.isEnableTagAsFilter) {
             //we consider developer tag as filter
             collectLogs().firstOrNull()?.let {
-                val developerTags = filterRepository.createTagFilterList(it,userDefinedFilterList).values
+                val developerTags = filterRepository.createTagFilterList(it, userDefinedFilterList).values
                 result.addAll(developerTags)
             }
         }
@@ -276,7 +264,13 @@ class ReaderViewModel constructor(
     }
 
     private fun findFilterCriteria(filterItemId: String): FilterCriteria? {
-        return _uiStateFlow.value.filterList?.find { it.id == filterItemId }?.criteria
+        return _uiStateFlow.value.filterList?.find { it.id == filterItemId }?.let {
+            when (it) {
+                is CustomFilterItem -> it.criteria
+                is TagFilterItem -> it.createCriteria()
+                else -> null
+            }
+        }
     }
 
     fun refreshOnlyLogs(
