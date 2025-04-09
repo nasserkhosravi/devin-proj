@@ -1,8 +1,5 @@
 import java.net.URI
 
-include(":devin-write-okhttp-no-op")
-
-
 pluginManagement {
     repositories {
         google()
@@ -26,8 +23,10 @@ rootProject.name = "DevinProj"
 include(":sample-app")
 include(":present-app")
 include(":devin")
-//include(":devin-api")
 include(":devin-no-op")
+//include(":devin-api")
+include(":devin-write-okhttp")
+include(":devin-write-okhttp-no-op")
+
 include(":lib-calendar")
 include(":lib-har")
-include(":devin-write-okhttp")
