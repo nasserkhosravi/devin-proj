@@ -1,4 +1,4 @@
-package com.khosravi.devin.write.api
+package com.khosravi.devin.read
 
 
 object DevinImageFlagsApi {
