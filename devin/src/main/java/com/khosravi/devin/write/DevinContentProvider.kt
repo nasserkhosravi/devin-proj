@@ -162,6 +162,8 @@ class DevinContentProvider : ContentProvider() {
 
         private val mUriOfAllLog: Uri by lazy { Uri.parse(URI_ALL_LOG) }
 
+        private val mUriOfAllLog: Uri by lazy { Uri.parse(URI_ALL_LOG) }
+
         fun contentValueLog(appId: String, tag: String, value: String, meta: String?, date: Date = Date()) =
             ContentValues().apply {
                 put(LogTable.COLUMN_TAG, tag)
@@ -188,6 +190,8 @@ class DevinContentProvider : ContentProvider() {
         }
 
         fun uriOfLog(id: Long): Uri = Uri.parse(URI_ALL_LOG.plus("?$KEY_LOG_ID=$id"))
+
+        fun uriOfAllLog(): Uri = mUriOfAllLog
 
     }
 
