@@ -50,7 +50,11 @@ class OkHttpSampleActivity : AppCompatActivity(), CoroutineScope by MainScope() 
             return
         }
 
-        devinTool.okhttpLogger?.initOkHttpLoggerSample()
+        httpClient = devinTool.okhttpLogger?.buildOkHttpClient()
+        if (httpClient == null) {
+            Snackbar.make(binding.root, "Devin-write-okhttp is not available", Snackbar.LENGTH_INDEFINITE).show()
+            return
+        }
 
         val fileString = assets.readString("okhttp-sample/okhttp_sample1.json")
 
@@ -109,14 +113,14 @@ class OkHttpSampleActivity : AppCompatActivity(), CoroutineScope by MainScope() 
 
     }
 
-    private fun DevinOkHttpLogger.initOkHttpLoggerSample() {
+    private fun DevinOkHttpLogger.buildOkHttpClient(): OkHttpClient? {
         val networkLogger = this
-        networkLogger.getOrCreateInterceptor()?.let { devinInterceptorLogger ->
-            httpClient = OkHttpClient.Builder()
+       return networkLogger.getOrCreateInterceptor()?.let { devinInterceptorLogger ->
+            OkHttpClient.Builder()
                 .addInterceptor(devinInterceptorLogger)
                 .addInterceptor(createOtherOkHttpInterceptor())
                 .build()
-        }
+        } ?: return null
     }
 
     private fun convertOkHttpRequestBuilderFromHarString(harFileString: String): Result<Request.Builder> {

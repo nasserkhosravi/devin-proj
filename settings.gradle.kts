@@ -1,5 +1,8 @@
 import java.net.URI
 
+include(":devin-write-okhttp-no-op")
+
+
 pluginManagement {
     repositories {
         google()
