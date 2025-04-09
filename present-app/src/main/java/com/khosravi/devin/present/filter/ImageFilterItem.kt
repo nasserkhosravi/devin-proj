@@ -2,7 +2,7 @@ package com.khosravi.devin.present.filter
 
 import com.khosravi.devin.present.Defaults
 import com.khosravi.devin.present.tool.NotEmptyString
-import com.khosravi.devin.write.api.DevinImageFlagsApi
+import com.khosravi.devin.read.DevinImageFlagsApi
 
 class ImageFilterItem(
     override val id: String = ID

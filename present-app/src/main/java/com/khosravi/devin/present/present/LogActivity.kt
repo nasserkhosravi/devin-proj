@@ -23,13 +23,15 @@ import com.khosravi.devin.present.filter.FilterItemViewHolder
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
+import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
+import com.khosravi.devin.present.present.http.HttpLogDetailActivity
+import com.khosravi.devin.present.requestJsonFileUriToSave
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.setClipboard
 import com.khosravi.devin.present.toItemViewHolder
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
-import com.khosravi.devin.present.writeOrSaveFileIntent
 import com.khosravi.devin.present.writeTextToUri
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.IAdapter
@@ -42,7 +44,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import java.util.Date
 import javax.inject.Inject
 
 
@@ -95,6 +96,10 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 is TextLogItem -> {
                     onTextLogItemClick(item)
                 }
+
+                is HttpLogItemView -> {
+                    onHttpLogItemClicked(item)
+                }
             }
             true
         }
@@ -135,6 +140,10 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 }
             }
         }
+    }
+
+    private fun onHttpLogItemClicked(item: HttpLogItemView) {
+        HttpLogDetailActivity.startActivity(this,item.data.logId)
     }
 
     private fun getIndexOfFilter(id: String?): Int? {
@@ -201,7 +210,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun exportJsonFile() {
-        val intent = writeOrSaveFileIntent("Devin_${Date()}.json", MIME_APP_JSON)
+        val intent = requestJsonFileUriToSave()
         exportIntentLauncher.launch(Intent.createChooser(intent, getString(R.string.menu_export_json)))
     }
 

@@ -7,14 +7,14 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.khosravi.devin.present.BuildConfig
-import com.khosravi.devin.present.data.UserSettings
+import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.ClientContentProvider
-import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.data.ClientLoadedState
 import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.data.LogData
+import com.khosravi.devin.present.data.UserSettings
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.TimePresent
@@ -22,6 +22,7 @@ import com.khosravi.devin.present.fileForCache
 import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
+import com.khosravi.devin.present.filter.HttpFilterItem
 import com.khosravi.devin.present.filter.ImageFilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
@@ -29,12 +30,13 @@ import com.khosravi.devin.present.filter.createCriteria
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.log.DateLogItemData
+import com.khosravi.devin.present.log.HttpLogItemData
 import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.toUriByFileProvider
-import com.khosravi.devin.write.api.DevinImageFlagsApi
-import com.khosravi.devin.write.api.DevinLogFlagsApi
+import com.khosravi.devin.read.DevinImageFlagsApi
+import com.khosravi.devin.read.DevinLogFlagsApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +50,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
 import org.json.JSONObject
-import java.lang.IllegalArgumentException
 
 class ReaderViewModel constructor(
     application: Application,
@@ -115,7 +116,7 @@ class ReaderViewModel constructor(
     fun clearLogs() {
         viewModelScope.launch {
             flow {
-                ContentProviderLogsDao.clear(getContext(), clientId = requireSelectedClientId())
+                ContentProviderLogsDao.clear(getContext(), clientId = getSelectedClientIdOrError())
                 emit(Unit)
             }.flowOn(Dispatchers.Default)
                 .collect {
@@ -148,6 +149,7 @@ class ReaderViewModel constructor(
     }
 
     fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
+        //TODO: make it sequence to avoid OOM.
         InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
     }.map { createCacheShareFile(it) }
 
@@ -161,12 +163,9 @@ class ReaderViewModel constructor(
     }
 
     private fun collectLogs() = flow {
-        val selectedClientId = getSelectedClientId()
-        if (selectedClientId.isNullOrEmpty()) {
-            emit(emptyList())
-            return@flow
+        val result = getClientIdOrReturnEmptyList { clientId ->
+            ContentProviderLogsDao.getAll(getContext(), clientId)
         }
-        val result = ContentProviderLogsDao.getAll(getContext(), selectedClientId).sortedByDescending { it.date }
         emit(result)
     }
 
@@ -176,24 +175,29 @@ class ReaderViewModel constructor(
     }.flowOn(Dispatchers.Default)
 
     private fun collectImageLogs() = flow {
-        val selectedClientId = getSelectedClientId()
-        if (selectedClientId.isNullOrEmpty()) {
-            emit(emptyList())
-            return@flow
+        val result = getClientIdOrReturnEmptyList { clientId ->
+            ContentProviderLogsDao.getLogImages(getContext(), clientId)
         }
-        val result = ContentProviderLogsDao.getLogImages(getContext(), selectedClientId)
-            .sortedByDescending { it.date }
         emit(result)
+    }
+
+    private fun collectHttpLogs() = flow {
+        val result = getClientIdOrReturnEmptyList { clientId ->
+            ContentProviderLogsDao.getHttpLogs(getContext(), clientId)
+        }.map { HttpLogItemData(it) }
+
+        emit(result)
+    }.flowOn(Dispatchers.Default)
+
+    private fun <T> getClientIdOrReturnEmptyList(action: (clientId: String) -> List<T>): List<T> {
+        val clientId = getSelectedClientId()
+        if (clientId.isNullOrEmpty()) return emptyList()
+        return action(clientId)
     }
 
     private fun getSelectedClientId() = cacheRepo.getSelectedClientId()
 
     private fun getSelectedClientIdOrError() = getSelectedClientId()!!
-
-    private fun requireSelectedClientId(): String {
-        val clientId = cacheRepo.getSelectedClientId()
-        return requireNotNull(clientId)
-    }
 
     fun setSelectedClientId(clientData: ClientData) = cacheRepo.setSelectedClientId(clientData)
 
@@ -244,6 +248,7 @@ class ReaderViewModel constructor(
         val filterList = ArrayList<FilterItem>().apply {
             //app defined filters
             add(IndexFilterItem())
+            add(HttpFilterItem())
             add(ImageFilterItem())
 
             //other filters
@@ -254,15 +259,21 @@ class ReaderViewModel constructor(
 
     private suspend fun provideAllComputableFilters(): List<FilterItem> {
         val userDefinedFilterList = filterRepository.getCustomFilterItemList(getSelectedClientIdOrError())
+
         val result = ArrayList<FilterItem>(userDefinedFilterList)
         if (userSettings.isEnableTagAsFilter) {
             //we consider developer tag as filter
             collectLogs().firstOrNull()?.let {
-                val developerTags = filterRepository.createTagFilterList(it, userDefinedFilterList).values
+                val developerTags = filterRepository.createTagFilterList(it, userDefinedFilterList).values.toList()
+                    .filterDevinSpecialFilters()
                 result.addAll(developerTags)
             }
         }
         return result
+    }
+
+    private fun List<FilterItem>.filterDevinSpecialFilters() = filter {
+        !it.id.startsWith(VALUE_DEVIN_PREFIX_SPECIAL_FILTER)
     }
 
     private fun findFilterCriteria(filterItemId: String): FilterCriteria? {
@@ -305,11 +316,21 @@ class ReaderViewModel constructor(
         }
     }
 
-    private fun getLogs(filterItemId: String) = if (filterItemId == ImageFilterItem.ID) {
-        //TODO: its better solve image logs dynamically
-        getDetermineImageLogs()
-    } else {
-        getLogListOfFilter(filterItemId)
+    fun getHttpLogs(): Flow<List<HttpLogItemData>> = collectHttpLogs()
+
+    private fun getLogs(filterItemId: String) = when (filterItemId) {
+        ImageFilterItem.ID -> {
+            //TODO: its better solve image logs dynamically
+            getDetermineImageLogs()
+        }
+
+        HttpFilterItem.ID -> {
+            getHttpLogs()
+        }
+
+        else -> {
+            getLogListOfFilter(filterItemId)
+        }
     }
 
     data class ResultUiState(
@@ -326,5 +347,6 @@ class ReaderViewModel constructor(
 
     companion object {
         private const val DEFAULT_FILTER_ID = IndexFilterItem.ID
+        private const val VALUE_DEVIN_PREFIX_SPECIAL_FILTER = "devin_"
     }
 }

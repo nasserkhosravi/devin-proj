@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import com.khosravi.devin.present.ResourceHelper
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.applyBundle
-import com.khosravi.devin.present.creataNotEmpty
+import com.khosravi.devin.present.itsNotEmpty
 import com.khosravi.devin.present.databinding.DialogFilterBinding
 import com.khosravi.devin.present.filter.CustomFilterCriteria
 import com.khosravi.devin.present.filter.CustomFilterItem
@@ -53,7 +53,7 @@ class FilterDialog : BaseDialog() {
         val searchText = binding.edSearchText.text.toString()
         val chipColor = ResourceHelper.getAFilterColor(context!!, requireArguments().getInt(KEY_LAST_INDEX))
         val filterItem = CustomFilterItem(
-            ui = FilterUiData(fTitle, fTitle.creataNotEmpty(), chipColor),
+            ui = FilterUiData(fTitle, fTitle.itsNotEmpty(), chipColor),
             criteria = CustomFilterCriteria(tag, searchText)
         )
         onConfirm?.invoke(filterItem)

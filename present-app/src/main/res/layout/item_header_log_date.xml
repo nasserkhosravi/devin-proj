@@ -11,7 +11,7 @@
         android:layout_gravity="center"
         app:chipBackgroundColor="@color/colorOnSurface"
         android:textColor="@color/colorOnSurfaceVariant"
-        android:layout_margin="?attr/spaceXSmall"
+        android:layout_margin="?attr/spaceSmall2"
         android:textSize="@dimen/textSizeLogHeaderDate"
         app:chipMinHeight="20dp"
         app:chipIconTint="@null"
