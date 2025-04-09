@@ -30,7 +30,7 @@ internal class DevinImageLoggerImpl(
         payload: String?,
         throwable: Throwable?
     ) {
-        if (logger.isEnable.not()) return
+        if (logger.isEnable().not()) return
         val fName = (name.takeIf { !it.isNullOrEmpty() } ?: URI(url).path)
             .let {
                 statusToText(status).plus(" $it")

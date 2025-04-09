@@ -12,7 +12,7 @@ internal class LoggerImpl(
     private val devinExceptionLogger: DevinExceptionLogger by lazy { DevinExceptionLogger(logCore) }
 
     override fun doIfEnable(action: (DevinLogger) -> Unit) {
-        if (logCore.isEnable) {
+        if (logCore.isEnable()) {
             action(this)
         }
     }
@@ -34,7 +34,7 @@ internal class LoggerImpl(
     }
 
     override fun logCallerFunc() {
-        if (!logCore.isEnable) {
+        if (!logCore.isEnable()) {
             return
         }
         // One for logCallerFunc parent
@@ -76,7 +76,7 @@ internal class LoggerImpl(
     }
 
     private fun sendUserLog(tag: String?, value: String, logLevel: Int, payload: String?, throwable: Throwable? = null) {
-        if (logCore.isEnable.not()) return
+        if (logCore.isEnable().not()) return
         sendLog(tag, value, createMetaFromUserPayload(logLevel, payload, throwable))
     }
 
