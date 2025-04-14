@@ -51,5 +51,6 @@ dependencies {
     debugImplementation(project(mapOf("path" to ":devin-write-okhttp")))
     releaseImplementation(project(mapOf("path" to ":devin-write-okhttp-no-op")))
 
+    //for reading har sample from asset
     implementation(project(mapOf("path" to ":lib-har")))
 }
