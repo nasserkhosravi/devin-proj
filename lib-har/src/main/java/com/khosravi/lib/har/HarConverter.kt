@@ -262,8 +262,8 @@ object HarConverter {
     fun JSONObject.toHarEntry(): HarEntry {
         return HarEntry(
             pageref = optStringOrNull("pageref"),
-            startedDateTime = getString("startedDateTime"),
-            time = getLong("time"),
+            startedDateTime = optString("startedDateTime", ""),
+            time = optLong("time", -1),
             request = getJSONObject("request").toHarRequest(),
             response = optJSONObject("response")?.toHarResponse(),
             cache = optJSONObject("cache")?.toHarCache(),
@@ -349,8 +349,8 @@ object HarConverter {
             mimeType = getString("mimeType"),
             params = optJSONArray("params")?.let { jsonArray ->
                 List(jsonArray.length()) { i -> jsonArray.getJSONObject(i).toHarPostParam() }
-            }?: emptyList(),
-            text = optString("text",""),
+            } ?: emptyList(),
+            text = optString("text", ""),
             comment = optStringOrNull("comment")
         )
     }
