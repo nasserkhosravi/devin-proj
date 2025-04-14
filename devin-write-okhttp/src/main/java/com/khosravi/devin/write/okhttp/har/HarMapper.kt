@@ -1,21 +1,9 @@
-package com.khosravi.devin.write.okhttp.network.support
+package com.khosravi.devin.write.okhttp.har
 
 import com.khosravi.devin.write.BuildConfig
 import com.khosravi.devin.write.okhttp.network.entity.HttpRequestModel
 import com.khosravi.devin.write.okhttp.network.entity.HttpResponseModel
-import com.khosravi.lib.har.HarCache
-import com.khosravi.lib.har.HarContent
-import com.khosravi.lib.har.HarCreator
-import com.khosravi.lib.har.HarEntryCustom
-import com.khosravi.lib.har.HarEntry
-import com.khosravi.lib.har.HarFile
-import com.khosravi.lib.har.HarHeader
-import com.khosravi.lib.har.HarLog
-import com.khosravi.lib.har.HarPostData
-import com.khosravi.lib.har.HarQueryString
-import com.khosravi.lib.har.HarRequest
-import com.khosravi.lib.har.HarResponse
-import com.khosravi.lib.har.HarTimings
+import com.khosravi.devin.write.okhttp.network.support.getQueryParameters
 import org.json.JSONObject
 import java.net.URL
 import java.text.SimpleDateFormat

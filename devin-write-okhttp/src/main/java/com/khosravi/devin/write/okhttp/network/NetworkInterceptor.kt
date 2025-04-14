@@ -3,7 +3,7 @@ package com.khosravi.devin.write.okhttp.network
 import com.khosravi.devin.write.okhttp.InternalLogger
 import com.khosravi.devin.write.okhttp.OkHttpLoggerImpl
 import com.khosravi.devin.write.okhttp.network.entity.HttpTransactionStateModel
-import com.khosravi.devin.write.okhttp.network.support.HarMapper
+import com.khosravi.devin.write.okhttp.har.HarMapper
 import okhttp3.Interceptor
 import okhttp3.Response
 import java.io.IOException

@@ -1,9 +1,9 @@
-package com.khosravi.lib.har
+package com.khosravi.devin.write.okhttp.har
 
 import org.json.JSONArray
 import org.json.JSONObject
 
-object HarConverter {
+internal object HarConverter {
 
     //region toJson
     fun HarFile.toJson(): JSONObject {

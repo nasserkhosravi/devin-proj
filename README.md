@@ -22,3 +22,17 @@ dependencies {
 }
 ```
 
+## Snapshot version
+
+For using snapshot versions
+```groovy
+maven {
+            url = URI("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+        }
+```
+
+To upload the version, double check versions in gradle of your module, then run these two gradle tasks:
+$module$->build->assemble 
+$module$->publishing->publish
+
+

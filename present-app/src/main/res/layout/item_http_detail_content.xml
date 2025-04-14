@@ -28,7 +28,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.appcompat.widget.LinearLayoutCompat
-        android:id="@+id/rootSearchSummary"
+        android:id="@+id/cvg_search_result"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/colorPrimary"
@@ -49,13 +49,13 @@
             android:paddingVertical="12dp"
             android:textColor="@color/white_light_1"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/iv_search_previous"
+            app:layout_constraintEnd_toStartOf="@id/iv_search_down"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="3/10" />
 
         <ImageButton
-            android:id="@+id/iv_search_previous"
+            android:id="@+id/iv_search_down"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginEnd="8dp"
@@ -64,13 +64,13 @@
             android:rotation="180"
             android:src="@drawable/ic_ic_arrow_down"
             app:layout_constraintBottom_toBottomOf="@id/tv_search_found"
-            app:layout_constraintEnd_toStartOf="@id/iv_search_next"
+            app:layout_constraintEnd_toStartOf="@id/iv_search_up"
             app:layout_constraintHorizontal_bias="1"
             app:layout_constraintStart_toEndOf="@id/tv_search_found"
             app:layout_constraintTop_toTopOf="@id/tv_search_found" />
 
         <ImageButton
-            android:id="@+id/iv_search_next"
+            android:id="@+id/iv_search_up"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_marginEnd="?attr/spaceSmall2"
@@ -95,7 +95,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/rootSearchSummary"
+        app:layout_constraintTop_toBottomOf="@id/cvg_search_result"
         tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
