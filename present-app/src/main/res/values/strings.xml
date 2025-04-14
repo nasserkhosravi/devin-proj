@@ -10,7 +10,7 @@
     <string name="menu_clear_filters">Clear custom filters</string>
     <string name="msg_empty_filter">Empty filter</string>
     <string name="msg_refreshed">refreshed</string>
-    <string name="title_of_share">Share file with</string>
+    <string name="title_of_share">Share file through</string>
     <string name="menu_create_filter">Create custom filter</string>
     <string name="field_title">title</string>
     <string name="field_tag">tag</string>
@@ -27,4 +27,36 @@
     <string name="one_client_found">One client found</string>
     <string name="choose_client">Choose client app</string>
     <string name="copied">Copied</string>
+    <string name="msg_failed_to_copy">Failed to copy, User other available options</string>
+    <string name="share_curl_command">Share CURL command</string>
+    <string name="failed_to_load">Failed to load</string>
+    <string name="response">Response</string>
+    <string name="request">Request</string>
+    <string name="overview">Overview</string>
+    <string name="ssl">SSL</string>
+    <string name="tls_version">TLS version</string>
+    <string name="tls_cipher_suite">Cipher Suite</string>
+    <string name="request_time">Request time</string>
+    <string name="response_time">Response time</string>
+    <string name="duration">Duration</string>
+    <string name="request_size">Request size</string>
+    <string name="response_size">Response size</string>
+    <string name="url">URL</string>
+    <string name="method">Method</string>
+    <string name="protocol">Protocol</string>
+    <string name="status">Status</string>
+    <string name="no">No</string>
+    <string name="yes">Yes</string>
+    <string name="msg_body_empty">(body is empty)</string>
+    <string name="msg_header_empty">(header is empty)</string>
+    <string name="menu_http_copy_response_content">Copy response content</string>
+    <string name="menu_http_copy_request_content">Copy request content</string>
+    <string name="menu_http_copy_as_curl">Copy CURL command</string>
+    <string name="menu_http_share_as_curl">Share CURL command</string>
+    <string name="menu_http_share_har_as_json">Share HAR (whole log) as json</string>
+    <string name="menu_http_export_har_as_json">Export HAR as json</string>
+    <string name="menu_http_copy_har">Copy HAR (whole log)</string>
+    <string name="msg_response_null">Response is null</string>
+    <string name="total_size">Total size</string>
+
 </resources>

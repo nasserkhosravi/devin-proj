@@ -35,7 +35,7 @@ class LogDetailDialog : BaseDialog() {
         val data = requireArguments().getSerializableSupport(KEY_DATA, TextLogItemData::class.java)!!
         binding.tvTag.text = data.tag
         binding.tvMessage.text = data.text
-        binding.tvMeta.text = data.meta?.toSafeJSONObject()?.toString(3) ?: ""
+        binding.tvMeta.text = data.meta?.toSafeJSONObject()?.toString(3)?.replace("\\/", "/") ?: ""
     }
 
 

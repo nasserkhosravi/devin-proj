@@ -7,6 +7,7 @@ import com.khosravi.devin.present.data.UserSettings
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.present.http.HttpDetailViewModel
 import com.khosravi.devin.present.present.ReaderViewModel
 import java.lang.IllegalArgumentException
 
@@ -18,9 +19,16 @@ class ViewModelFactory(
     private val userSettings: UserSettings,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(ReaderViewModel::class.java)) {
-            return ReaderViewModel(application, calendar, filterRepository, cacheRepo, userSettings) as T
+        when {
+            modelClass.isAssignableFrom(ReaderViewModel::class.java) -> {
+                return ReaderViewModel(application, calendar, filterRepository, cacheRepo, userSettings) as T
+            }
+
+            modelClass.isAssignableFrom(HttpDetailViewModel::class.java) -> {
+                return HttpDetailViewModel(application) as T
+            }
+
+            else -> throw IllegalArgumentException()
         }
-        throw IllegalArgumentException()
     }
 }

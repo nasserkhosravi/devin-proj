@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
-import android.text.ClipboardManager
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -76,7 +75,7 @@ fun Int.withPadding(): String {
     return this.toString()
 }
 
-fun String.creataNotEmpty() = NotEmptyString(this)
+fun String.itsNotEmpty() = NotEmptyString(this)
 
 fun <T : Fragment> T.applyBundle(vararg pairs: Pair<String, Any?>): T {
     arguments = bundleOf(*pairs)
@@ -121,4 +120,12 @@ fun Context.setClipboard(text: String) {
     val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
     val clip = ClipData.newPlainText("Copied Text", text)
     clipboard.setPrimaryClip(clip)
+}
+
+fun Intent.getLongExtraOrFail(name: String): Long {
+    return if (hasExtra(name)) {
+        getLongExtra(name, -1)
+    } else {
+        throw IllegalStateException()
+    }
 }

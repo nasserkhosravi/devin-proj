@@ -1,7 +1,7 @@
 package com.khosravi.devin.present.data
 
 import android.content.Context
-import com.khosravi.devin.present.creataNotEmpty
+import com.khosravi.devin.present.itsNotEmpty
 import com.khosravi.devin.present.filter.ChipColor
 import com.khosravi.devin.present.filter.CustomFilterCriteria
 import com.khosravi.devin.present.filter.CustomFilterItem
@@ -72,7 +72,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
         val uiJson = json.getJSONObject(KEY_UI)
         val present = FilterUiData(
-            id, uiJson.getString(KEY_UI_TITLE).creataNotEmpty(),
+            id, uiJson.getString(KEY_UI_TITLE).itsNotEmpty(),
             ChipColor(
                 uiJson.getInt(KEY_UI_BACK_COLOR),
                 uiJson.getInt(KEY_UI_TEXT_COLOR)

@@ -3,15 +3,23 @@ package com.khosravi.devin.present
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import android.widget.Toast
+import androidx.activity.result.ActivityResult
+import androidx.appcompat.app.AppCompatActivity
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.DumbDate
 import com.khosravi.devin.present.date.DumbTime
 import com.khosravi.devin.present.date.TimePresent
+import com.khosravi.devin.present.formatter.InterAppJsonConverter
+import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HeaderLogDateItem
+import com.khosravi.devin.present.log.HttpLogItemData
+import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.ImageLogItem
 import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
@@ -22,6 +30,13 @@ import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.log.TextLogSubItem
 import com.mikepenz.fastadapter.GenericItem
 import io.github.nasserkhosravi.calendar.iranian.PersianCalendar
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import java.io.FileNotFoundException
 import java.text.CharacterIterator
 import java.text.StringCharacterIterator
@@ -61,10 +76,12 @@ fun List<LogItemData>.toItemViewHolder(calendar: CalendarProxy): List<GenericIte
         when (item) {
             is DateLogItemData -> HeaderLogDateItem(calendar, item)
             is TextLogItemData -> TextLogItem(calendar, item)
+            is HttpLogItemData -> HttpLogItemView(calendar, item)
             is ImageLogItemData -> ImageLogItem(calendar, item)
             is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, item).apply {
                 subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
             }
+
         }
     }
 }
@@ -94,4 +111,43 @@ fun humanReadableByteCountSI(bytes: Long): String {
         ci.next()
     }
     return String.format("%.1f %cB", mBytes / 1000.0, ci.current())
+}
+
+fun Context.createCacheShareFile(textualReport: TextualReport): Uri {
+    val file = fileForCache(textualReport.fileName)
+    file.printWriter().use { out ->
+        out.print(textualReport.content)
+    }
+    return toUriByFileProvider(file)
+}
+
+fun AppCompatActivity.createFlowForExportFileIntentResult(content: String, activityResult: ActivityResult): Flow<Unit> {
+    val returnedIntent = activityResult.data
+    val uriData = returnedIntent?.data
+    if (activityResult.resultCode == AppCompatActivity.RESULT_OK && returnedIntent != null && uriData != null) {
+        return flowOf(uriData)
+            .flowOn(Dispatchers.Default)
+            .map { contentResolver.writeTextToUri(uriData, content) }
+            .flowOn(Dispatchers.Main)
+            .onEach { uriWriteResult ->
+                val msg = if (uriWriteResult) getString(R.string.msg_export_done)
+                else getString(R.string.error_msg_something_went_wrong)
+                Toast.makeText(this@createFlowForExportFileIntentResult, msg, Toast.LENGTH_LONG).show()
+            }.map { Unit }
+    }
+    return emptyFlow()
+}
+
+fun Context.setClipboardSafe(text: String): Boolean {
+    return try {
+        setClipboard(text)
+        true
+    } catch (e: Exception) {
+        Toast.makeText(this, getString(R.string.msg_failed_to_copy), Toast.LENGTH_SHORT).show()
+        false
+    }
+}
+
+fun requestJsonFileUriToSave(fileName: String = InterAppJsonConverter.createJsonFileName()): Intent {
+    return writeOrSaveFileIntent(fileName, MIME_APP_JSON)
 }

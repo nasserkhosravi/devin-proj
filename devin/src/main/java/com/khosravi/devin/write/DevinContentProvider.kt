@@ -4,21 +4,17 @@ import android.content.ContentProvider
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
-import android.content.UriMatcher
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import com.khosravi.devin.api.core.DevinLogCore
 import com.khosravi.devin.write.room.ClientTable
 import com.khosravi.devin.write.room.DevinDB
 import com.khosravi.devin.write.room.LogTable
 import java.util.Date
 
 class DevinContentProvider : ContentProvider() {
-
-    private val matcher = UriMatcher(UriMatcher.NO_MATCH).apply {
-        addURI(AUTHORITY, LogTable.TABLE_NAME, CODE_LOG_ALL)
-        addURI(AUTHORITY, ClientTable.TABLE_NAME, CODE_CLIENT)
-    }
 
     override fun onCreate(): Boolean {
         return true
@@ -29,59 +25,68 @@ class DevinContentProvider : ContentProvider() {
         projection: Array<out String>?,
         selection: String?,
         selectionArgs: Array<out String>?,
-        sortOrder: String?
+        sortOrder: String?,
     ): Cursor? {
         val context: Context = context ?: return null
-        val code = matcher.match(uri)
-        return when (code) {
-            CODE_LOG_ALL -> {
-                val clientId = selectionArgs?.get(0)
-                require(!clientId.isNullOrEmpty())
+        if (!uri.isDevinScope()) return null
 
-                DevinDB.getInstance(context).logDao()
-                    .getAllAsCursor(clientId)
+        if (uri.isLogPath()) {
+
+            uri.getLogId()?.let {
+                try {
+                    val id = it.toLong()
+                    return DevinDB.getInstance(context).logDao().getLog(id)
+                } catch (e: Exception) {
+                    return null
+                }
             }
 
-            CODE_CLIENT -> {
-                DevinDB.getInstance(context).clientDao()
-                    .getAllAsCursor()
+            val clientId = uri.getClientId() ?: return null
+            val tag = uri.getQueryParameter(KEY_LOG_TAG)
+            if (!tag.isNullOrEmpty()) {
+                return getLogListByTagAsCursor(context, clientId, tag)
             }
-
-            else -> throw java.lang.IllegalArgumentException("on query Unknown URI: $uri")
+            return getLogListCursor(context, clientId)
+        } else if (uri.isClientPath()) {
+            return getClientListCursor(context)
         }
+        Log.d(TAG, "unknown query() operation with uri: $uri")
+        return null
     }
 
-    override fun getType(uri: Uri): String {
-        return when (matcher.match(uri)) {
-            CODE_LOG_ALL -> URI_ALL_LOG
-            CODE_CLIENT -> URI_ROOT_CLIENT
-            else -> throw java.lang.IllegalArgumentException("on getType Unknown URI: $uri")
-        }
+    private fun getLogListByTagAsCursor(context: Context, clientId: String, tag: String) =
+        DevinDB.getInstance(context).logDao().getAllLogsByTagAsCursor(clientId, tag)
+
+    private fun getLogListCursor(context: Context, clientId: String) = DevinDB.getInstance(context).logDao()
+        .getAllAsCursor(clientId)
+
+    private fun getClientListCursor(context: Context) = DevinDB.getInstance(context).clientDao().getAllAsCursor()
+
+    override fun getType(uri: Uri): String? {
+        return null
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {
         val context = context ?: return null
-        when (matcher.match(uri)) {
-            CODE_LOG_ALL -> {
-                val logTable = values?.readAsNewLogTable() ?: return null
-                val id: Long = DevinDB.getInstance(context).logDao()
-                    .insert(logTable)
-                context.contentResolver.notifyChange(uri, null)
-                ContentUris.withAppendedId(uri, id)
-                return uri
-            }
+        if (!uri.isDevinScope()) return null
 
-            CODE_CLIENT -> {
-                val tableData = values?.readAsNewClientTable() ?: return null
-                DevinDB.getInstance(context).clientDao()
-                    .put(tableData)
-                return uri
-            }
-
-            else -> {
-                throw IllegalArgumentException("on insert Unknown URI: $uri")
-            }
+        if (uri.isLogPath()) {
+            val logTable = values?.readAsNewLogTable() ?: return null
+            val id: Long = DevinDB.getInstance(context).logDao()
+                .insert(logTable)
+            context.contentResolver.notifyChange(uri, null)
+            return ContentUris.withAppendedId(uri, id)
         }
+
+        if (uri.isClientPath()) {
+            val tableData = values?.readAsNewClientTable() ?: return null
+            val id = DevinDB.getInstance(context).clientDao()
+                .put(tableData)
+            return ContentUris.withAppendedId(uri, id)
+        }
+
+        Log.d(TAG, "unknown insert() operation with uri: $uri, values:$values")
+        return null
     }
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int {
@@ -89,35 +94,43 @@ class DevinContentProvider : ContentProvider() {
     }
 
     override fun delete(uri: Uri, extras: Bundle?): Int {
-        when (matcher.match(uri)) {
-            CODE_LOG_ALL -> {
-                val clientId = uri.getQueryParameter(KEY_CLIENT_ID)!!
-                val context = context ?: return -1
-                DevinDB.getInstance(context).logDao()
-                    .removeLogs(clientId)
-                return 1
-            }
-
-            CODE_CLIENT -> {
-                val context = context ?: return -1
-                DevinDB.getInstance(context).clientDao()
-                    .nukeTable()
-                return 1
-            }
-
-            else -> {
-                throw IllegalArgumentException("on remove Unknown URI: $uri")
-            }
+        val context = context ?: return FLAG_OPERATION_FAILED
+        if (!uri.isDevinScope()) return FLAG_OPERATION_FAILED
+        if (uri.isLogPath()) {
+            val clientId = uri.getQueryParameter(KEY_CLIENT_ID)!!
+            DevinDB.getInstance(context).logDao()
+                .removeLogs(clientId)
+            return FLAG_OPERATION_SUCCESS
         }
+        if (uri.isClientPath()) {
+            DevinDB.getInstance(context).clientDao()
+                .nukeTable()
+            return FLAG_OPERATION_SUCCESS
+        }
+        Log.d(TAG, "unknown delete() operation with uri: $uri")
+
+        return FLAG_OPERATION_FAILED
     }
 
     override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int {
-        TODO("Not supported")
+        val context = context ?: return FLAG_OPERATION_FAILED
+        if (!uri.isDevinScope()) return FLAG_OPERATION_FAILED
+
+        if (uri.isLogPath()) {
+            val id = uri.lastPathSegment?.toLongOrNull() ?: return FLAG_OPERATION_FAILED
+            val logTable = values?.readAsNewLogTable(id) ?: return FLAG_OPERATION_FAILED
+            DevinDB.getInstance(context).logDao()
+                .update(logTable)
+            context.contentResolver.notifyChange(uri, null)
+            return FLAG_OPERATION_SUCCESS
+        }
+        return FLAG_OPERATION_FAILED
     }
 
-    private fun ContentValues.readAsNewLogTable(): LogTable {
+
+    private fun ContentValues.readAsNewLogTable(id: Long = 0): LogTable {
         return LogTable(
-            id = 0,
+            id = id,
             tag = getAsString(LogTable.COLUMN_TAG),
             value = getAsString(LogTable.COLUMN_VALUE),
             date = getAsLong(LogTable.COLUMN_DATE),
@@ -131,18 +144,21 @@ class DevinContentProvider : ContentProvider() {
     )
 
     companion object {
+        private const val TAG = "DevinContentProvider"
 
         private const val AUTHORITY = "com.khosravi.devin.provider"
         private const val SCHEME = "content"
         private const val TABLE_LOG = LogTable.TABLE_NAME
         private const val TABLE_CLIENT = ClientTable.TABLE_NAME
         private const val KEY_CLIENT_ID = "clientId"
+        private const val KEY_LOG_ID = "logId"
+        private const val KEY_LOG_TAG = "tag"
 
-        const val URI_ALL_LOG = "$SCHEME://$AUTHORITY/$TABLE_LOG"
-        const val URI_ROOT_CLIENT = "$SCHEME://$AUTHORITY/$TABLE_CLIENT"
+        private const val URI_ALL_LOG = "$SCHEME://$AUTHORITY/$TABLE_LOG"
+        private const val URI_ROOT_CLIENT = "$SCHEME://$AUTHORITY/$TABLE_CLIENT"
 
-        const val CODE_LOG_ALL = 1
-        const val CODE_CLIENT = 2
+        private const val FLAG_OPERATION_FAILED = DevinLogCore.FLAG_OPERATION_FAILED
+        private const val FLAG_OPERATION_SUCCESS = DevinLogCore.FLAG_OPERATION_SUCCESS
 
         private val mUriOfAllLog: Uri by lazy { Uri.parse(URI_ALL_LOG) }
 
@@ -161,10 +177,25 @@ class DevinContentProvider : ContentProvider() {
 
         fun uriOfClient(): Uri = Uri.parse(URI_ROOT_CLIENT)
 
-        fun uriOfAllLog(clientId: String): Uri = Uri.parse(URI_ALL_LOG.plus("?$KEY_CLIENT_ID=$clientId"))
-
         fun uriOfAllLog(): Uri = mUriOfAllLog
 
+        fun uriOfAllLog(clientId: String, tag: String? = null): Uri {
+            val builder = Uri.parse(URI_ALL_LOG.plus("?$KEY_CLIENT_ID=$clientId")).buildUpon()
+            if (!tag.isNullOrEmpty()) {
+                builder.appendQueryParameter(KEY_LOG_TAG, tag)
+            }
+            return builder.build()
+        }
+
+        fun uriOfLog(id: Long): Uri = Uri.parse(URI_ALL_LOG.plus("?$KEY_LOG_ID=$id"))
+
     }
+
+
+    private fun Uri.getClientId(): String? = getQueryParameter(KEY_CLIENT_ID)
+    private fun Uri.isDevinScope() = authority == AUTHORITY && scheme == SCHEME
+    private fun Uri.isLogPath() = pathSegments.firstOrNull() == TABLE_LOG
+    private fun Uri.isClientPath() = pathSegments.firstOrNull() == TABLE_CLIENT
+    private fun Uri.getLogId() = getQueryParameter(KEY_LOG_ID)
 
 }

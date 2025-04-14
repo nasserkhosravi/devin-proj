@@ -2,22 +2,34 @@ package com.khosravi.devin.present.data
 
 import android.content.Context
 import android.database.Cursor
-import android.net.Uri
 import android.os.Build
 import androidx.core.database.getStringOrNull
+import com.khosravi.devin.present.data.http.HttpLogData
+import com.khosravi.devin.present.data.http.HttpLogDetailData
+import com.khosravi.devin.present.data.http.HttpLogOperationStatus
+import com.khosravi.devin.present.data.http.UrlQuery
 import com.khosravi.devin.write.DevinContentProvider
-import com.khosravi.devin.write.api.DevinImageFlagsApi
+import com.khosravi.devin.read.DevinImageFlagsApi
+import com.khosravi.devin.write.DevinContentProvider.Companion.uriOfLog
+import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
+import com.khosravi.lib.har.HarConverter.toHarFile
+import com.khosravi.lib.har.HarEntry
 import org.json.JSONObject
 
 object ContentProviderLogsDao {
 
-    private fun getAllLogUri(clientId: String): Uri {
-        return DevinContentProvider.uriOfAllLog(clientId)
+    fun getAll(context: Context, clientId: String): List<LogData> {
+        return provideLogListOf(context, clientId, null)
     }
 
-    fun getAll(context: Context, clientId: String): List<LogData> {
+    private fun provideLogListOf(
+        context: Context,
+        clientId: String,
+        tag: String?,
+    ): List<LogData> {
         val cursor =
-            context.contentResolver.query(getAllLogUri(clientId), null, null, arrayOf(clientId), null) ?: return emptyList()
+            context.contentResolver.query(DevinContentProvider.uriOfAllLog(clientId, tag), null, null, arrayOf(clientId), null)
+                ?: return emptyList()
         val result = ArrayList<LogData>()
         while (cursor.moveToNext()) {
             val element = cursor.asLogModel()
@@ -27,7 +39,7 @@ object ContentProviderLogsDao {
     }
 
     fun clear(context: Context, clientId: String) {
-        val uri = getAllLogUri(clientId)
+        val uri = DevinContentProvider.uriOfAllLog(clientId)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             context.contentResolver.delete(uri, null)
         } else {
@@ -56,4 +68,74 @@ object ContentProviderLogsDao {
             ImageLogData(it.value, url = url, status = status, it.date)
         }
     }
+
+    private fun LogData.mapToModel(): HttpLogData? {
+        val meta = meta ?: return null
+
+        return try {
+            val metaJson = JSONObject(meta)
+            val metaModel = HttpMetaStruct(metaJson)
+            val detail = metaModel.detail ?: return null
+            val operationStatus = metaModel.operationStatus
+            val url = metaModel.url
+
+            val status = HttpLogOperationStatus.fromCode(operationStatus, detail.response)
+            HttpLogData(LogId(id), value, url = url, operationStatus = status, date = date, detail.request.method)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun getHttpLogs(context: Context, clientId: String): List<HttpLogData> {
+        return provideLogListOf(context, clientId, DevinHttpFlagsApi.LOG_TAG)
+            .mapNotNull { it.mapToModel() }
+
+    }
+
+    fun getHttpLog(context: Context, logId: LogId): HttpLogDetailData? {
+        val cursor = context.contentResolver
+            .query(uriOfLog(logId.rawId), null, null, null, null) ?: return null
+
+        try {
+            if (cursor.moveToNext()) {
+                val simpleLog = cursor.asLogModel()
+                if (simpleLog.tag != DevinHttpFlagsApi.LOG_TAG) return null
+                val meta = simpleLog.meta ?: return null
+                val metaJson = JSONObject(meta)
+                val metaModel = HttpMetaStruct(metaJson)
+                val detail = metaModel.detail ?: return null
+                val operationStatus = HttpLogOperationStatus.fromCode(metaModel.operationStatus, detail.response)
+
+                val url = UrlQuery.create(metaModel.url)
+                return HttpLogDetailData(simpleLog.id, detail, operationStatus, url, metaModel.errorSummery)
+            }
+            return null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return null
+        }
+    }
+
+
+    @JvmInline
+    private value class HttpMetaStruct(
+        val metaJson: JSONObject,
+    ) {
+
+        val url: String
+            get() = metaJson.getString(DevinHttpFlagsApi.KEY_URL)
+
+        val operationStatus: Int
+            get() = metaJson.getInt(DevinHttpFlagsApi.KEY_STATUS_TYPE)
+
+        val detail: HarEntry?
+            get() = harFile().log.entries.firstOrNull()
+
+        val errorSummery: String?
+            get() = metaJson.optString(DevinHttpFlagsApi.KEY_SUMMERY_OF_ERROR)
+
+        private fun harFile() = metaJson.getJSONObject(DevinHttpFlagsApi.KEY_HAR).toHarFile()
+    }
+
 }

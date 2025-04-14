@@ -52,11 +52,18 @@
         android:text="send log" />
 
     <Button
+        android:id="@+id/btn_go_to_http_sample"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Ok Http sample" />
+
+    <Button
         android:id="@+id/btn_cause_crash"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Cause crash" />
+        android:text="Make a uncaught exception(crash)" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
@@ -66,9 +73,9 @@
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/ed_url_image"
-            android:inputType="textUri"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:inputType="textUri" />
 
     </com.google.android.material.textfield.TextInputLayout>
 

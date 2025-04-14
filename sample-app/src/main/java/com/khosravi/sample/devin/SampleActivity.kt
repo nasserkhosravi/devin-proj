@@ -1,5 +1,6 @@
 package com.khosravi.sample.devin
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,14 +16,17 @@ import com.google.android.material.snackbar.Snackbar
 import com.khosravi.devin.api.DevinLogger
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
 
-class SampleActivity : AppCompatActivity() {
+
+class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val binding = ActivitySampleBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
-        val devinTool : DevinTool?= DevinTool.getOrCreate(this)
+        val devinTool: DevinTool? = DevinTool.getOrCreate(this)
         val logger = devinTool?.logger
         if (logger == null) {
             Snackbar.make(binding.root, "Devin is not available", Snackbar.LENGTH_INDEFINITE).show()
@@ -38,10 +42,11 @@ class SampleActivity : AppCompatActivity() {
             throw IllegalStateException("My message from exception that appears in UncaughtExceptionHandler")
         }
 
-        //you can have you UncaughtExceptionHandler here without conflict to devin general exception handler.
-        Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
-            paramThread
-        }
+        //you can have your UncaughtExceptionHandler here without conflict to devin general exception handler.
+//        Thread.setDefaultUncaughtExceptionHandler { paramThread, paramThrowable ->
+//            paramThread
+//        }
+        //this line enable logging uncaught exceptions
         logger.generalUncaughtExceptionLogging(true)
 
         logger.logCallerFunc()
@@ -78,6 +83,10 @@ class SampleActivity : AppCompatActivity() {
                 e.printStackTrace()
                 Toast.makeText(this, "Exception, maybe not a valid URL", Toast.LENGTH_SHORT).show()
             }
+        }
+
+        binding.btnGoToHttpSample.setOnClickListener {
+            startActivity(Intent(this, OkHttpSampleActivity::class.java))
         }
     }
 

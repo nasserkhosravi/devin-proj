@@ -12,8 +12,10 @@
     <dimen name="textSizeH6">12sp</dimen>
     <dimen name="textSizeH7">11sp</dimen>
 
-    <attr name="spaceXSmall" />
+    <attr name="spaceSmall2" />
     <attr name="spaceSmall" />
+    <attr name="spaceLarge" />
+
     <attr name="borderSizeSmall" />
     <attr name="borderSizeSmall2" />
 </resources>

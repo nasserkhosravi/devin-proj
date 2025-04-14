@@ -6,4 +6,11 @@
     <item name="vh_item_header_log_date" type="id" />
     <item name="vh_item_client" type="id" />
     <item name="vh_item_image_log" type="id" />
+    <item name="vh_item_http_log" type="id" />
+    <item name="vh_item_http_detail_overview" type="id" />
+    <item name="vh_item_http_header_row" type="id" />
+    <item name="vh_item_http_detail_content" type="id" />
+    <item name="vh_item_http_detail_request" type="id" />
+    <item name="vh_item_http_detail_response" type="id" />
+    <item name="vh_item_http_body_row" type="id" />
 </resources>

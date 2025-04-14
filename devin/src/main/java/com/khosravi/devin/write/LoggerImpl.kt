@@ -2,7 +2,7 @@ package com.khosravi.devin.write
 
 import android.util.Log
 import com.khosravi.devin.api.DevinLogger
-import com.khosravi.devin.write.api.DevinLogFlagsApi
+import com.khosravi.devin.read.DevinLogFlagsApi
 import org.json.JSONObject
 
 internal class LoggerImpl(

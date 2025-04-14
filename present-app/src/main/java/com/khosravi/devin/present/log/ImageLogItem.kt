@@ -16,7 +16,7 @@ import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.humanReadableByteCountSI
 import com.khosravi.devin.present.setClipboard
 import com.khosravi.devin.present.tool.adapter.FastBindingItem
-import com.khosravi.devin.write.api.DevinImageFlagsApi
+import com.khosravi.devin.read.DevinImageFlagsApi
 import com.wcabral.spantastic.bold
 import com.wcabral.spantastic.foreground
 import com.wcabral.spantastic.spantastic

@@ -1,5 +1,6 @@
 package com.khosravi.devin.present.formatter
 
+import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.getPersianDateTimeFormatted
 import com.khosravi.devin.present.mapNotNull
@@ -33,12 +34,7 @@ internal object InterAppJsonConverter {
         logs: List<LogData>
     ): TextualReport {
         //TODO: Add version name and app name, with package id.
-        val root = JSONObject()
-            .put(KEY_AGENT, JSONObject().apply {
-                put(KEY_EXPORTER_ID, exporterId)
-                put(KEY_VERSION_NAME, versionName)
-            })
-
+        val root = rootApplicationJson(exporterId, versionName)
 
         val jsonGroupedLogs = JSONArray()
         logs.forEach {
@@ -54,8 +50,27 @@ internal object InterAppJsonConverter {
         }
         root.put(KEY_ROOT, jsonGroupedLogs)
 
-        return TextualReport("Devin_${Date()}.json", root.toString())
+        return TextualReport(createJsonFileName(), root.toString())
     }
+
+    fun exportHARContent(
+        harEntryJson: JSONObject,
+        exporterId: String = BuildConfig.APPLICATION_ID,
+        versionName: String = BuildConfig.VERSION_NAME,
+    ): String {
+        val root = rootApplicationJson(exporterId, versionName)
+        val jsonGroupedLogs = JSONObject().put("log", harEntryJson)
+        root.put("detail", jsonGroupedLogs)
+        return root.toString()
+    }
+
+    private fun rootApplicationJson(exporterId: String, versionName: String): JSONObject = JSONObject()
+        .put(KEY_AGENT, JSONObject().apply {
+            put(KEY_EXPORTER_ID, exporterId)
+            put(KEY_VERSION_NAME, versionName)
+        })
+
+    fun createJsonFileName() = "Devin_${Date()}.json"
 
     fun import(json: JSONObject): List<LogData> {
         return json.getJSONArray(KEY_ROOT).mapNotNull {
