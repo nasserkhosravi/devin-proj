@@ -63,11 +63,11 @@ class HttpDetailContentItemView(
         binding.run {
             rvContent.visibility = View.INVISIBLE
             cpiProgress.visibility = View.VISIBLE
-            ivSearchPrevious.setOnClickListener {
-                onSearchScrollerButtonClick(true, context)
-            }
-            ivSearchNext.setOnClickListener {
+            ivSearchDown.setOnClickListener {
                 onSearchScrollerButtonClick(false, context)
+            }
+            ivSearchUp.setOnClickListener {
+                onSearchScrollerButtonClick(true, context)
             }
             svText.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(query: String?): Boolean = false
@@ -88,11 +88,11 @@ class HttpDetailContentItemView(
                             scrollableIndices.addAll(listOfSearchQuery)
                         } else {
                             resetHighlight()
-                            makeToolbarSearchSummaryVisible(false)
+                            visibleSearchResultResult(false)
                         }
                     } else {
                         resetHighlight()
-                        makeToolbarSearchSummaryVisible(false)
+                        visibleSearchResultResult(false)
                     }
 
                     lifecycleScope.launch {
@@ -152,7 +152,6 @@ class HttpDetailContentItemView(
                 } else {
                     (abs(currentSearchScrollIndex - 1 + scrollableIndices.size) % scrollableIndices.size)
                 }
-
             scrollToSearchedItemPosition(scrollToIndex)
         }
     }
@@ -239,15 +238,15 @@ class HttpDetailContentItemView(
                 foregroundSpanColor,
             )
             updateToolbarText(scrollableIndices.size, positionOfScrollableIndices + 1)
-            makeToolbarSearchSummaryVisible()
+            visibleSearchResultResult()
 
-            rvContent.smoothScrollToPosition(scrollTo.indexBodyLine)
+            rvContent.scrollToPosition(scrollTo.indexBodyLine)
             currentSearchScrollIndex = positionOfScrollableIndices
         }
     }
 
-    private fun ItemHttpDetailContentBinding.makeToolbarSearchSummaryVisible(visible: Boolean = true) {
-        rootSearchSummary.isVisible = visible
+    private fun ItemHttpDetailContentBinding.visibleSearchResultResult(visible: Boolean = true) {
+        cvgSearchResult.isVisible = visible
     }
 
     private fun ItemHttpDetailContentBinding.updateToolbarText(
