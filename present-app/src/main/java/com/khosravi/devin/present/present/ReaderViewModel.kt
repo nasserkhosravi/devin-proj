@@ -6,6 +6,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.JsonObject
 import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.data.CacheRepository
@@ -34,6 +35,7 @@ import com.khosravi.devin.present.log.HttpLogItemData
 import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
+import com.khosravi.devin.present.optInt
 import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.read.DevinImageFlagsApi
 import com.khosravi.devin.read.DevinLogFlagsApi
@@ -49,7 +51,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 class ReaderViewModel constructor(
     application: Application,
@@ -74,7 +75,7 @@ class ReaderViewModel constructor(
         }.flowOn(Dispatchers.Default)
     }
 
-    fun convertImportedLogsToPresentableLogItems(content: JSONObject): Flow<List<LogItemData>> {
+    fun convertImportedLogsToPresentableLogItems(content: String): Flow<List<LogItemData>> {
         return flow {
             emit(InterAppJsonConverter.import(content))
         }.map {
@@ -101,9 +102,9 @@ class ReaderViewModel constructor(
         return result
     }
 
-    private fun getLogIdFromMetaJsonOrDefault(meta: String?): Int {
-        if (meta.isNullOrEmpty()) return Log.DEBUG
-        return JSONObject(meta).optInt(DevinLogFlagsApi.KEY_LOG_LEVEL, Log.DEBUG)
+    private fun getLogIdFromMetaJsonOrDefault(meta: JsonObject?): Int {
+        if (meta == null) return Log.DEBUG
+        return meta.optInt(DevinLogFlagsApi.KEY_LOG_LEVEL) ?: Log.DEBUG
     }
 
     private fun allLogsByCriteria(

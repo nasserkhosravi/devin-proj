@@ -10,7 +10,6 @@ import com.khosravi.devin.present.applyBundle
 import com.khosravi.devin.present.databinding.DialogLogDetailBinding
 import com.khosravi.devin.present.getSerializableSupport
 import com.khosravi.devin.present.log.TextLogItemData
-import com.khosravi.devin.present.toSafeJSONObject
 import com.khosravi.devin.present.tool.BaseDialog
 
 class LogDetailDialog : BaseDialog() {
@@ -35,7 +34,7 @@ class LogDetailDialog : BaseDialog() {
         val data = requireArguments().getSerializableSupport(KEY_DATA, TextLogItemData::class.java)!!
         binding.tvTag.text = data.tag
         binding.tvMessage.text = data.text
-        binding.tvMeta.text = data.meta?.toSafeJSONObject()?.toString(3)?.replace("\\/", "/") ?: ""
+        binding.tvMeta.text = data.meta?.toString()
     }
 
 

@@ -9,6 +9,8 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.DumbDate
@@ -150,4 +152,12 @@ fun Context.setClipboardSafe(text: String): Boolean {
 
 fun requestJsonFileUriToSave(fileName: String = InterAppJsonConverter.createJsonFileName()): Intent {
     return writeOrSaveFileIntent(fileName, MIME_APP_JSON)
+}
+
+
+fun JsonObject.opt(key: String): JsonElement? {
+    if (has(key)) {
+        return get(key)
+    }
+    return null
 }

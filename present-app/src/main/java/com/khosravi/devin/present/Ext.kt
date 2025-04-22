@@ -12,6 +12,7 @@ import android.os.Parcelable
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import com.google.gson.JsonObject
 import com.khosravi.devin.present.tool.NotEmptyString
 import org.json.JSONException
 import org.json.JSONObject
@@ -129,3 +130,20 @@ fun Intent.getLongExtraOrFail(name: String): Long {
         throw IllegalStateException()
     }
 }
+
+fun JsonObject.optInt(key: String): Int? {
+    return get(key)?.asInt
+}
+
+fun JsonObject.getInt(key: String): Int {
+    return get(key).asInt
+}
+
+fun JsonObject.getString(key: String): String {
+    return get(key).asString
+}
+
+fun JsonObject.optString(key: String): String? {
+    return get(key)?.asString
+}
+

@@ -25,6 +25,7 @@ import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
+import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.requestJsonFileUriToSave
 import com.khosravi.devin.present.sendOrShareFileIntent
@@ -44,6 +45,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import javax.inject.Inject
 
 
@@ -140,6 +142,10 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 }
             }
         }
+//        val data = """{"meta_type":"devin_http","log_level":4,"status_type":1,"url":"http://10.0.2.2/mysite/inner/location.php","HAR":{"log":{"version":"1.2","creator":{"name":"devin_write_okhttp","version":"1.0","comment":"{\"devin_write_version\":\"{3.1.1}\"}"},"entries":[{"startedDateTime":"2025-04-22T03:56:27.155Z","time":1017,"request":{"method":"POST","url":"http://10.0.2.2/mysite/inner/location.php","httpVersion":"http/1.1","cookies":[],"headers":[{"name":"Content-Type","value":"application/json"},{"name":"Authorization","value":"Bearer your_access_token"}],"queryString":[],"postData":{"mimeType":"application/json; charset=utf-8","params":[],"text":"{\"lat\":\"37.7749\",\"lng\":\"-122.4194\"}"},"headersSize":73,"bodySize":35},"response":{"status":200,"statusText":"OK","httpVersion":"http/1.1","cookies":[],"headers":[{"name":"Date","value":"Tue, 22 Apr 2025 03:56:27 GMT"},{"name":"Server","value":"Apache/2.4.53 (Unix) OpenSSL/1.1.1o PHP/7.4.29 mod_perl/2.0.12 Perl/v5.34.1"},{"name":"X-Powered-By","value":"PHP/7.4.29"},{"name":"X-Custom-Response-Header","value":"MyResponseValue"},{"name":"Content-Length","value":"104"},{"name":"Keep-Alive","value":"timeout=5, max=100"},{"name":"Connection","value":"Keep-Alive"},{"name":"Content-Type","value":"application/json"}],"content":{"size":0,"mimeType":"application/json","text":"{\"lat\":\"37.7749\",\"lng\":\"-122.4194\",\"timestamp\":\"2025-04-22 05:56:27\",\"message\":\"hel\",\"message2\":\"hello\"}"},"redirectURL":"","headersSize":300,"bodySize":104},"cache":{},"timings":{"send":0,"wait":1017,"receive":0},"serverIPAddress":"10.0.2.2","connection":"Keep-Alive"}]}}}"""
+//        JSONObject()
+//        val result = GsonConverter.instance.toJson(data)
+//        result
     }
 
     private fun onHttpLogItemClicked(item: HttpLogItemView) {
