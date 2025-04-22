@@ -12,10 +12,11 @@ class DevinTool private constructor(
     companion object {
 
 
-        fun create(context: Context, isEnable: Boolean? = null): DevinTool = DevinTool(null, null)
-
         fun get(): DevinTool? = null
 
         fun getOrCreate(context: Context): DevinTool? = null
+
+        fun getOrCreate(context: Context, isEnable: Boolean? = null): DevinTool = DevinTool(null, null)
+
     }
 }

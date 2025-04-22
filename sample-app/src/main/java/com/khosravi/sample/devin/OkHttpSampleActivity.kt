@@ -43,7 +43,9 @@ class OkHttpSampleActivity : AppCompatActivity(), CoroutineScope by MainScope() 
         super.onCreate(savedInstanceState)
         val binding = ActivityHttpSampleBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
-        val devinTool: DevinTool? = DevinTool.getOrCreate(this)
+
+        DevinTool.init(this)
+        val devinTool: DevinTool? = DevinTool.get()
         val logger = devinTool?.logger
         if (logger == null) {
             Snackbar.make(binding.root, "Devin is not available", Snackbar.LENGTH_INDEFINITE).show()
