@@ -59,7 +59,7 @@ internal class LoggerImpl(
     }
 
     private fun sendLog(tag: String?, value: String, meta: JSONObject? = null) {
-        logCore.sendLog(tag, value, meta)
+        logCore.sendLog(tag, value, meta.toString())
     }
 
     /**

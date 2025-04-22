@@ -8,7 +8,8 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import com.khosravi.devin.api.core.DevinLogCore
+import com.khosravi.devin.read.DevinPersistenceFlagsApi
+import com.khosravi.devin.write.api.DevinLogCore
 import com.khosravi.devin.write.room.ClientTable
 import com.khosravi.devin.write.room.DevinDB
 import com.khosravi.devin.write.room.LogTable
@@ -162,13 +163,19 @@ class DevinContentProvider : ContentProvider() {
 
         private val mUriOfAllLog: Uri by lazy { Uri.parse(URI_ALL_LOG) }
 
-        fun contentValueLog(appId: String, tag: String, value: String, meta: String?, date: Date = Date()) =
+        fun contentValueLog(
+            appId: String,
+            tag: String,
+            value: String,
+            meta: String?,
+            date: Date = Date()
+        ) =
             ContentValues().apply {
-                put(LogTable.COLUMN_TAG, tag)
-                put(LogTable.COLUMN_VALUE, value)
-                put(LogTable.COLUMN_DATE, date.time)
-                put(LogTable.COLUMN_META, meta)
-                put(LogTable.COLUMN_CLIENT_ID, appId)
+                put(DevinPersistenceFlagsApi.KEY_TAG, tag)
+                put(DevinPersistenceFlagsApi.KEY_VALUE, value)
+                put(DevinPersistenceFlagsApi.KEY_DATE, date.time)
+                put(DevinPersistenceFlagsApi.KEY_META, meta)
+                put(DevinPersistenceFlagsApi.KEY_CLIENT_ID, appId)
             }
 
         fun contentValuePutClient(packageId: String) = ContentValues().apply {

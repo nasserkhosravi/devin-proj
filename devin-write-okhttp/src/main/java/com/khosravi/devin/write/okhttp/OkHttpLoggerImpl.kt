@@ -2,9 +2,10 @@ package com.khosravi.devin.write.okhttp
 
 import android.net.Uri
 import android.util.Log
-import com.khosravi.devin.api.core.DevinLogCore
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.khosravi.devin.read.DevinLogFlagsApi
-import com.khosravi.devin.write.okhttp.har.HarConverter.toJson
+import com.khosravi.devin.write.api.DevinLogCore
 import com.khosravi.devin.write.okhttp.har.HarFile
 import com.khosravi.devin.write.okhttp.network.NetworkInterceptor
 import com.khosravi.devin.write.okhttp.network.entity.HttpTransactionStateModel
@@ -18,6 +19,8 @@ import org.json.JSONObject
 internal class OkHttpLoggerImpl internal constructor(
     private val logCore: DevinLogCore,
 ) : DevinOkHttpLogger {
+
+    private val gson: Gson = GsonBuilder().serializeNulls().create()
 
     private val isEnable: Boolean
         get() = logCore.isEnable()
@@ -63,11 +66,13 @@ internal class OkHttpLoggerImpl internal constructor(
         val meta = createMetaJson(Log.DEBUG)
             .put(DevinHttpFlagsApi.KEY_STATUS_TYPE, DevinHttpFlagsApi.Status.REQUEST)
             .put(DevinHttpFlagsApi.KEY_URL, model.url.toString())
-            .put(DevinHttpFlagsApi.KEY_HAR, har.toJson())
+            .put(DevinHttpFlagsApi.KEY_HAR, toJson(har))
 
         val value = "..... ${model.request.method} ${model.url.path}"
-        return logCore.sendLog(DevinHttpFlagsApi.LOG_TAG, value, meta)
+        val metaJsonString = useGsonToJsonString(meta)
+        return logCore.sendLog(DevinHttpFlagsApi.LOG_TAG, value, metaJsonString)
     }
+
 
     internal fun onResponseReceived(model: HttpTransactionStateModel.Completed, har: HarFile) {
         val responseCode = model.response.responseCode
@@ -77,9 +82,10 @@ internal class OkHttpLoggerImpl internal constructor(
         val meta = createMetaJson(logLevelFlag)
             .put(DevinHttpFlagsApi.KEY_STATUS_TYPE, DevinHttpFlagsApi.Status.HTTP_CODE)
             .put(DevinHttpFlagsApi.KEY_URL, model.url.toString())
-            .put(DevinHttpFlagsApi.KEY_HAR, har.toJson())
+            .put(DevinHttpFlagsApi.KEY_HAR, toJson(har))
+        val metaJsonString = useGsonToJsonString(meta)
 
-        val resultLog = logCore.updateLog(model.dbUri, DevinHttpFlagsApi.LOG_TAG, value, meta)
+        val resultLog = logCore.updateLog(model.dbUri, DevinHttpFlagsApi.LOG_TAG, value, metaJsonString)
         if (resultLog != DevinLogCore.FLAG_OPERATION_SUCCESS) {
             InternalLogger.debug("onResponseReceived updateLog failed:$resultLog")
         }
@@ -89,12 +95,12 @@ internal class OkHttpLoggerImpl internal constructor(
         val meta = createMetaJson(Log.ERROR, model.exception)
             .put(DevinHttpFlagsApi.KEY_STATUS_TYPE, DevinHttpFlagsApi.Status.NETWORK_ERROR)
             .put(DevinHttpFlagsApi.KEY_SUMMERY_OF_ERROR, model.exception.toString())
-            .put(DevinHttpFlagsApi.KEY_URL, model.url.toString().replace("\"", "\\\""))
-            .put(DevinHttpFlagsApi.KEY_HAR, har.toJson())
+            .put(DevinHttpFlagsApi.KEY_URL, model.url.toString())
+            .put(DevinHttpFlagsApi.KEY_HAR, toJson(har))
 
 
         val value = "!!!!!! ${model.request.method} ${model.url.path}"
-        val resultCode = logCore.updateLog(model.dbUri, DevinHttpFlagsApi.LOG_TAG, value, meta)
+        val resultCode = logCore.updateLog(model.dbUri, DevinHttpFlagsApi.LOG_TAG, value, meta.toString())
         if (resultCode != DevinLogCore.FLAG_OPERATION_SUCCESS) {
             InternalLogger.debug("onResponseFailed updateLog failed: $resultCode")
         }
@@ -110,5 +116,10 @@ internal class OkHttpLoggerImpl internal constructor(
         }
 
     //endregion
+
+    //use gson to convert meta to string, not JSONObject
+    private fun useGsonToJsonString(meta: JSONObject) = gson.toJsonTree(meta.toString()).asJsonObject.toString()
+
+    private fun toJson(model: HarFile): String = gson.toJson(model)
 
 }
