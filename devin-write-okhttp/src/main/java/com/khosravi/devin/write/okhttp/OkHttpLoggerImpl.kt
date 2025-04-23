@@ -64,7 +64,7 @@ internal class OkHttpLoggerImpl internal constructor(
 
         val value = "..... ${model.request.method} ${model.url.path}"
         val metaJsonString = meta.toString()
-        return logCore.sendLog(
+        return logCore.insertLog(
             DevinHttpFlagsApi.LOG_TAG, value, metaJsonString,
             content = metaJsonString.toByteArray(Charsets.UTF_8)
         )

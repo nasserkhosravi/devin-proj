@@ -11,7 +11,7 @@ internal class LogCore(
 
     private val appId = appContext.packageName
 
-    override fun sendLog(tag: String?, value: String, meta: String?, content: ByteArray?): Uri? {
+    override fun insertLog(tag: String?, value: String, meta: String?, content: ByteArray?): Uri? {
         if (isEnable.not()) return null
 
         val fTag = if (tag.isNullOrEmpty()) LoggerImpl.LOG_TAG_UNTAG else tag

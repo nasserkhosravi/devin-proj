@@ -9,7 +9,7 @@ interface DevinLogCore {
         const val FLAG_OPERATION_SUCCESS = 1
     }
 
-    fun sendLog(tag: String?, value: String, meta: String? = null, content: ByteArray? = null): Uri?
+    fun insertLog(tag: String?, value: String, meta: String? = null, content: ByteArray? = null): Uri?
 
     fun updateLog(itemId: Uri, tag: String?, value: String, meta: String? = null, content: ByteArray? = null): Int
 
