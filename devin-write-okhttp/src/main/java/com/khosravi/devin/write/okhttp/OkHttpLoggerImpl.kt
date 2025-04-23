@@ -10,7 +10,7 @@ import com.khosravi.devin.write.okhttp.network.NetworkInterceptor
 import com.khosravi.devin.write.okhttp.network.entity.HttpTransactionStateModel
 import com.khosravi.devin.write.okhttp.network.support.DefaultTextDecoder
 import com.khosravi.devin.write.okhttp.network.support.DevinOkHttpBodyDecoder
-import com.khosravi.devin.write.okhttp.network.support.JsonParser
+import com.khosravi.devin.write.okhttp.network.support.JsonConverter
 import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -106,7 +106,7 @@ internal class OkHttpLoggerImpl internal constructor(
         return createBaseMetaJson(logLevelFlag).apply {
             addProperty(DevinHttpFlagsApi.KEY_STATUS_TYPE, statusType)
             addProperty(DevinHttpFlagsApi.KEY_URL, model.url.toString())
-            add(DevinHttpFlagsApi.KEY_HAR, JsonParser.toJsonTree(har))
+            add(DevinHttpFlagsApi.KEY_HAR, JsonConverter.toJsonTree(har))
         }
     }
 

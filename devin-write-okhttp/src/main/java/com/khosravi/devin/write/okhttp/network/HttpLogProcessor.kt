@@ -4,7 +4,7 @@ import com.khosravi.devin.write.okhttp.InternalLogger
 import com.khosravi.devin.write.okhttp.network.entity.HttpRequestModel
 import com.khosravi.devin.write.okhttp.network.entity.HttpResponseModel
 import com.khosravi.devin.write.okhttp.network.support.DevinOkHttpBodyDecoder
-import com.khosravi.devin.write.okhttp.network.support.JsonParser
+import com.khosravi.devin.write.okhttp.network.support.JsonConverter
 import com.khosravi.devin.write.okhttp.network.support.contentType
 import com.khosravi.devin.write.okhttp.network.support.exclude
 import com.khosravi.devin.write.okhttp.network.support.hasBody
@@ -23,7 +23,7 @@ internal class HttpLogProcessor(
     internal fun processRequest(request: Request): HttpRequestModel {
         val requestDate = System.currentTimeMillis()
         val headers = request.headers.exclude(headersToRedact).toMyHttpHeaderModelList().let {
-            JsonParser.serialize(it)
+            JsonConverter.serialize(it)
         }
         val requestContentType = request.body?.contentType()?.toString()
         val requestPayloadSize = request.body?.contentLength()
@@ -90,12 +90,12 @@ internal class HttpLogProcessor(
         // includes headers added later in the chain
         requestModel.requestHeadersSize = response.request.headers.byteCount()
         requestModel.requestHeaders = response.request.headers.exclude(headersToRedact).toMyHttpHeaderModelList().let {
-            JsonParser.serialize(it)
+            JsonConverter.serialize(it)
         }
         requestModel.requestDate = response.sentRequestAtMillis
 
         val responseHeadersSize = response.headers.byteCount()
-        val responseHeaders = response.headers.exclude(headersToRedact).toMyHttpHeaderModelList().let { JsonParser.serialize(it) }
+        val responseHeaders = response.headers.exclude(headersToRedact).toMyHttpHeaderModelList().let { JsonConverter.serialize(it) }
         val responseDate = response.receivedResponseAtMillis
         val protocol = response.protocol.toString()
         val responseCode = response.code

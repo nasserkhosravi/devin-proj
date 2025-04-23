@@ -9,7 +9,7 @@ import com.khosravi.devin.write.okhttp.network.entity.HttpHeaderModel
 import org.json.JSONArray
 import org.json.JSONObject
 
-internal object JsonParser {
+internal object JsonConverter {
     private val instance: Gson by lazy { GsonBuilder().serializeNulls().create() }
 
     private const val KEY_HEADER_NAME = "name"

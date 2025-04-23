@@ -3,7 +3,7 @@ package com.khosravi.devin.write.okhttp.har
 import com.khosravi.devin.write.BuildConfig
 import com.khosravi.devin.write.okhttp.network.entity.HttpRequestModel
 import com.khosravi.devin.write.okhttp.network.entity.HttpResponseModel
-import com.khosravi.devin.write.okhttp.network.support.JsonParser
+import com.khosravi.devin.write.okhttp.network.support.JsonConverter
 import com.khosravi.devin.write.okhttp.network.support.getQueryParameters
 import org.json.JSONObject
 import java.net.URL
@@ -47,7 +47,7 @@ internal object HarMapper {
             val decodedBody = responseModel.decodedBody
             val fContent =
                 if (!decodedBody.isNullOrEmpty() && responseModel.responseContentType?.contains(CONTENT_TYPE_JSON) == true) {
-                    JsonParser.parseJsonStringSafe(decodedBody)
+                    JsonConverter.parseJsonStringSafe(decodedBody)
                 } else null
 
             // Capture Response Data
@@ -99,7 +99,7 @@ internal object HarMapper {
 
     private fun capturePostData(data: String?, contentType: String?): HarPostData {
         val fData: Any? = if (!data.isNullOrEmpty() && contentType?.contains("application/json") == true) {
-            JsonParser.parseJsonStringSafe(data)
+            JsonConverter.parseJsonStringSafe(data)
         } else {
             data
         }
