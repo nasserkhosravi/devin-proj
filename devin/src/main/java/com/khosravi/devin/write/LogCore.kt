@@ -11,24 +11,24 @@ internal class LogCore(
 
     private val appId = appContext.packageName
 
-    override fun sendLog(tag: String?, value: String, meta: String?): Uri? {
+    override fun sendLog(tag: String?, value: String, meta: String?, content: ByteArray?): Uri? {
         if (isEnable.not()) return null
 
         val fTag = if (tag.isNullOrEmpty()) LoggerImpl.LOG_TAG_UNTAG else tag
 
         return appContext.contentResolver.insert(
             DevinContentProvider.uriOfAllLog(),
-            DevinContentProvider.contentValueLog(appId, fTag, value, meta)
+            DevinContentProvider.contentValueLog(appId, fTag, value, meta, content)
         )
     }
 
-    override fun updateLog(itemId: Uri, tag: String?, value: String, meta: String?): Int {
+    override fun updateLog(itemId: Uri, tag: String?, value: String, meta: String?, content: ByteArray?): Int {
         if (isEnable.not()) return DevinLogCore.FLAG_OPERATION_FAILED
 
         val fTag = if (tag.isNullOrEmpty()) LoggerImpl.LOG_TAG_UNTAG else tag
         return appContext.contentResolver.update(
             itemId,
-            DevinContentProvider.contentValueLog(appId, fTag, value, meta), null, null
+            DevinContentProvider.contentValueLog(appId, fTag, value, meta, content), null, null
         )
     }
 
