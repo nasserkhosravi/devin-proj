@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.os.Build
 import androidx.core.database.getStringOrNull
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.khosravi.devin.present.data.http.HttpLogData
 import com.khosravi.devin.present.data.http.HttpLogDetailData
 import com.khosravi.devin.present.data.http.HttpLogOperationStatus
@@ -59,7 +60,7 @@ object ContentProviderLogsDao {
             value = cursor.getString(2),
             date = cursor.getLong(3),
             meta = cursor.getStringOrNull(4)?.let {
-                GsonConverter.instance.fromJson(it, JsonObject::class.java)
+                JsonParser.parseString(it).asJsonObject
             },
             packageId = cursor.getString(5),
         )
@@ -140,8 +141,9 @@ object ContentProviderLogsDao {
         val errorSummery: String?
             get() = metaJson.optString(DevinHttpFlagsApi.KEY_SUMMERY_OF_ERROR)
 
-        private fun harFile(): HarFile = metaJson.getAsJsonObject(DevinHttpFlagsApi.KEY_HAR).let {
-            GsonConverter.instance.fromJson(it, HarFile::class.java)
+        private fun harFile(): HarFile {
+            val harJson = metaJson.getAsJsonObject(DevinHttpFlagsApi.KEY_HAR)
+            return GsonConverter.instance.fromJson(harJson, HarFile::class.java)
         }
     }
 

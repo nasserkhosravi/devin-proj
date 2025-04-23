@@ -1,5 +1,6 @@
 package com.khosravi.devin.present.formatter
 
+import com.google.gson.JsonObject
 import com.khosravi.lib.har.HarRequest
 import okio.Buffer
 import okio.Source
@@ -16,9 +17,15 @@ object HttpCurlBuilder {
                 writeUtf8(" -H '${header.name}: ${header.value}'")
             }
 
-            request.postData?.let { postData ->
-                if (postData.text.isNotEmpty()) {
-                    writeUtf8(" --data-raw '${postData.text}'")
+            request.postData?.text?.let { textInstance ->
+                val fText = when (textInstance) {
+                    is JsonObject -> textInstance.toString()
+                    is String -> textInstance
+                    else -> textInstance.toString()
+                }
+
+                if (fText.isNotEmpty()) {
+                    writeUtf8(" --data-raw '${fText}'")
                 }
             }
         }

@@ -67,14 +67,14 @@ data class HttpLogDetailData(
     val requestHeaders: List<HarHeader>
         get() = harEntry.request.headers
     val requestBody: String?
-        get() = harEntry.request.postData?.text
+        get() = harEntry.request.postData?.text?.toString()
 
     val responseHeaders: List<HarHeader>
         get() = harEntry.response?.headers ?: emptyList()
     val requestBodyMimeType: String?
         get() = harEntry.request.postData?.mimeType
     val responseBody: String?
-        get() = harEntry.response?.content?.text
+        get() = harEntry.response?.content?.text?.toString()
     val responseBodyMimeType: String?
         get() = harEntry.response?.content?.mimeType
 

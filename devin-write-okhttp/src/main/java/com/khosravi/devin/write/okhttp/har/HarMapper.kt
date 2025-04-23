@@ -3,6 +3,7 @@ package com.khosravi.devin.write.okhttp.har
 import com.khosravi.devin.write.BuildConfig
 import com.khosravi.devin.write.okhttp.network.entity.HttpRequestModel
 import com.khosravi.devin.write.okhttp.network.entity.HttpResponseModel
+import com.khosravi.devin.write.okhttp.network.support.JsonParser
 import com.khosravi.devin.write.okhttp.network.support.getQueryParameters
 import org.json.JSONObject
 import java.net.URL
@@ -17,6 +18,8 @@ internal object HarMapper {
     private const val VALUE_CREATOR_NAME = "devin_write_okhttp"
     private const val META_KEY_DEVIN_WRITE_VERSION_NAME = "devin_write_version"
     private const val DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+
+    private const val CONTENT_TYPE_JSON = "application/json"
 
     fun from(url: URL, request: HttpRequestModel, responseModel: HttpResponseModel?, tookMSFallback: Long = -1): HarFile {
         val harRequest = HarRequest(
@@ -41,6 +44,11 @@ internal object HarMapper {
                     responseTlsVersion = responseModel.responseTlsVersion
                 )
             }
+            val decodedBody = responseModel.decodedBody
+            val fContent =
+                if (!decodedBody.isNullOrEmpty() && responseModel.responseContentType?.contains(CONTENT_TYPE_JSON) == true) {
+                    JsonParser.parseJsonStringSafe(decodedBody)
+                } else null
 
             // Capture Response Data
             HarResponse(
@@ -53,7 +61,7 @@ internal object HarMapper {
                     size = 0,
                     compression = null,
                     mimeType = responseModel.responseContentType ?: "",
-                    text = responseModel.decodedBody ?: "",
+                    text = fContent,
                     encoding = null,
                     comment = null
                 ),
@@ -90,10 +98,15 @@ internal object HarMapper {
     }
 
     private fun capturePostData(data: String?, contentType: String?): HarPostData {
+        val fData: Any? = if (!data.isNullOrEmpty() && contentType?.contains("application/json") == true) {
+            JsonParser.parseJsonStringSafe(data)
+        } else {
+            data
+        }
         return HarPostData(
             mimeType = contentType ?: "application/octet-stream",
             params = emptyList(),
-            text = data ?: "",
+            text = fData,
             comment = null
         )
     }

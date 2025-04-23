@@ -56,7 +56,6 @@ internal object InterAppJsonConverter {
             jsonGroupedLogs.add(item)
         }
         root.add(KEY_ROOT, jsonGroupedLogs)
-//        val resultString = JsonParser.parseString(root.toString()).asJsonObject.toString()
         val resultString = GsonConverter.instance.toJson(root)
         return TextualReport(createJsonFileName(), resultString)
     }

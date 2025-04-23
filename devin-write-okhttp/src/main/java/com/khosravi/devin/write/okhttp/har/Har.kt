@@ -110,7 +110,7 @@ internal data class HarQueryString(
 internal data class HarPostData(
     val mimeType: String,
     val params: List<HarPostParam>,
-    val text: String,
+    val text: Any?,
     val comment: String?,
 )
 
@@ -126,7 +126,7 @@ internal data class HarContent(
     val size: Int,
     val compression: Int?,
     val mimeType: String,
-    val text: String?,
+    val text: Any?,
     val encoding: String?,
     val comment: String?,
 )

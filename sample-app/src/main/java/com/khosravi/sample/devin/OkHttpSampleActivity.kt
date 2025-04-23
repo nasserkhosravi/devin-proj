@@ -152,7 +152,7 @@ class OkHttpSampleActivity : AppCompatActivity(), CoroutineScope by MainScope() 
         var body: RequestBody? = null
         postData?.let {
             val mediaType = postData.mimeType.toMediaType()
-            body = RequestBody.create(mediaType, postData.text)
+            body = RequestBody.create(mediaType, postData.text.toString())
             //TODO: what should we do with postData.params?
         }
         return Result.success(
