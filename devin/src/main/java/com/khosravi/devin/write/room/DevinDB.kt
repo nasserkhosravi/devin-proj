@@ -22,7 +22,6 @@ abstract class DevinDB : RoomDatabase() {
 
                 sInstance = Room.databaseBuilder(context.applicationContext, DevinDB::class.java, DB_NAME)
                     .fallbackToDestructiveMigration()
-                    .allowMainThreadQueries()
                     .build()
             }
             return sInstance!!
