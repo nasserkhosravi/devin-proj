@@ -8,13 +8,18 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import androidx.sqlite.db.SimpleSQLiteQuery
 import com.khosravi.devin.read.DevinPersistenceFlagsApi
+import com.khosravi.devin.read.DevinUriHelper
+import com.khosravi.devin.read.DevinUriHelper.getMsl1
 import com.khosravi.devin.write.api.DevinLogCore
 import com.khosravi.devin.write.room.ClientTable
 import com.khosravi.devin.write.room.DevinDB
 import com.khosravi.devin.write.room.LogTable
+import com.khosravi.devin.write.room.MetaIndexTable
 import java.io.File
 import java.util.Date
+
 
 class DevinContentProvider : ContentProvider() {
 
@@ -26,13 +31,23 @@ class DevinContentProvider : ContentProvider() {
         uri: Uri,
         projection: Array<out String>?,
         selection: String?,
-        selectionArgs: Array<out String>?,
+        selectionArgs: Array<String>?,
         sortOrder: String?,
     ): Cursor? {
         val context: Context = context ?: return null
         if (!uri.isDevinScope()) return null
-
         if (uri.isLogPath()) {
+            if (uri.isRawQuery()) {
+                val pageIndex = uri.getQueryParameter(DevinUriHelper.KEY_PAGE_INDEX)?.toIntOrNull()
+                val itemCount = uri.getQueryParameter(DevinUriHelper.KEY_ITEM_COUNT)?.toIntOrNull()
+                val query = buildSelectLogQuery(
+                    projection, selection, selectionArgs, sortOrder,
+                    pageIndex = pageIndex,
+                    itemCount = itemCount,
+                    msl1 = uri.getMsl1()
+                )
+                return DevinDB.getInstance(context).logDao().rawQuery(query)
+            }
 
             uri.getLogId()?.let {
                 try {
@@ -44,7 +59,7 @@ class DevinContentProvider : ContentProvider() {
             }
 
             val clientId = uri.getClientId() ?: return null
-            val tag = uri.getQueryParameter(KEY_LOG_TAG)
+            val tag = uri.getQueryParameter(LogTable.COLUMN_TAG)
             if (!tag.isNullOrEmpty()) {
                 return getLogListByTagAsCursor(context, clientId, tag)
             }
@@ -64,6 +79,50 @@ class DevinContentProvider : ContentProvider() {
 
     private fun getClientListCursor(context: Context) = DevinDB.getInstance(context).clientDao().getAllAsCursor()
 
+    private fun buildSelectLogQuery(
+        projection: Array<out String>?,
+        selection: String?,
+        selectionArgs: Array<String>?,
+        sortOrder: String?,
+        pageIndex: Int?,
+        itemCount: Int?,
+        msl1: DevinUriHelper.OpStringParam?
+    ): SimpleSQLiteQuery {
+        val columns = projection?.joinToString(",") ?: "*"
+        val fSelection = if (selection != null || msl1 != null) {
+            val msResult = msl1?.let {
+                """${LogTable.COLUMN_ID} IN (SELECT ${MetaIndexTable.COLUMN_ID} FROM ${MetaIndexTable.TABLE_NAME}
+    WHERE field = '${msl1.fName}' AND ${msl1.toSqlQuery()}
+    )"""
+            }
+            if (msResult != null) {
+                "WHERE $msResult AND ${selection ?: ""}"
+            } else {
+                selection?.let {
+                    "WHERE $it"
+                }
+
+            }
+        } else ""
+
+        val orderBy = sortOrder?.let {
+            "ORDER BY $it"
+        } ?: ""
+
+        val fCountQuery = if (itemCount != null) {
+            val offset = pageIndex?.let {
+                "OFFSET ${pageIndex * itemCount}"
+            } ?: ""
+
+            "LIMIT $itemCount $offset"
+        } else ""
+
+
+        val sql = """SELECT $columns FROM ${LogTable.TABLE_NAME} $fSelection $orderBy $fCountQuery"""
+        return SimpleSQLiteQuery(sql, selectionArgs)
+    }
+
+
     override fun getType(uri: Uri): String? {
         return null
     }
@@ -72,18 +131,24 @@ class DevinContentProvider : ContentProvider() {
         val context = context ?: return null
         if (!uri.isDevinScope()) return null
 
+        val instance = DevinDB.getInstance(context)
         if (uri.isLogPath()) {
             val logTable = values?.readAsNewLogTable() ?: return null
-            val id: Long = DevinDB.getInstance(context).logDao()
-                .insert(logTable)
+            val id: Long = instance.logDao().insert(logTable)
+            values.readMetaIndexPair()?.let {
+                val resultId = instance.metaIndexDao().put(MetaIndexTable(id, it.first, it.second))
+                Log.d(TAG, "put meta index: $resultId")
+            }
             writeContentFileIfItsPossible(values, context, logTable.clientId, logTable.id)
             context.contentResolver.notifyChange(uri, null)
-            return ContentUris.withAppendedId(uri, id)
+            return ContentUris.withAppendedId(uri, id).apply {
+                Log.d(TAG, "Insert log: $uri")
+            }
         }
 
         if (uri.isClientPath()) {
             val tableData = values?.readAsNewClientTable() ?: return null
-            val id = DevinDB.getInstance(context).clientDao()
+            val id = instance.clientDao()
                 .put(tableData)
             return ContentUris.withAppendedId(uri, id)
         }
@@ -108,7 +173,6 @@ class DevinContentProvider : ContentProvider() {
             }
             val contentFile = File(clientDir, "file_content")
             contentFile.writeBytesSafe(rawData)
-            ///data/user/0/com.khosravi.devin.present/files/com.khosravi.sample.devin/123/content
         }
     }
 
@@ -151,7 +215,6 @@ class DevinContentProvider : ContentProvider() {
         return FLAG_OPERATION_FAILED
     }
 
-
     private fun ContentValues.readAsNewLogTable(id: Long = 0): LogTable {
         return LogTable(
             id = id,
@@ -160,12 +223,28 @@ class DevinContentProvider : ContentProvider() {
             date = getAsLong(LogTable.COLUMN_DATE),
             meta = getAsString(LogTable.COLUMN_META),
             clientId = getAsString(LogTable.COLUMN_CLIENT_ID),
+            typeId = getAsString(LogTable.COLUMN_TYPE_ID)
         )
     }
 
     private fun ContentValues.readAsNewClientTable() = ClientTable(
         packageId = getAsString(ClientTable.COLUMN_PACKAGE_ID),
     )
+
+    private fun ContentValues.readMetaIndexPair(): Pair<String, String>? {
+        val name = getAsString(KEY_META_INDEX_NAME)
+        val value = getAsString(KEY_META_INDEX_VALUE)
+        if (name != null && value != null) return name to value
+        return null
+    }
+
+    private fun DevinUriHelper.OpStringParam.toSqlQuery(): String {
+        return when (this.op) {
+            is DevinUriHelper.OpStringValue.Contain -> "${MetaIndexTable.COLUMN_FIELD_VALUE} LIKE '%${op.value}%'"
+            is DevinUriHelper.OpStringValue.StartWith -> "${MetaIndexTable.COLUMN_FIELD_VALUE} = '${op.value}%'"
+            is DevinUriHelper.OpStringValue.EqualTo -> "${MetaIndexTable.COLUMN_FIELD_VALUE} = ${op.value}"
+        }
+    }
 
     companion object {
         private const val TAG = "DevinContentProvider"
@@ -174,61 +253,68 @@ class DevinContentProvider : ContentProvider() {
         private const val SCHEME = "content"
         private const val TABLE_LOG = LogTable.TABLE_NAME
         private const val TABLE_CLIENT = ClientTable.TABLE_NAME
-        private const val KEY_CLIENT_ID = "clientId"
-        private const val KEY_LOG_ID = "logId"
-        private const val KEY_LOG_TAG = "tag"
+        private const val KEY_CLIENT_ID = ClientTable.COLUMN_PACKAGE_ID
 
-        private const val URI_ALL_LOG = "$SCHEME://$AUTHORITY/$TABLE_LOG"
-        private const val URI_ROOT_CLIENT = "$SCHEME://$AUTHORITY/$TABLE_CLIENT"
+        internal const val URI_ALL_LOG = "$SCHEME://$AUTHORITY/$TABLE_LOG"
+        internal const val URI_ROOT_CLIENT = "$SCHEME://$AUTHORITY/$TABLE_CLIENT"
 
         private const val FLAG_OPERATION_FAILED = DevinLogCore.FLAG_OPERATION_FAILED
         private const val FLAG_OPERATION_SUCCESS = DevinLogCore.FLAG_OPERATION_SUCCESS
 
-        private val mUriOfAllLog: Uri by lazy { Uri.parse(URI_ALL_LOG) }
+        private const val KEY_META_INDEX_NAME = "metaIndexName"
+        private const val KEY_META_INDEX_VALUE = "metaIndexValue"
 
         fun contentValueLog(
             appId: String,
             tag: String,
             value: String,
+            typeId: String?,
             meta: String?,
             content: ByteArray?,
+            metaIndexPair: Pair<String, String>?,
             date: Date = Date()
         ) =
             ContentValues().apply {
                 put(DevinPersistenceFlagsApi.KEY_TAG, tag)
                 put(DevinPersistenceFlagsApi.KEY_VALUE, value)
+                put(DevinPersistenceFlagsApi.KEY_TYPE_ID, typeId)
                 put(DevinPersistenceFlagsApi.KEY_DATE, date.time)
                 put(DevinPersistenceFlagsApi.KEY_META, meta)
                 put(DevinPersistenceFlagsApi.KEY_CLIENT_ID, appId)
                 put(DevinPersistenceFlagsApi.KEY_CONTENT, content)
+                metaIndexPair?.let {
+                    put(KEY_META_INDEX_NAME, it.first)
+                    put(KEY_META_INDEX_VALUE, it.second)
+                }
             }
 
         fun contentValuePutClient(packageId: String) = ContentValues().apply {
             put(LogTable.COLUMN_CLIENT_ID, packageId)
         }
 
-        fun uriOfClient(): Uri = Uri.parse(URI_ROOT_CLIENT)
+        @Deprecated("", replaceWith = ReplaceWith("DevinUriHelper.getClientListUri()"))
+        fun uriOfClient(): Uri = DevinUriHelper.getClientListUri()
 
-        fun uriOfAllLog(): Uri = mUriOfAllLog
+        @Deprecated("", replaceWith = ReplaceWith("DevinUriHelper.getLogListUri()"))
+        fun uriOfAllLog(): Uri = DevinUriHelper.getLogListUri()
 
+        @Deprecated("", replaceWith = ReplaceWith("DevinUriHelper.getLogListUri(clientId, tag)"))
         fun uriOfAllLog(clientId: String, tag: String? = null): Uri {
-            val builder = Uri.parse(URI_ALL_LOG.plus("?$KEY_CLIENT_ID=$clientId")).buildUpon()
-            if (!tag.isNullOrEmpty()) {
-                builder.appendQueryParameter(KEY_LOG_TAG, tag)
-            }
-            return builder.build()
+            return DevinUriHelper.getLogListUri(clientId, tag, null)
         }
 
-        fun uriOfLog(id: Long): Uri = Uri.parse(URI_ALL_LOG.plus("?$KEY_LOG_ID=$id"))
+        @Deprecated("", replaceWith = ReplaceWith("DevinUriHelper.getLogUri(id)"))
+        fun uriOfLog(id: Long): Uri = DevinUriHelper.getLogUri(id)
 
     }
 
 
-    private fun Uri.getClientId(): String? = getQueryParameter(KEY_CLIENT_ID)
     private fun Uri.isDevinScope() = authority == AUTHORITY && scheme == SCHEME
     private fun Uri.isLogPath() = pathSegments.firstOrNull() == TABLE_LOG
     private fun Uri.isClientPath() = pathSegments.firstOrNull() == TABLE_CLIENT
-    private fun Uri.getLogId() = getQueryParameter(KEY_LOG_ID)
+    private fun Uri.getLogId() = getQueryParameter(LogTable.COLUMN_ID)
+    private fun Uri.getClientId(): String? = getQueryParameter(KEY_CLIENT_ID)
+    private fun Uri.isRawQuery(): Boolean = getBooleanQueryParameter(DevinUriHelper.KEY_IS_RAW_QUERY, false)
 
     private fun File.writeBytesSafe(byteArray: ByteArray) {
         try {
@@ -237,5 +323,5 @@ class DevinContentProvider : ContentProvider() {
             e.printStackTrace()
         }
     }
-
 }
+

@@ -25,8 +25,10 @@ internal class LogCore(
         val fTag = if (tag.isNullOrEmpty()) LoggerImpl.LOG_TAG_UNTAG else tag
 
         return appContext.contentResolver.insert(
-            DevinContentProvider.uriOfAllLog(),
-            DevinContentProvider.contentValueLog(appId, fTag, value, meta, content)
+            DevinUriHelper.getLogListUri(),
+            DevinContentProvider.contentValueLog(
+                appId, fTag, value, typeId, meta, content, metaIndex
+            )
         )
     }
 
@@ -36,7 +38,7 @@ internal class LogCore(
         val fTag = if (tag.isNullOrEmpty()) LoggerImpl.LOG_TAG_UNTAG else tag
         return appContext.contentResolver.update(
             itemId,
-            DevinContentProvider.contentValueLog(appId, fTag, value, meta, content), null, null
+            DevinContentProvider.contentValueLog(appId, fTag, value, typeId, meta, content, null), null, null
         )
     }
 

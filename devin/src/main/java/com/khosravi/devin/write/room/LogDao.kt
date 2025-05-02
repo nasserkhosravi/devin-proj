@@ -4,7 +4,9 @@ import android.database.Cursor
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 
 @Dao
 interface LogDao {
@@ -26,5 +28,8 @@ interface LogDao {
 
     @Query("DELETE FROM ${LogTable.TABLE_NAME} WHERE _clientId = :clientId")
     fun removeLogs(clientId: String)
+
+    @RawQuery
+    fun rawQuery(query: SupportSQLiteQuery): Cursor
 
 }
