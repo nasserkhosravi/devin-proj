@@ -2,6 +2,7 @@ package com.khosravi.devin.write.room
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Fts4
 import androidx.room.PrimaryKey
 import com.khosravi.devin.read.DevinPersistenceFlagsApi
 
@@ -14,12 +15,14 @@ class LogTable(
     val tag: String,
     @ColumnInfo(name = COLUMN_VALUE)
     val value: String,
-    @ColumnInfo(name = COLUMN_DATE)
+    @ColumnInfo(index = true, name = COLUMN_DATE)
     val date: Long,
     @ColumnInfo(name = COLUMN_META)
     val meta: String?,
     @ColumnInfo(index = true, name = COLUMN_CLIENT_ID)
     val clientId: String,
+    @ColumnInfo(index = true, name = COLUMN_TYPE_ID)
+    val typeId: String?
 ) {
 
     companion object {
@@ -31,5 +34,6 @@ class LogTable(
         const val COLUMN_DATE = DevinPersistenceFlagsApi.KEY_DATE
         const val COLUMN_META = DevinPersistenceFlagsApi.KEY_META
         const val COLUMN_CLIENT_ID = DevinPersistenceFlagsApi.KEY_CLIENT_ID
+        const val COLUMN_TYPE_ID = DevinPersistenceFlagsApi.KEY_TYPE_ID
     }
 }

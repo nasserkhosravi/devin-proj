@@ -5,11 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [LogTable::class, ClientTable::class], version = 2)
+@Database(entities = [LogTable::class, ClientTable::class, MetaIndexTable::class], version = 3)
 abstract class DevinDB : RoomDatabase() {
 
     abstract fun logDao(): LogDao
     abstract fun clientDao(): ClientDao
+    abstract fun metaIndexDao(): MetaIndexDao
 
     companion object {
         private var sInstance: DevinDB? = null
