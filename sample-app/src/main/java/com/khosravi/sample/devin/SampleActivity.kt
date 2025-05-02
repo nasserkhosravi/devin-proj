@@ -40,6 +40,12 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             sendLog(binding, logger)
         }
 
+        binding.btnSendLogs.setOnClickListener {
+            binding.edLogCount.text.toString().toIntOrNull()?.let {
+                sendLogs(binding, logger, it)
+            } ?: Toast.makeText(this, "Error in getting number", Toast.LENGTH_SHORT).show()
+        }
+
         binding.btnCauseCrash.setOnClickListener {
             throw IllegalStateException("My message from exception that appears in UncaughtExceptionHandler")
         }
@@ -93,13 +99,46 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun sendLog(binding: ActivitySampleBinding, logger: DevinLogger) {
+        getLogInputParams(binding) { tag, message, logLevel, throwable ->
+            sendLog(logger, tag, logLevel, message, throwable)
+        }
+    }
+
+
+    private fun sendLogs(binding: ActivitySampleBinding, logger: DevinLogger, count: Int) {
+        getLogInputParams(binding) { tag, message, logLevel, throwable ->
+            for (i in 0 until count) {
+                val fMessage = message.plus(" ${i + 1}")
+                sendLog(logger, tag, logLevel, fMessage, throwable)
+            }
+        }
+
+    }
+
+    private fun getLogInputParams(
+        binding: ActivitySampleBinding,
+        action: (
+            tag: String,
+            message: String,
+            logLevel: Int, throwable: Throwable?
+        ) -> Unit
+    ) {
         val tag = binding.edTag.text.toString()
         val message = binding.edMessage.text.toString()
         val selectedItemPosition = binding.spLogLevel.selectedItemPosition
         val throwable = if (binding.cbWithException.isChecked) Throwable("Something went wrong") else null
-
         //+3 to sync selectedItemPosition to [android.util.Log] levels
-        when (selectedItemPosition + 3) {
+        action(tag, message, selectedItemPosition + 3, throwable)
+    }
+
+    private fun sendLog(
+        logger: DevinLogger,
+        tag: String,
+        logLevel: Int,
+        message: String,
+        throwable: Throwable?
+    ) {
+        when (logLevel) {
             Log.DEBUG -> {
                 logger.debug(tag, message, null, throwable)
             }
