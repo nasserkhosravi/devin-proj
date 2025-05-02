@@ -8,6 +8,7 @@ import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.getPersianDateTimeFormatted
 import com.khosravi.devin.present.opt
+import com.khosravi.devin.present.optString
 import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.devin.write.room.LogTable
 import java.util.Date
@@ -26,6 +27,7 @@ internal object InterAppJsonConverter {
     private const val KEY_DATE = "date"
     private const val KEY_META = "meta"
     private const val KEY_CLIENT_ID = LogTable.COLUMN_CLIENT_ID
+    private const val KEY_TYPE_ID = LogTable.COLUMN_TYPE_ID
 
     //provided presenter data
     private const val KEY_JAVA_DATE = "java_date_time"
@@ -52,6 +54,9 @@ internal object InterAppJsonConverter {
                 add(KEY_PERSIAN_DATE_TIME, JsonPrimitive(getPersianDateTimeFormatted(it.date)))
                 add(KEY_META, it.meta)
                 add(KEY_CLIENT_ID, JsonPrimitive(it.packageId))
+                it.typeId?.let {
+                    add(KEY_TYPE_ID, JsonPrimitive(it))
+                }
             }
             jsonGroupedLogs.add(item)
         }
@@ -97,6 +102,7 @@ internal object InterAppJsonConverter {
                         json.get(KEY_DATE).asLong,
                         json.opt(KEY_META)?.asJsonObject,
                         json.opt(KEY_CLIENT_ID)?.asString ?: "No client id",
+                        json.optString(KEY_TYPE_ID)
                     )
                 } else null
             }

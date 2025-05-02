@@ -16,18 +16,16 @@ import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.data.UserSettings
+import com.khosravi.devin.present.data.model.GetLogsQueryModel
+import com.khosravi.devin.present.data.model.PageInfo
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.fileForCache
 import com.khosravi.devin.present.filter.CustomFilterItem
-import com.khosravi.devin.present.filter.FilterCriteria
 import com.khosravi.devin.present.filter.FilterItem
-import com.khosravi.devin.present.filter.HttpFilterItem
-import com.khosravi.devin.present.filter.ImageFilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
-import com.khosravi.devin.present.filter.createCriteria
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.log.DateLogItemData
@@ -39,12 +37,14 @@ import com.khosravi.devin.present.optInt
 import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.read.DevinImageFlagsApi
 import com.khosravi.devin.read.DevinLogFlagsApi
+import com.khosravi.devin.read.DevinUriHelper
+import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -59,18 +59,16 @@ class ReaderViewModel constructor(
     private val cacheRepo: CacheRepository,
     private val userSettings: UserSettings
 ) : AndroidViewModel(application) {
+    private var pageInfo = PageInfo()
+    private val _uiStateFlow = MutableStateFlow(ResultUiState(null, null, ResultUiState.UpdateInfo(), pageInfo = pageInfo))
+    private var lastDayHeaderDate: Int? = null
 
-    private val _uiStateFlow = MutableStateFlow(ResultUiState(null, null, ResultUiState.UpdateInfo()))
     val uiState = _uiStateFlow.asStateFlow()
+    val nextPageFlow = MutableSharedFlow<ResultNextPage>(replay = 1)
 
-    private fun getLogListOfFilter(filterItemId: String): Flow<List<LogItemData>> {
-        val filterCriteria = findFilterCriteria(filterItemId)
-
-        return collectLogs().map { logTables ->
-            val logs = allLogsByCriteria(filterCriteria, logTables)
-            val logsWithHeaders = addDateHeadersByDay(logs, calendar)
-            //TODO: temporary disabled, use a setting flag
-//            val countedItemsWithHeader = CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
+    private fun getLogListOfFilter(model: GetLogsQueryModel): Flow<List<LogItemData>> {
+        return collectLogs(model).map { logTables ->
+            val logsWithHeaders = addDateHeadersByDay(logTables, calendar)
             logsWithHeaders
         }.flowOn(Dispatchers.Default)
     }
@@ -90,16 +88,34 @@ class ReaderViewModel constructor(
         if (logs.isEmpty()) return emptyList()
         val result = ArrayList<LogItemData>()
         var nextDateDifferInDayCode: Int? = null
-        logs.forEach {
-            val presentDate = calendar.initIfNeed(DatePresent(it.date))
+        logs.forEach { data ->
+            val presentDate = calendar.initIfNeed(DatePresent(data.date))
             val candidateCode = presentDate.dumbed.hashCode()
             if (candidateCode != nextDateDifferInDayCode) {
                 nextDateDifferInDayCode = candidateCode
-                result.add(DateLogItemData(presentDate))
+                if (lastDayHeaderDate != candidateCode) {
+                    lastDayHeaderDate = candidateCode
+                    result.add(DateLogItemData(presentDate))
+                }
             }
-            result.add(TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta))
+            logItemDataFactory(data)?.let { result.add(it) }
         }
         return result
+    }
+
+    private fun logItemDataFactory(it: LogData): LogItemData? {
+        return when (it.typeId) {
+            DevinHttpFlagsApi.TYPE_ID -> {
+                ContentProviderLogsDao.mapToHttpModel(it)?.let { HttpLogItemData(it) }
+            }
+
+            DevinImageFlagsApi.TYPE_ID -> {
+                val imageData = ContentProviderLogsDao.mapToImageModel(it)
+                ImageLogItemData(imageData, DatePresent(it.date), TimePresent(it.date))
+            }
+
+            else -> TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta)
+        }
     }
 
     private fun getLogIdFromMetaJsonOrDefault(meta: JsonObject?): Int {
@@ -107,28 +123,23 @@ class ReaderViewModel constructor(
         return meta.optInt(DevinLogFlagsApi.KEY_LOG_LEVEL) ?: Log.DEBUG
     }
 
-    private fun allLogsByCriteria(
-        criteria: FilterCriteria?,
-        allLogs: List<LogData>
-    ) = (criteria?.let {
-        criteria.applyCriteria(allLogs)
-    } ?: allLogs)
-
     fun clearLogs() {
+        val customFilterList = _uiStateFlow.value.filterList?.filterIsInstance<CustomFilterItem>() ?: emptyList()
         viewModelScope.launch {
             flow {
-                ContentProviderLogsDao.clear(getContext(), clientId = getSelectedClientIdOrError())
+                ContentProviderLogsDao.clear(context = getContext(), clientId = getSelectedClientIdOrError())
                 emit(Unit)
             }.flowOn(Dispatchers.Default)
                 .collect {
-                    getAllFiltersFlow().collect { filterList ->
-                        _uiStateFlow.update {
-                            ResultUiState(
-                                filterList = filterList,
-                                logList = emptyList(),
-                                ResultUiState.UpdateInfo(filterIdSelection = DEFAULT_FILTER_ID)
-                            )
-                        }
+                    _uiStateFlow.update {
+                        ResultUiState(
+                            filterList = ArrayList<FilterItem>(customFilterList).apply {
+                                add(0, IndexFilterItem.instance)
+                            },
+                            logList = emptyList(),
+                            updateInfo = ResultUiState.UpdateInfo(filterIdSelection = IndexFilterItem.ID),
+                            pageInfo = pageInfo
+                        )
                     }
                 }
         }
@@ -139,56 +150,60 @@ class ReaderViewModel constructor(
             flow {
                 filterRepository.clearSync()
                 emit(Unit)
-            }.flowOn(Dispatchers.Default).collect {
-                refreshLogsAndFilters(DEFAULT_FILTER_ID, null).collect()
-            }
+            }.flatMapConcat {
+                resetPagination()
+                val query = buildQueryGet(IndexFilterItem.instance)
+                getLogListOfFilter(query)
+            }.flowOn(Dispatchers.Default)
+                .collect { result ->
+
+                    val newFilterItems = _uiStateFlow.value.filterList?.filter { it !is CustomFilterItem }
+                    _uiStateFlow.update {
+                        ResultUiState(
+                            filterList = newFilterItems,
+                            logList = result,
+                            ResultUiState.UpdateInfo(filterIdSelection = IndexFilterItem.ID, callbackId = null),
+                            pageInfo
+                        )
+                    }
+                }
         }
     }
 
-    fun getLogsInJson() = collectLogs().map {
+    fun getLogsInJson() = collectAllLogs().map {
         InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
-    }
+    }.flowOn(Dispatchers.Default)
 
-    fun getLogsInCachedJsonFile(): Flow<Uri> = collectLogs().map {
-        //TODO: make it sequence to avoid OOM.
-        InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
-    }.map { createCacheShareFile(it) }
+    fun getLogsInCachedJsonFile(): Flow<Uri> = collectAllLogs()
+        .map {
+            //TODO: make it sequence to avoid OOM.
+            InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
+        }
+        .map { createCacheShareFile(it) }
+        .flowOn(Dispatchers.Default)
 
     fun getClientList() = flow {
         val result = ClientContentProvider.getClientList(getContext())
         emit(result)
-    }.map {
+    }.flowOn(Dispatchers.Default).map {
         if (it.isEmpty()) ClientLoadedState.Zero
         else if (it.size == 1) ClientLoadedState.Single(it.first())
         else ClientLoadedState.Multi(it)
     }
 
-    private fun collectLogs() = flow {
+    private fun collectLogs(model: GetLogsQueryModel): Flow<List<LogData>> = flow {
         val result = getClientIdOrReturnEmptyList { clientId ->
-            ContentProviderLogsDao.getAll(getContext(), clientId)
+            ContentProviderLogsDao.queryLogList(getContext(), clientId, model)
         }
         emit(result)
     }
 
-    fun getDetermineImageLogs() = collectImageLogs().map { list ->
-        list.filter { it.status != DevinImageFlagsApi.Status.DOWNLOADING }
-            .map { ImageLogItemData(it, DatePresent(it.date), TimePresent(it.date)) }
-    }.flowOn(Dispatchers.Default)
-
-    private fun collectImageLogs() = flow {
+    private fun collectAllLogs() = flow {
         val result = getClientIdOrReturnEmptyList { clientId ->
-            ContentProviderLogsDao.getLogImages(getContext(), clientId)
+            ContentProviderLogsDao.queryLogList(getContext(), clientId, null)
         }
         emit(result)
     }
-
-    private fun collectHttpLogs() = flow {
-        val result = getClientIdOrReturnEmptyList { clientId ->
-            ContentProviderLogsDao.getHttpLogs(getContext(), clientId)
-        }.map { HttpLogItemData(it) }
-
-        emit(result)
-    }.flowOn(Dispatchers.Default)
 
     private fun <T> getClientIdOrReturnEmptyList(action: (clientId: String) -> List<T>): List<T> {
         val clientId = getSelectedClientId()
@@ -230,7 +245,8 @@ class ReaderViewModel constructor(
                         ResultUiState(
                             filterList = newFilterList,
                             logList = it.logList,
-                            ResultUiState.UpdateInfo(filterIdSelection = data.id, callbackId = callbackId)
+                            ResultUiState.UpdateInfo(filterIdSelection = data.id, callbackId = callbackId),
+                            pageInfo
                         )
                     }
                 }
@@ -239,71 +255,154 @@ class ReaderViewModel constructor(
 
     private fun getAllFiltersFlow(): Flow<List<FilterItem>> {
         return flow {
-            val result = provideAllFilters()
+            val allComputableFilters = provideAllComputableFilters()
+            val result = ArrayList<FilterItem>(allComputableFilters.size + 1).apply {
+                add(IndexFilterItem.instance)
+                addAll(allComputableFilters)
+            }
             emit(result)
         }.flowOn(Dispatchers.Default)
     }
 
-    private suspend fun provideAllFilters(): List<FilterItem> {
-        //TODO: maybe its better to make it sequence
-        val filterList = ArrayList<FilterItem>().apply {
-            //app defined filters
-            add(IndexFilterItem())
-            add(HttpFilterItem())
-            add(ImageFilterItem())
-
-            //other filters
-            addAll(provideAllComputableFilters())
-        }
-        return filterList
-    }
-
-    private suspend fun provideAllComputableFilters(): List<FilterItem> {
+    private fun provideAllComputableFilters(): List<FilterItem> {
         val userDefinedFilterList = filterRepository.getCustomFilterItemList(getSelectedClientIdOrError())
 
         val result = ArrayList<FilterItem>(userDefinedFilterList)
         if (userSettings.isEnableTagAsFilter) {
             //we consider developer tag as filter
-            collectLogs().firstOrNull()?.let {
-                val developerTags = filterRepository.createTagFilterList(it, userDefinedFilterList).values.toList()
-                    .filterDevinSpecialFilters()
-                result.addAll(developerTags)
-            }
+            val tags = ContentProviderLogsDao.getAllTags(getContext(), getSelectedClientIdOrError())
+            val developerFilters = filterRepository.createTagFilterList(tags, userDefinedFilterList).values.toList()
+            result.addAll(developerFilters)
+
         }
         return result
     }
 
-    private fun List<FilterItem>.filterDevinSpecialFilters() = filter {
-        !it.id.startsWith(VALUE_DEVIN_PREFIX_SPECIAL_FILTER)
+    fun search(filter: FilterItem, searchText: String?) {
+        resetPagination()
+        viewModelScope.launch {
+            val query = buildQueryGet(filter, pageInfo, searchText)
+            getLogListOfFilter(query)
+                .collect { logList ->
+                    checkPaginationFinish(logList)
+                    _uiStateFlow.update {
+                        ResultUiState(
+                            logList = logList, filterList = it.filterList,
+                            pageInfo = pageInfo,
+                            updateInfo = ResultUiState.UpdateInfo(filterIdSelection = null, skipFilterList = true)
+                        )
+                    }
+                }
+        }
     }
 
-    private fun findFilterCriteria(filterItemId: String): FilterCriteria? {
-        return _uiStateFlow.value.filterList?.find { it.id == filterItemId }?.let {
-            when (it) {
-                is CustomFilterItem -> it.criteria
-                is TagFilterItem -> it.createCriteria()
-                else -> null
+    fun nextPage(currentPageIndex: Int, filter: FilterItem, searchText: String?) {
+        if (pageInfo.isFinished) {
+            return
+        }
+        viewModelScope.launch {
+            pageInfo = pageInfo.copy(index = currentPageIndex + 1)
+            val model = buildQueryGet(filter, pageInfo, searchText)
+            getLogListOfFilter(model).collect {
+                checkPaginationFinish(it)
+                nextPageFlow.tryEmit(ResultNextPage(it, pageInfo))
             }
         }
     }
 
-    fun refreshOnlyLogs(
-        filterItemId: String,
-    ): Flow<Unit> {
-        return getLogs(filterItemId).map { logList ->
+    fun doFirstFetch() {
+        val queryModel = defaultFilterQuery()
+        viewModelScope.launch {
+            refreshLogsAndFilters(IndexFilterItem.ID, queryModel).collect {}
+        }
+    }
+
+    fun newFilterSelected(filter: FilterItem): Flow<Unit> {
+        resetPagination()
+        val model = buildQueryGet(filter)
+        return getLogListOfFilter(model).map { logList ->
+            checkPaginationFinish(logList)
             _uiStateFlow.update {
                 ResultUiState(
                     logList = logList, filterList = it.filterList,
-                    updateInfo = ResultUiState.UpdateInfo(filterIdSelection = filterItemId, skipFilterList = true)
+                    pageInfo = pageInfo,
+                    updateInfo = ResultUiState.UpdateInfo(filterIdSelection = filter.id, skipFilterList = true)
                 )
             }
         }
     }
 
-    fun refreshLogsAndFilters(filterItemId: String, callbackId: String? = null): Flow<Unit> {
-        return getLogs(filterItemId).zip(getAllFiltersFlow()) { a, b ->
+    fun refreshLogsAndFilters(filter: FilterItem, callbackId: String? = null) {
+        viewModelScope.launch {
+            resetPagination()
+            val queryModel = buildQueryGet(filter)
+            refreshLogsAndFilters(filter.id, queryModel, callbackId).collect {}
+        }
+    }
+
+    private fun checkPaginationFinish(it: List<LogItemData>) {
+        if (it.size < pageInfo.count) {
+            pageInfo.isFinished = true
+        }
+    }
+
+    private fun buildQueryGet(filter: FilterItem) = buildQueryGet(filter, pageInfo, null)
+
+    private fun buildQueryGet(
+        filter: FilterItem,
+        pageInfo: PageInfo,
+        searchText: String?
+    ): GetLogsQueryModel {
+        val tagOp: DevinUriHelper.OpStringValue?
+        val valueOp: DevinUriHelper.OpStringValue?
+        var metaParam: DevinUriHelper.OpStringParam? = null
+
+        when (filter) {
+            is TagFilterItem -> {
+                if (filter.tagValue.contains(DevinHttpFlagsApi.LOG_TAG)) {
+                    if (!searchText.isNullOrEmpty()) {
+                        metaParam = DevinUriHelper.OpStringParam("url", DevinUriHelper.OpStringValue.Contain(searchText))
+                    }
+                    tagOp = DevinUriHelper.OpStringValue.EqualTo(filter.id)
+                    valueOp = null
+                } else {
+                    //normal tag id
+                    tagOp = DevinUriHelper.OpStringValue.EqualTo(filter.id)
+                    valueOp = if (searchText.isNullOrEmpty()) {
+                        null
+                    } else DevinUriHelper.OpStringValue.Contain(searchText)
+
+                }
+            }
+
+            is CustomFilterItem -> {
+                tagOp = filter.criteria.tag?.let {
+                    DevinUriHelper.OpStringValue.Contain(it)
+                }
+                valueOp = filter.criteria.searchText?.let {
+                    DevinUriHelper.OpStringValue.Contain(it)
+                }
+            }
+
+            else -> {
+                tagOp = null
+                valueOp = null
+            }
+        }
+        return GetLogsQueryModel(null, tagOp, valueOp, metaParam = metaParam, page = pageInfo)
+    }
+
+    private fun defaultFilterQuery() = buildQueryGet(IndexFilterItem.instance)
+
+    private fun refreshLogsAndFilters(
+        filterItemId: String,
+        queryModel: GetLogsQueryModel,
+        callbackId: String? = null
+    ): Flow<Unit> {
+        return getLogListOfFilter(queryModel).zip(getAllFiltersFlow()) { a, b ->
             Pair(a, b)
         }.map { result ->
+            checkPaginationFinish(result.first)
             _uiStateFlow.update {
                 ResultUiState(
                     filterList = result.second,
@@ -311,43 +410,51 @@ class ReaderViewModel constructor(
                     ResultUiState.UpdateInfo(
                         filterIdSelection = filterItemId,
                         callbackId = callbackId,
-                    )
+                    ),
+                    pageInfo
                 )
             }
         }
     }
 
-    fun getHttpLogs(): Flow<List<HttpLogItemData>> = collectHttpLogs()
+    private fun resetPagination() {
+        pageInfo = PageInfo()
+    }
 
-    private fun getLogs(filterItemId: String) = when (filterItemId) {
-        ImageFilterItem.ID -> {
-            //TODO: its better solve image logs dynamically
-            getDetermineImageLogs()
+    fun getSearchItemHint(filter: FilterItem): String? {
+        //see [buildQueryGet] logics
+        if (filter is TagFilterItem) {
+            return if (filter.tagValue.contains(DevinHttpFlagsApi.LOG_TAG)) {
+                "Contain text in url"
+            } else {
+                "Contain text in log value"
+            }
         }
+        return null
 
-        HttpFilterItem.ID -> {
-            getHttpLogs()
-        }
-
-        else -> {
-            getLogListOfFilter(filterItemId)
-        }
     }
 
     data class ResultUiState(
         val filterList: List<FilterItem>?,
         val logList: List<LogItemData>?,
-        val updateInfo: UpdateInfo
+        val updateInfo: UpdateInfo,
+        val pageInfo: PageInfo
     ) {
-        class UpdateInfo(
+
+        data class UpdateInfo(
             val filterIdSelection: String? = null,
             val callbackId: String? = null,
             val skipFilterList: Boolean = false
         )
     }
 
+
+    data class ResultNextPage(
+        val logs: List<LogItemData>,
+        val pageInfo: PageInfo
+    )
+
     companion object {
-        private const val DEFAULT_FILTER_ID = IndexFilterItem.ID
-        private const val VALUE_DEVIN_PREFIX_SPECIAL_FILTER = "devin_"
+        private const val TAG = "ReaderViewModel"
     }
 }

@@ -13,4 +13,5 @@
     <item name="vh_item_http_detail_request" type="id" />
     <item name="vh_item_http_detail_response" type="id" />
     <item name="vh_item_http_body_row" type="id" />
+    <item name="vh_item_search" type="id" />
 </resources>

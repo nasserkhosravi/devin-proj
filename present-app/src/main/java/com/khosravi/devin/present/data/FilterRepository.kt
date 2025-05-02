@@ -27,7 +27,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
                 true
             } else savedClientId == clientId
         }.sortedBy { it.getLong(KEY_TIMESTAMP) }
-            .map { createCustomFilterItem(it) }
+            .mapNotNull { createCustomFilterItem(it) }
     }
 
     fun saveFilter(data: CustomFilterItem, clientId: String): Boolean {
@@ -39,7 +39,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
     }
 
     private fun CustomFilterItem.toJson(clientId: String): JSONObject {
-        val criteriaJson = criteria?.let {
+        val criteriaJson = criteria.let {
             JSONObject().put(KEY_CRITERIA_TAG, it.tag)
                 .put(KEY_CRITERIA_SEARCH_TEXT, it.searchText)
         }
@@ -62,13 +62,13 @@ class FilterRepository @Inject constructor(appContext: Context) {
         return pref.edit().clear().commit()
     }
 
-    private fun createCustomFilterItem(json: JSONObject): FilterItem {
+    private fun createCustomFilterItem(json: JSONObject): FilterItem? {
         val id = json.getString(KEY_ID)
         val criteria = json.optJSONObject(KEY_CRITERIA)?.let {
             CustomFilterCriteria(
                 it.optString(KEY_CRITERIA_TAG), it.optString(KEY_CRITERIA_SEARCH_TEXT)
             )
-        }
+        } ?: return null
 
         val uiJson = json.getJSONObject(KEY_UI)
         val present = FilterUiData(
@@ -81,16 +81,16 @@ class FilterRepository @Inject constructor(appContext: Context) {
         return CustomFilterItem(present, criteria)
     }
 
-    fun createTagFilterList(logs: List<LogData>, userFilterList: List<FilterItem>): HashMap<String, FilterItem> {
+    fun createTagFilterList(tags: Set<String>, userFilterList: List<FilterItem>): HashMap<String, FilterItem> {
         val userFilterListId = userFilterList.map { it.id }
         val result = HashMap<String, FilterItem>()
-        logs.filter {
-            val key = it.tag
+        tags.filter {
+            val key = it
             //first see if the tag exist in user tags
             //second see if the tag already added to [result] for removing duplicate tags
             !userFilterListId.contains(key) && !result.contains(key)
         }.forEach {
-            result[it.tag] = TagFilterItem(it.tag)
+            result[it] = TagFilterItem(it)
         }
         return result
     }

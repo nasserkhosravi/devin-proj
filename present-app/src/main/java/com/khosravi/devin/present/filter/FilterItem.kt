@@ -15,7 +15,7 @@ class FilterUiData(
 
 class CustomFilterItem(
     override val ui: FilterUiData,
-    val criteria: CustomFilterCriteria?
+    val criteria: CustomFilterCriteria
 ) : FilterItem {
     override val id: String
         get() = ui.title.value

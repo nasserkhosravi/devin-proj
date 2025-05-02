@@ -13,8 +13,8 @@
     <string name="title_of_share">Share file through</string>
     <string name="menu_create_filter">Create custom filter</string>
     <string name="field_title">title</string>
-    <string name="field_tag">tag</string>
-    <string name="field_search_text">search text</string>
+    <string name="field_filter_tag">contain tag</string>
+    <string name="field_search_text">search value</string>
     <string name="confirm">confirm</string>
     <string name="msg_title_required">tag or title required</string>
     <string name="choosing_intent_title">Choose a file</string>

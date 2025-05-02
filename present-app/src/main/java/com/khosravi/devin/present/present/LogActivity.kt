@@ -13,39 +13,43 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
+import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
-import com.khosravi.devin.present.filter.FilterUiData
-import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
-import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
+import com.khosravi.devin.present.present.itemview.SearchItemView
 import com.khosravi.devin.present.requestJsonFileUriToSave
 import com.khosravi.devin.present.sendOrShareFileIntent
-import com.khosravi.devin.present.setClipboard
+import com.khosravi.devin.present.setClipboardSafe
 import com.khosravi.devin.present.toItemViewHolder
+import com.khosravi.devin.present.uikit.component.EndlessScrollListener
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
 import com.khosravi.devin.present.writeTextToUri
 import com.mikepenz.fastadapter.FastAdapter
+import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
 import com.mikepenz.fastadapter.expandable.getExpandableExtension
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import javax.inject.Inject
 
 
@@ -73,6 +77,8 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private lateinit var importIntentLauncher: ActivityResultLauncher<Intent>
     private lateinit var exportIntentLauncher: ActivityResultLauncher<Intent>
+    private var endlessRecyclerOnScrollListener: EndlessScrollListener? = null
+    private val searchInput = MutableSharedFlow<String?>(replay = 0, extraBufferCapacity = 1)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
@@ -108,44 +114,100 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         //this call enable being expandable
         mainAdapter.getExpandableExtension()
 
-        doFirstFetch()
+        endlessRecyclerOnScrollListener = object : EndlessScrollListener(binding.rvMain.layoutManager as LinearLayoutManager) {
+            override fun onLoadMore(page: Int, totalItemsCount: Int) {
+                loadMoreItems(page)
+            }
+        }
+        binding.rvMain.addOnScrollListener(endlessRecyclerOnScrollListener!!)
+
+        viewModel.doFirstFetch()
 
         lifecycleScope.launch {
             viewModel.uiState.collect { result ->
                 if (_binding == null) {
                     return@collect
                 }
-                result.filterList?.let {
-                    if (!result.updateInfo.skipFilterList) {
-                        filterItemAdapter.set(it.map { FilterItemViewHolder(it.ui) })
-                    }
-                }
-                result.logList?.let {
-                    mainItemAdapter.set(it.toItemViewHolder(calendar))
-                }
-                getIndexOfFilter(result.updateInfo.filterIdSelection)?.let {
-                    filterItemAdapter.selectOrCheck(it)
-                }
-                binding.rvFilter.isEnabled = true
-                result.updateInfo.callbackId?.let {
-                    if (it == CALLBACK_ID_REFRESH) {
-                        if (result.logList?.isNotEmpty() == true) {
-                            Toast.makeText(this@LogActivity, getString(R.string.msg_refreshed), Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
-                        }
-                    } else if (it == CALLBACK_ID_ADD_FILTER) {
-                        result.filterList?.let {
-                            selectNewFilter(result.filterList.last().ui)
-                        }
-                    }
-                }
+                onUiStateFlowResult(result)
             }
+        }
+        setupNextPageFlow()
+        setupSearchFlow()
+    }
+
+    private fun setupNextPageFlow() {
+        lifecycleScope.launch {
+            viewModel.nextPageFlow.collect {
+                endlessRecyclerOnScrollListener?.setLoaded(it.pageInfo.isFinished)
+                mainItemAdapter.add(it.logs.toItemViewHolder(calendar))
+            }
+
+        }
+    }
+
+    private fun setupSearchFlow() {
+        lifecycleScope.launch {
+            searchInput.debounce(700)
+                .distinctUntilChanged()
+                .collect { searchText ->
+                    optCurrentFilterItem()?.let {
+                        viewModel.search(it, searchText)
+                    }
+                }
+        }
+    }
+
+    private fun onUiStateFlowResult(
+        result: ReaderViewModel.ResultUiState,
+    ) {
+        result.filterList?.let {
+            if (!result.updateInfo.skipFilterList) {
+                filterItemAdapter.set(it.map { item -> FilterItemViewHolder(item) })
+            }
+        }
+        result.logList?.let {
+            val itemCount = mainItemAdapter.adapterItemCount
+            if (getSearchItem() != null) {
+                mainItemAdapter.removeRange(1, itemCount - 1)
+                mainItemAdapter.add(it.toItemViewHolder(calendar))
+            } else {
+                mainItemAdapter.set(it.toItemViewHolder(calendar))
+            }
+        }
+        getIndexOfFilter(result.updateInfo.filterIdSelection)?.let {
+            filterItemAdapter.selectOrCheck(it)
+        }
+        binding.rvFilter.isEnabled = true
+        result.updateInfo.callbackId?.let {
+            when (it) {
+                CALLBACK_ID_REFRESH -> {
+                    if (result.logList?.isNotEmpty() == true) {
+                        Toast.makeText(this@LogActivity, getString(R.string.msg_refreshed), Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@LogActivity, getString(R.string.msg_empty_filter), Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                CALLBACK_ID_ADD_FILTER -> {
+                    result.filterList?.let {
+                        selectNewFilter(result.filterList.last())
+                    }
+                }
+
+                else -> {}
+            }
+        }
+        endlessRecyclerOnScrollListener?.setLoaded(result.pageInfo.isFinished)
+    }
+
+    private fun loadMoreItems(currentPage: Int) {
+        optCurrentFilterItem()?.let {
+            viewModel.nextPage(currentPage - 1, it, getSearchItem()?.searchText)
         }
     }
 
     private fun onHttpLogItemClicked(item: HttpLogItemView) {
-        HttpLogDetailActivity.startActivity(this,item.data.logId)
+        HttpLogDetailActivity.startActivity(this, item.data.logId)
     }
 
     private fun getIndexOfFilter(id: String?): Int? {
@@ -162,9 +224,9 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val uriData = returnedIntent?.data
         if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
             launch {
-                viewModel.getLogsInJson().flowOn(Dispatchers.Main).map {
+                viewModel.getLogsInJson().map {
                     contentResolver.writeTextToUri(uriData, it.content)
-                }.collect {
+                }.flowOn(Dispatchers.Main).collect {
                     val msg = if (it) getString(R.string.msg_export_done)
                     else getString(R.string.error_msg_something_went_wrong)
 
@@ -182,18 +244,51 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun doFirstFetch() {
+    private fun selectNewFilter(data: FilterItem) {
+        binding.rvFilter.isEnabled = false
+        //reset pagination, we are on a new filter
+        endlessRecyclerOnScrollListener?.resetState()
+
+        //update search view, we are on a new filter
+        val possibleSearchItem = getSearchItem()
+        updateSearchItem(data, possibleSearchItem)
+
         launch {
-            viewModel.refreshLogsAndFilters(IndexFilterItem.ID).collect()
+            viewModel.newFilterSelected(data).collect()
         }
     }
 
-    private fun selectNewFilter(data: FilterUiData) {
-        binding.rvFilter.isEnabled = false
-        launch {
-            viewModel.refreshOnlyLogs(data.id).collect()
+    private fun updateSearchItem(
+        filterItem: FilterItem,
+        possibleSearchItem: GenericItem?
+    ) {
+        val searchItemHint = viewModel.getSearchItemHint(filterItem)
+        val shouldShowSearch = searchItemHint != null
+        if (shouldShowSearch) {
+            //should show search
+            if (possibleSearchItem != null && possibleSearchItem is SearchItemView) {
+                //reset its view
+                val searchItem = possibleSearchItem
+                searchItem.searchHint = searchItemHint
+                searchItem.searchText = null
+                mainItemAdapter[0] = searchItem
+            } else {
+                mainItemAdapter.add(
+                    0,
+                    SearchItemView(searchHint = searchItemHint, onSearchTextChange = { searchText ->
+                        searchInput.tryEmit(searchText)
+                    })
+                )
+            }
+        } else {
+            mainItemAdapter.adapterItems.firstOrNull()?.let {
+                if (it is SearchItemView) {
+                    mainItemAdapter.remove(0)
+                }
+            }
         }
     }
+
 
     private fun clearAllLogs() {
         viewModel.clearLogs()
@@ -205,9 +300,11 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun shareJsonFile() {
         launch {
-            viewModel.getLogsInCachedJsonFile().map { sendOrShareFileIntent(it, MIME_APP_JSON) }.collect {
-                startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
-            }
+            viewModel.getLogsInCachedJsonFile().map { sendOrShareFileIntent(it, MIME_APP_JSON) }
+                .flowOn(Dispatchers.Main)
+                .collect {
+                    startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
+                }
         }
     }
 
@@ -224,8 +321,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_refresh -> {
-                val filterItemId = filterItemAdapter.optSelectedItem()?.data?.id ?: return true
-                refreshLogsAndFilters(filterItemId)
+                refreshLogsAndFilters()
                 true
             }
 
@@ -268,10 +364,10 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun refreshLogsAndFilters(filterItemId: String) {
+    private fun refreshLogsAndFilters() {
         binding.rvFilter.isEnabled = false
-        launch {
-            viewModel.refreshLogsAndFilters(filterItemId, callbackId = CALLBACK_ID_REFRESH).collect()
+        optCurrentFilterItem()?.let {
+            viewModel.refreshLogsAndFilters(it, callbackId = CALLBACK_ID_REFRESH)
         }
     }
 
@@ -282,10 +378,13 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun shareJsonInClipboard() {
         launch {
-            viewModel.getLogsInJson().collect {
-                application.setClipboard(it.content)
-                Toast.makeText(this@LogActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
-            }
+            viewModel.getLogsInJson()
+                .flowOn(Dispatchers.Main)
+                .collect {
+                    if (application.setClipboardSafe(it.content)) {
+                        Toast.makeText(this@LogActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
+                    }
+                }
         }
     }
 
@@ -303,9 +402,18 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         LogDetailDialog.newInstance(item.data).show(supportFragmentManager, LogDetailDialog.TAG)
     }
 
+    private fun optCurrentFilterItem(): FilterItem? = filterItemAdapter.optSelectedItem()?.data
+
+    private fun getSearchItem(): SearchItemView? {
+        val possibleSearchItem = mainItemAdapter.adapterItems.firstOrNull()
+        if (possibleSearchItem is SearchItemView) return possibleSearchItem
+        return null
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
+        endlessRecyclerOnScrollListener?.let { binding.rvMain.removeOnScrollListener(it) }
         mainAdapter.onClickListener = null
         filterAdapter.onClickListener = null
     }
@@ -313,6 +421,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     companion object {
         private const val CALLBACK_ID_REFRESH = "refresh"
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"
+        private const val TAG = "LogActivity"
     }
 
 }
