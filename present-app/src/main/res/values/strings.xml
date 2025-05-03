@@ -4,14 +4,14 @@
 
     <string name="menu_share_json">Share all logs in json</string>
     <string name="menu_import_json">Import logs as json</string>
-    <string name="menu_export_json">Export all logs as json</string>
-    <string name="menu_export_json_clipboard">Copy logs as json in clipboard</string>
+    <string name="menu_export_logs">Export logs</string>
     <string name="menu_clear_logs">Clear all logs</string>
     <string name="menu_clear_filters">Clear custom filters</string>
     <string name="msg_empty_filter">Empty filter</string>
     <string name="msg_refreshed">refreshed</string>
     <string name="title_of_share">Share file through</string>
     <string name="menu_create_filter">Create custom filter</string>
+    <string name="field_contain_value">Contain value</string>
     <string name="field_title">title</string>
     <string name="field_filter_tag">contain tag</string>
     <string name="field_search_text">search value</string>
@@ -58,5 +58,7 @@
     <string name="menu_http_copy_har">Copy HAR (whole log)</string>
     <string name="msg_response_null">Response is null</string>
     <string name="total_size">Total size</string>
+    <string name="btn_export_logs">Export Logs</string>
+    <string name="btn_share_logs">Share Logs</string>
 
 </resources>

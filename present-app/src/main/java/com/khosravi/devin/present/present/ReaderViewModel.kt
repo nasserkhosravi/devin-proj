@@ -7,7 +7,6 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.JsonObject
-import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.ClientContentProvider
@@ -27,7 +26,8 @@ import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
-import com.khosravi.devin.present.formatter.TextualReport
+import com.khosravi.devin.present.formatter.InterAppJsonConverter.createJsonFileName
+import com.khosravi.devin.present.formatter.InterAppJsonConverter.writeLogs
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HttpLogItemData
 import com.khosravi.devin.present.log.ImageLogItemData
@@ -46,11 +46,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
+import java.io.BufferedWriter
+import java.io.FileOutputStream
+import java.io.OutputStreamWriter
+import java.io.Writer
 
 class ReaderViewModel constructor(
     application: Application,
@@ -170,17 +175,56 @@ class ReaderViewModel constructor(
         }
     }
 
-    fun getLogsInJson() = collectAllLogs().map {
-        InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
-    }.flowOn(Dispatchers.Default)
 
-    fun getLogsInCachedJsonFile(): Flow<Uri> = collectAllLogs()
-        .map {
-            //TODO: make it sequence to avoid OOM.
-            InterAppJsonConverter.export(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME, it)
+    fun exportLogsToUri(fileUri: Uri, whitelistTags: List<String>): Flow<Boolean> {
+        return flowOf(fileUri).map {
+            val context = getContext()
+            val cursor = ContentProviderLogsDao.getAllLogsAsCursor(getContext(), getSelectedClientIdOrError())
+            if (cursor != null) {
+                context.contentResolver.openOutputStream(fileUri)?.use { outputStream ->
+                    val writer = OutputStreamWriter(outputStream, "UTF-8")
+                    writeLogs(writer, cursor, tagListToFilterFunction(whitelistTags))
+                } ?: run {
+                    cursor.close()
+                    throw IllegalStateException("Cannot open output stream for URI: $fileUri")
+                }
+                cursor.close()
+                true
+            } else false
+        }.flowOn(Dispatchers.Default)
+    }
+
+    private fun tagListToFilterFunction(tags: List<String>): ((LogData) -> Boolean)? {
+        if (tags.isEmpty()) return null
+        return { logData ->
+            tags.any { it.equals(logData.tag, true) }
         }
-        .map { createCacheShareFile(it) }
-        .flowOn(Dispatchers.Default)
+
+    }
+
+    fun shareAllLogs(whiteListTags: List<String>): Flow<Uri> {
+        val context = getContext()
+        return flow {
+            val file = context.fileForCache(createJsonFileName())
+            emit(file)
+        }.map { file ->
+            val cursor = ContentProviderLogsDao.getAllLogsAsCursor(getContext(), getSelectedClientIdOrError())
+            if (cursor != null) {
+                val writer: Writer = OutputStreamWriter(FileOutputStream(file), "UTF-8")
+                // Optional: buffer it for efficient writes
+                val bufferedWriter: Writer = BufferedWriter(writer)
+                writer.use {
+                    writeLogs(bufferedWriter, cursor,tagListToFilterFunction(whiteListTags) )
+                }
+                cursor.close()
+                file
+            } else {
+                throw IllegalStateException("Cannot get logs for sharing")
+            }
+        }.map { getContext().toUriByFileProvider(it) }
+            .flowOn(Dispatchers.IO)
+
+    }
 
     fun getClientList() = flow {
         val result = ClientContentProvider.getClientList(getContext())
@@ -198,13 +242,6 @@ class ReaderViewModel constructor(
         emit(result)
     }
 
-    private fun collectAllLogs() = flow {
-        val result = getClientIdOrReturnEmptyList { clientId ->
-            ContentProviderLogsDao.queryLogList(getContext(), clientId, null)
-        }
-        emit(result)
-    }
-
     private fun <T> getClientIdOrReturnEmptyList(action: (clientId: String) -> List<T>): List<T> {
         val clientId = getSelectedClientId()
         if (clientId.isNullOrEmpty()) return emptyList()
@@ -218,14 +255,6 @@ class ReaderViewModel constructor(
     fun setSelectedClientId(clientData: ClientData) = cacheRepo.setSelectedClientId(clientData)
 
     private fun getContext(): Context = getApplication<Application>().applicationContext
-
-    private fun createCacheShareFile(textualReport: TextualReport): Uri {
-        val file = getContext().fileForCache(textualReport.fileName)
-        file.printWriter().use { out ->
-            out.print(textualReport.content)
-        }
-        return getContext().toUriByFileProvider(file)
-    }
 
     fun addFilter(data: CustomFilterItem, callbackId: String? = null) {
         viewModelScope.launch {

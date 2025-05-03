@@ -29,6 +29,15 @@ object ContentProviderLogsDao {
 
     private const val TAG = "PresenterLogQuery"
 
+    fun getAllLogsAsCursor(context: Context, clientId: String): Cursor? {
+        val args = arrayListOf(clientId)
+        val where = "${LogTable.COLUMN_CLIENT_ID} = ?"
+        val uri = DevinUriHelper.getLogListUri(clientId, isRawQuery = true)
+        val cursor = context.contentResolver
+            .query(uri, null, where, args.toTypedArray(), "${LogTable.COLUMN_DATE} DESC") ?: return null
+        return cursor
+    }
+
     fun queryLogList(
         context: Context,
         clientId: String,
@@ -200,6 +209,10 @@ object ContentProviderLogsDao {
             packageId = cursor.getString(5),
             typeId = cursor.getStringOrNull(6)
         )
+    }
+
+    fun readLogModel(cursor: Cursor): LogData {
+        return cursor.asLogModel()
     }
 
     private fun OpStringValue.toSqlStringQueryPart(name: String): String {

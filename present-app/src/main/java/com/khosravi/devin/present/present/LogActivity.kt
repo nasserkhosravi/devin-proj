@@ -27,28 +27,21 @@ import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.itemview.SearchItemView
-import com.khosravi.devin.present.requestJsonFileUriToSave
-import com.khosravi.devin.present.sendOrShareFileIntent
-import com.khosravi.devin.present.setClipboardSafe
 import com.khosravi.devin.present.toItemViewHolder
 import com.khosravi.devin.present.uikit.component.EndlessScrollListener
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
-import com.khosravi.devin.present.writeTextToUri
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
 import com.mikepenz.fastadapter.expandable.getExpandableExtension
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -76,7 +69,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private lateinit var importIntentLauncher: ActivityResultLauncher<Intent>
-    private lateinit var exportIntentLauncher: ActivityResultLauncher<Intent>
     private var endlessRecyclerOnScrollListener: EndlessScrollListener? = null
     private val searchInput = MutableSharedFlow<String?>(replay = 0, extraBufferCapacity = 1)
 
@@ -89,9 +81,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         importIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             onImportFileIntentResult(it)
-        }
-        exportIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            onExportFileIntentResult(it)
         }
         binding.rvFilter.adapter = filterAdapter
         binding.rvMain.adapter = mainAdapter
@@ -219,23 +208,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun onExportFileIntentResult(activityResult: ActivityResult) {
-        val returnedIntent = activityResult.data
-        val uriData = returnedIntent?.data
-        if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
-            launch {
-                viewModel.getLogsInJson().map {
-                    contentResolver.writeTextToUri(uriData, it.content)
-                }.flowOn(Dispatchers.Main).collect {
-                    val msg = if (it) getString(R.string.msg_export_done)
-                    else getString(R.string.error_msg_something_went_wrong)
-
-                    Toast.makeText(this@LogActivity, msg, Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
     private fun onImportFileIntentResult(activityResult: ActivityResult) {
         val returnedIntent = activityResult.data
         val uriData = returnedIntent?.data
@@ -298,19 +270,10 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         viewModel.clearCustomFilters()
     }
 
-    private fun shareJsonFile() {
-        launch {
-            viewModel.getLogsInCachedJsonFile().map { sendOrShareFileIntent(it, MIME_APP_JSON) }
-                .flowOn(Dispatchers.Main)
-                .collect {
-                    startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
-                }
+    private fun exportLogs() {
+        LogExportDialog.newInstance().apply {
+            show(supportFragmentManager, LogExportDialog.TAG)
         }
-    }
-
-    private fun exportJsonFile() {
-        val intent = requestJsonFileUriToSave()
-        exportIntentLauncher.launch(Intent.createChooser(intent, getString(R.string.menu_export_json)))
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -340,23 +303,13 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 true
             }
 
-            R.id.action_export_json -> {
-                exportJsonFile()
-                true
-            }
-
-            R.id.action_share_json -> {
-                shareJsonFile()
+            R.id.action_export -> {
+                exportLogs()
                 true
             }
 
             R.id.action_create_filter -> {
                 createFilter()
-                true
-            }
-
-            R.id.action_export_json_in_clipboard -> {
-                shareJsonInClipboard()
                 true
             }
 
@@ -374,18 +327,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun importJsonFile() {
         val chooserIntent = Intent.createChooser(importFileIntent(MIME_APP_JSON), getString(R.string.choosing_intent_title))
         importIntentLauncher.launch(chooserIntent)
-    }
-
-    private fun shareJsonInClipboard() {
-        launch {
-            viewModel.getLogsInJson()
-                .flowOn(Dispatchers.Main)
-                .collect {
-                    if (application.setClipboardSafe(it.content)) {
-                        Toast.makeText(this@LogActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
-                    }
-                }
-        }
     }
 
     private fun createFilter() {
