@@ -24,7 +24,7 @@ class HarContentConverter : JsonDeserializer<HarContent>, JsonSerializer<HarCont
             if (mimeType.contains(MIME_APP_JSON)) {
                 jsonText
             } else {
-                jsonText.asString
+                jsonText.toString()
             }
         }
         return HarContent(
