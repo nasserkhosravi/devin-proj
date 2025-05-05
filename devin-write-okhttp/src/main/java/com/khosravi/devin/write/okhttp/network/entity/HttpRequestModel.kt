@@ -1,6 +1,6 @@
 package com.khosravi.devin.write.okhttp.network.entity
 
-import com.khosravi.devin.write.okhttp.network.support.JsonParser
+import com.khosravi.devin.write.okhttp.network.support.JsonConverter
 
 internal data class HttpRequestModel(
     val requestContentSize: Long?,
@@ -14,7 +14,7 @@ internal data class HttpRequestModel(
 ) {
 
     fun getHeadersAsList(): List<HttpHeaderModel> {
-        return requestHeaders.let { JsonParser.deserializeAsHttpHeaderList(it) }
+        return requestHeaders.let { JsonConverter.deserializeAsHttpHeaderList(it) }
     }
 
 

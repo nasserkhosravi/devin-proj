@@ -6,7 +6,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.util.Log
 import com.khosravi.devin.api.DevinImageLogger
-import com.khosravi.devin.api.core.DevinLogCore
+import com.khosravi.devin.write.api.DevinLogCore
 import com.khosravi.devin.api.DevinLogger
 import java.lang.Exception
 
@@ -58,21 +58,19 @@ class DevinTool private constructor(
             return devinTool
         }
 
-        fun create(context: Context, isEnable: Boolean? = null): DevinTool {
+        fun get(): DevinTool? = instance
+
+        fun init(context: Context) {
+            if (instance == null) {
+                init(context, null)
+            }
+        }
+
+        fun init(context: Context, isEnable: Boolean? = null) {
             if (instance == null) {
                 val fIsEnable: Boolean = isEnable ?: context.isDebuggable()
                 instance = create(context, fIsEnable)
             }
-            return instance!!
-        }
-
-        fun get(): DevinTool? = instance
-
-        fun getOrCreate(context: Context): DevinTool? {
-            if (instance == null) {
-                instance = create(context)
-            }
-            return instance
         }
 
         private fun Context.isDebuggable() = ((applicationContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0)

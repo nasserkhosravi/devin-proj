@@ -350,7 +350,7 @@ object HarConverter {
             params = optJSONArray("params")?.let { jsonArray ->
                 List(jsonArray.length()) { i -> jsonArray.getJSONObject(i).toHarPostParam() }
             } ?: emptyList(),
-            text = optString("text", ""),
+            text = opt("text"),
             comment = optStringOrNull("comment")
         )
     }
@@ -370,7 +370,7 @@ object HarConverter {
             size = getInt("size"),
             compression = optIntOrNull("compression"),
             mimeType = getString("mimeType"),
-            text = optStringOrNull("text"),
+            text = opt("text"),
             encoding = optStringOrNull("encoding"),
             comment = optStringOrNull("comment")
         )

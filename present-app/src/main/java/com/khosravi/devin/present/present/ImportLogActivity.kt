@@ -80,7 +80,7 @@ class ImportLogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
 
         launch {
-            viewModel.convertImportedLogsToPresentableLogItems(JSONObject(content))
+            viewModel.convertImportedLogsToPresentableLogItems(content)
                 .map { it.toItemViewHolder(calendar) }
                 .flowOn(Dispatchers.Main)
                 .collect { itemAdapter.set(it) }

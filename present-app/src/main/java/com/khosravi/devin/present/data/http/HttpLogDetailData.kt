@@ -1,13 +1,13 @@
 package com.khosravi.devin.present.data.http
 
+import com.google.gson.JsonObject
 import com.khosravi.devin.present.present.http.HttpFormatUtils
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DateTimePresent
-import com.khosravi.lib.har.HarConverter.toJson
+import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.lib.har.HarEntry
 import com.khosravi.lib.har.HarHeader
 import com.khosravi.lib.har.HarRequest
-import org.json.JSONObject
 import java.time.Instant
 
 data class HttpLogDetailData(
@@ -21,7 +21,10 @@ data class HttpLogDetailData(
     private val requestDateTimePresent by lazy { DateTimePresent(startedAtMills) }
     private val responseDateTimePresent by lazy { DateTimePresent(startedAtMills + harEntry.time) }
 
-    fun getHarEntryAsJson(): JSONObject = harEntry.toJson()
+    fun getHarEntryAsGsonJsonObject(): JsonObject {
+        val json = GsonConverter.instance.toJsonTree(harEntry)
+        return json.asJsonObject
+    }
 
     val isSsl: Boolean
         get() = urlQuery.isSsl
@@ -64,14 +67,14 @@ data class HttpLogDetailData(
     val requestHeaders: List<HarHeader>
         get() = harEntry.request.headers
     val requestBody: String?
-        get() = harEntry.request.postData?.text
+        get() = harEntry.request.postData?.text?.toString()
 
     val responseHeaders: List<HarHeader>
         get() = harEntry.response?.headers ?: emptyList()
     val requestBodyMimeType: String?
         get() = harEntry.request.postData?.mimeType
     val responseBody: String?
-        get() = harEntry.response?.content?.text
+        get() = harEntry.response?.content?.text?.toString()
     val responseBodyMimeType: String?
         get() = harEntry.response?.content?.mimeType
 

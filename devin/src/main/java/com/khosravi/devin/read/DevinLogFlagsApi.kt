@@ -11,7 +11,6 @@ object DevinLogFlagsApi {
 
     const val KEY_LOG_LEVEL = "log_level"
     const val KEY_META_TYPE = "meta_type"
-    const val KEY_LOG_PAYLOAD = "payload"
     const val KEY_LOG_THROWABLE = "throwable"
 
 }

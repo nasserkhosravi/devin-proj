@@ -21,7 +21,7 @@ internal class DevinExceptionLogger(
 
     fun exceptionHappened(e: Throwable) {
         val meta = LoggerImpl.createMetaForComponentLogs(VALUE_ERROR_REPORT_META_TYPE, Log.ERROR, null, e)
-        logCore.sendLog(ERROR_REPORT_TAG, "General uncaught exception", meta)
+        logCore.insertLog(ERROR_REPORT_TAG, "General uncaught exception", meta.toString())
     }
 
     companion object {

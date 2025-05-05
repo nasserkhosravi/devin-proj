@@ -201,7 +201,7 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
 
     private fun toSharableContent(data: HttpLogDetailData): Flow<String> {
         return flow {
-            val harEntryJson = data.getHarEntryAsJson()
+            val harEntryJson = data.getHarEntryAsGsonJsonObject()
             emit(InterAppJsonConverter.exportHARContent(harEntryJson))
         }.flowOn(Dispatchers.Default)
     }

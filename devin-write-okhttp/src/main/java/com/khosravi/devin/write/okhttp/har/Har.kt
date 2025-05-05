@@ -1,11 +1,11 @@
 package com.khosravi.devin.write.okhttp.har
 
 // https://github.com/ahmadnassri/har-spec/blob/master/versions/1.2.md#log
-data class HarFile(
+internal data class HarFile(
     val log: HarLog,
 )
 
-data class HarLog(
+internal data class HarLog(
     val version: String,
     val creator: HarCreator,
     val browser: HarBrowser?,
@@ -18,19 +18,19 @@ data class HarLog(
     }
 }
 
-data class HarCreator(
+internal data class HarCreator(
     val name: String,
     val version: String,
     val comment: String?,
 )
 
-data class HarBrowser(
+internal data class HarBrowser(
     val name: String,
     val version: String,
     val comment: String?,
 )
 
-data class HarPage(
+internal data class HarPage(
     val startedDateTime: String,
     val id: String,
     val title: String,
@@ -38,13 +38,13 @@ data class HarPage(
     val comment: String?,
 )
 
-data class HarPageTimings(
+internal data class HarPageTimings(
     val onContentLoad: Long = -1,
     val onLoad: Long = -1,
     val comment: String?,
 )
 
-data class HarEntry(
+internal data class HarEntry(
     val pageref: String?,
     val startedDateTime: String,
     val time: Long = 0,//elapsed time
@@ -58,7 +58,7 @@ data class HarEntry(
     val custom: HarEntryCustom?,
 )
 
-data class HarRequest(
+internal data class HarRequest(
     val method: String,
     val url: String,
     val httpVersion: String,
@@ -71,7 +71,7 @@ data class HarRequest(
     val comment: String?,
 )
 
-data class HarResponse(
+internal data class HarResponse(
     val status: Int,
     val statusText: String,
     val httpVersion: String,
@@ -84,7 +84,7 @@ data class HarResponse(
     val comment: String?,
 )
 
-data class HarCookie(
+internal data class HarCookie(
     val name: String,
     val value: String,
     val path: String?,
@@ -95,26 +95,26 @@ data class HarCookie(
     val comment: String?,
 )
 
-data class HarHeader(
+internal data class HarHeader(
     val name: String,
     val value: String,
     val comment: String?,
 )
 
-data class HarQueryString(
+internal data class HarQueryString(
     val name: String,
     val value: String,
     val comment: String?,
 )
 
-data class HarPostData(
+internal data class HarPostData(
     val mimeType: String,
     val params: List<HarPostParam>,
-    val text: String,
+    val text: Any?,
     val comment: String?,
 )
 
-data class HarPostParam(
+internal data class HarPostParam(
     val name: String,
     val value: String?,
     val fileName: String?,
@@ -122,22 +122,22 @@ data class HarPostParam(
     val comment: String?,
 )
 
-data class HarContent(
+internal data class HarContent(
     val size: Int,
     val compression: Int?,
     val mimeType: String,
-    val text: String?,
+    val text: Any?,
     val encoding: String?,
     val comment: String?,
 )
 
-data class HarCache(
+internal data class HarCache(
     val beforeRequest: HarCacheEntry?,
     val afterRequest: HarCacheEntry?,
     val comment: String?,
 )
 
-data class HarCacheEntry(
+internal data class HarCacheEntry(
     val expires: String?,
     val lastAccess: String?,
     val eTag: String?,
@@ -145,7 +145,7 @@ data class HarCacheEntry(
     val comment: String?,
 )
 
-data class HarTimings(
+internal data class HarTimings(
     val blocked: Long?,
     val dns: Long?,
     val connect: Long?,
@@ -156,7 +156,7 @@ data class HarTimings(
     val comment: String?,
 )
 
-data class HarEntryCustom(
+internal data class HarEntryCustom(
     val responseCipherSuite: String?,
     val responseTlsVersion: String?,
 )

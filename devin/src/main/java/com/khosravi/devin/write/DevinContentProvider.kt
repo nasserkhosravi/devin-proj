@@ -8,10 +8,12 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import com.khosravi.devin.api.core.DevinLogCore
+import com.khosravi.devin.read.DevinPersistenceFlagsApi
+import com.khosravi.devin.write.api.DevinLogCore
 import com.khosravi.devin.write.room.ClientTable
 import com.khosravi.devin.write.room.DevinDB
 import com.khosravi.devin.write.room.LogTable
+import java.io.File
 import java.util.Date
 
 class DevinContentProvider : ContentProvider() {
@@ -74,6 +76,7 @@ class DevinContentProvider : ContentProvider() {
             val logTable = values?.readAsNewLogTable() ?: return null
             val id: Long = DevinDB.getInstance(context).logDao()
                 .insert(logTable)
+            writeContentFileIfItsPossible(values, context, logTable.clientId, logTable.id)
             context.contentResolver.notifyChange(uri, null)
             return ContentUris.withAppendedId(uri, id)
         }
@@ -87,6 +90,26 @@ class DevinContentProvider : ContentProvider() {
 
         Log.d(TAG, "unknown insert() operation with uri: $uri, values:$values")
         return null
+    }
+
+    private fun writeContentFileIfItsPossible(
+        values: ContentValues,
+        context: Context,
+        clientId: String,
+        logId: Long,
+    ) {
+        val rawData = values.getAsByteArray(DevinPersistenceFlagsApi.KEY_CONTENT)
+        if (rawData != null) {
+            val clientDir = File(context.filesDir, "$clientId/$logId")
+            if (!clientDir.exists()) {
+                if (!clientDir.mkdir()) {
+                    Log.e(TAG, "Error in creating content dir")
+                }
+            }
+            val contentFile = File(clientDir, "file_content")
+            contentFile.writeBytesSafe(rawData)
+            ///data/user/0/com.khosravi.devin.present/files/com.khosravi.sample.devin/123/content
+        }
     }
 
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int {
@@ -121,6 +144,7 @@ class DevinContentProvider : ContentProvider() {
             val logTable = values?.readAsNewLogTable(id) ?: return FLAG_OPERATION_FAILED
             DevinDB.getInstance(context).logDao()
                 .update(logTable)
+            writeContentFileIfItsPossible(values, context, logTable.clientId, logTable.id)
             context.contentResolver.notifyChange(uri, null)
             return FLAG_OPERATION_SUCCESS
         }
@@ -162,13 +186,21 @@ class DevinContentProvider : ContentProvider() {
 
         private val mUriOfAllLog: Uri by lazy { Uri.parse(URI_ALL_LOG) }
 
-        fun contentValueLog(appId: String, tag: String, value: String, meta: String?, date: Date = Date()) =
+        fun contentValueLog(
+            appId: String,
+            tag: String,
+            value: String,
+            meta: String?,
+            content: ByteArray?,
+            date: Date = Date()
+        ) =
             ContentValues().apply {
-                put(LogTable.COLUMN_TAG, tag)
-                put(LogTable.COLUMN_VALUE, value)
-                put(LogTable.COLUMN_DATE, date.time)
-                put(LogTable.COLUMN_META, meta)
-                put(LogTable.COLUMN_CLIENT_ID, appId)
+                put(DevinPersistenceFlagsApi.KEY_TAG, tag)
+                put(DevinPersistenceFlagsApi.KEY_VALUE, value)
+                put(DevinPersistenceFlagsApi.KEY_DATE, date.time)
+                put(DevinPersistenceFlagsApi.KEY_META, meta)
+                put(DevinPersistenceFlagsApi.KEY_CLIENT_ID, appId)
+                put(DevinPersistenceFlagsApi.KEY_CONTENT, content)
             }
 
         fun contentValuePutClient(packageId: String) = ContentValues().apply {
@@ -197,5 +229,13 @@ class DevinContentProvider : ContentProvider() {
     private fun Uri.isLogPath() = pathSegments.firstOrNull() == TABLE_LOG
     private fun Uri.isClientPath() = pathSegments.firstOrNull() == TABLE_CLIENT
     private fun Uri.getLogId() = getQueryParameter(KEY_LOG_ID)
+
+    private fun File.writeBytesSafe(byteArray: ByteArray) {
+        try {
+            writeBytes(byteArray)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
 }

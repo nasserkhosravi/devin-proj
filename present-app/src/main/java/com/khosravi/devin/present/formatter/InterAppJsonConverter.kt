@@ -1,12 +1,15 @@
 package com.khosravi.devin.present.formatter
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.getPersianDateTimeFormatted
-import com.khosravi.devin.present.mapNotNull
+import com.khosravi.devin.present.opt
+import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.devin.write.room.LogTable
-import org.json.JSONArray
-import org.json.JSONObject
 import java.util.Date
 
 internal object InterAppJsonConverter {
@@ -28,61 +31,79 @@ internal object InterAppJsonConverter {
     private const val KEY_JAVA_DATE = "java_date_time"
     private const val KEY_PERSIAN_DATE_TIME = "persian_date_time"
 
+    //HAR
+    private const val KEY_ROOT_HAR = "HAR"
+
+
     fun export(
         exporterId: String,
         versionName: String,
         logs: List<LogData>
     ): TextualReport {
-        //TODO: Add version name and app name, with package id.
-        val root = rootApplicationJson(exporterId, versionName)
+        val root = rootApplicationGsonJson(exporterId, versionName)
 
-        val jsonGroupedLogs = JSONArray()
+        val jsonGroupedLogs = JsonArray()
         logs.forEach {
-            val item = JSONObject()
-                .put(KEY_TAG, it.tag)
-                .put(KEY_MESSAGE, it.value)
-                .put(KEY_DATE, it.date)
-                .put(KEY_JAVA_DATE, Date(it.date).toString())
-                .put(KEY_PERSIAN_DATE_TIME, getPersianDateTimeFormatted(it.date))
-                .put(KEY_META, it.meta)
-                .put(KEY_CLIENT_ID, it.packageId)
-            jsonGroupedLogs.put(item)
+            val item = JsonObject().apply {
+                add(KEY_TAG, JsonPrimitive(it.tag))
+                add(KEY_MESSAGE, JsonPrimitive(it.value))
+                add(KEY_DATE, JsonPrimitive(it.date))
+                add(KEY_JAVA_DATE, JsonPrimitive(Date(it.date).toString()))
+                add(KEY_PERSIAN_DATE_TIME, JsonPrimitive(getPersianDateTimeFormatted(it.date)))
+                add(KEY_META, it.meta)
+                add(KEY_CLIENT_ID, JsonPrimitive(it.packageId))
+            }
+            jsonGroupedLogs.add(item)
         }
-        root.put(KEY_ROOT, jsonGroupedLogs)
-
-        return TextualReport(createJsonFileName(), root.toString())
+        root.add(KEY_ROOT, jsonGroupedLogs)
+        val resultString = GsonConverter.instance.toJson(root)
+        return TextualReport(createJsonFileName(), resultString)
     }
 
     fun exportHARContent(
-        harEntryJson: JSONObject,
+        harEntryJson: JsonObject,
         exporterId: String = BuildConfig.APPLICATION_ID,
         versionName: String = BuildConfig.VERSION_NAME,
     ): String {
-        val root = rootApplicationJson(exporterId, versionName)
-        val jsonGroupedLogs = JSONObject().put("log", harEntryJson)
-        root.put("detail", jsonGroupedLogs)
+        val root = rootApplicationGsonJson(exporterId, versionName)
+        val harJson = try {
+            GsonConverter.instance.toJsonTree(harEntryJson)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+        root.add(KEY_ROOT_HAR, harJson)
         return root.toString()
     }
 
-    private fun rootApplicationJson(exporterId: String, versionName: String): JSONObject = JSONObject()
-        .put(KEY_AGENT, JSONObject().apply {
-            put(KEY_EXPORTER_ID, exporterId)
-            put(KEY_VERSION_NAME, versionName)
-        })
+    private fun rootApplicationGsonJson(exporterId: String, versionName: String): JsonObject {
+        return JsonObject().apply {
+            add(KEY_AGENT, JsonObject().apply {
+                add(KEY_EXPORTER_ID, JsonPrimitive(exporterId))
+                add(KEY_VERSION_NAME, JsonPrimitive(versionName))
+            })
+        }
+    }
 
     fun createJsonFileName() = "Devin_${Date()}.json"
 
-    fun import(json: JSONObject): List<LogData> {
-        return json.getJSONArray(KEY_ROOT).mapNotNull {
-            if (it is JSONObject) {
-                LogData(
-                    0L, it.getString(KEY_TAG),
-                    it.getString(KEY_MESSAGE),
-                    it.getLong(KEY_DATE),
-                    it.getString(KEY_META),
-                    it.optString(KEY_CLIENT_ID) ?: "No client id",
-                )
-            } else null
+    fun import(jsonString: String): List<LogData> {
+        return try {
+            JsonParser.parseString(jsonString).asJsonObject.getAsJsonArray(KEY_ROOT).mapNotNull { json ->
+                if (json is JsonObject) {
+                    LogData(
+                        0L, json.get(KEY_TAG).asString,
+                        json.get(KEY_MESSAGE).asString,
+                        json.get(KEY_DATE).asLong,
+                        json.opt(KEY_META)?.asJsonObject,
+                        json.opt(KEY_CLIENT_ID)?.asString ?: "No client id",
+                    )
+                } else null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return emptyList()
         }
+
     }
 }

@@ -25,6 +25,7 @@ import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
+import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.requestJsonFileUriToSave
 import com.khosravi.devin.present.sendOrShareFileIntent
@@ -44,6 +45,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import javax.inject.Inject
 
 

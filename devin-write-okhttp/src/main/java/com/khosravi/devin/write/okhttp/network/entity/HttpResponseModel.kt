@@ -1,6 +1,6 @@
 package com.khosravi.devin.write.okhttp.network.entity
 
-import com.khosravi.devin.write.okhttp.network.support.JsonParser
+import com.khosravi.devin.write.okhttp.network.support.JsonConverter
 import java.net.HttpURLConnection
 
 internal data class HttpResponseModel(
@@ -21,7 +21,7 @@ internal data class HttpResponseModel(
     val serverIpAddress: String?,
 ) {
     fun getHeadersAsList(): List<HttpHeaderModel> {
-        return responseHeaders.let { JsonParser.deserializeAsHttpHeaderList(it) } ?: emptyList()
+        return responseHeaders.let { JsonConverter.deserializeAsHttpHeaderList(it) } ?: emptyList()
     }
 
     fun getPreferredResponseBodySize(): Long {

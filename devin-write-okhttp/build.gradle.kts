@@ -12,7 +12,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        minSdk = 21
+        minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -35,7 +35,9 @@ android {
 
 dependencies {
 
-    implementation("io.github.nasserkhosravi.devin:write:3.2.0-SNAPSHOT")
+    implementation(project(mapOf("path" to ":devin")))
+    implementation ("com.google.code.gson:gson:2.11.0")
+
     api("com.squareup.okhttp3:okhttp:4.9.3")
 
 }
