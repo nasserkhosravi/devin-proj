@@ -1,4 +1,4 @@
-package com.khosravi.devin.write.okhttp.support
+package com.khosravi.devin.write.okhttp.network.support
 
 import okhttp3.Request
 import okhttp3.Response

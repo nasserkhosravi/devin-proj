@@ -13,7 +13,7 @@ android {
         versionCode = 3
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    val versionName = "\"3.0.0\""
+    val versionName = "\"4.0.0\""
 
     buildTypes {
         debug {

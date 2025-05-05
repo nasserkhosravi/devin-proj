@@ -1,5 +1,20 @@
 # Changelog
 
+## 4.0.0
+**Write module:**
+- DevinTool now accept a boolean to config being enable.
+- Add metaIndex table to presenter be able to query something in meta.
+- Break-change, DevinTool getOrCreate function changed to init() and get()
+- Add type id
+
+**Presenter module:**
+- Support ok-http special logs.
+- Add search and pagination feature
+- Create a dedicated exporter dialog.
+- All query on DB should be done on main thread.
+- Able to run custom queries 
+
+
 ## 3.1.1
 **Write module:**
 - Fix devin content provider visibility access that may cause some problem in android 30 and above   

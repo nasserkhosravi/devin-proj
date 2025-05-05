@@ -1,7 +1,7 @@
 package com.khosravi.devin.write.okhttp
 
 import com.khosravi.devin.write.DevinTool
-import com.khosravi.devin.write.okhttp.support.DevinOkHttpBodyDecoder
+import com.khosravi.devin.write.okhttp.network.support.DevinOkHttpBodyDecoder
 import okhttp3.Interceptor
 import okhttp3.Request
 
