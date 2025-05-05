@@ -18,6 +18,7 @@ import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.getParcelableExtraSupport
+import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.ReplicatedTextLogItem
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.readTextAndClose
@@ -32,7 +33,6 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import javax.inject.Inject
 
 class ImportLogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
@@ -73,10 +73,20 @@ class ImportLogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         binding.rvMain.adapter = adapter
         adapter.getExpandableExtension()
         adapter.onClickListener = { _, _, item, _ ->
-            if (item is TextLogItem) {
-                onTextLogItemClick(item)
-                true
-            } else false
+            when (item) {
+                is TextLogItem -> {
+                    onTextLogItemClick(item)
+                    true
+
+                }
+
+                is HttpLogItemView -> {
+                    //TODO: support http detail viewer
+                    Toast.makeText(this,"Coming soon",Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
         }
 
         launch {

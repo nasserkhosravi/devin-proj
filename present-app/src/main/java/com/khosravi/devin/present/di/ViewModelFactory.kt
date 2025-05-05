@@ -19,13 +19,13 @@ class ViewModelFactory(
     private val userSettings: UserSettings,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        when {
+        return when {
             modelClass.isAssignableFrom(ReaderViewModel::class.java) -> {
-                return ReaderViewModel(application, calendar, filterRepository, cacheRepo, userSettings) as T
+                ReaderViewModel(application, calendar, filterRepository, cacheRepo, userSettings) as T
             }
 
             modelClass.isAssignableFrom(HttpDetailViewModel::class.java) -> {
-                return HttpDetailViewModel(application) as T
+                HttpDetailViewModel(application, cacheRepo) as T
             }
 
             else -> throw IllegalArgumentException()

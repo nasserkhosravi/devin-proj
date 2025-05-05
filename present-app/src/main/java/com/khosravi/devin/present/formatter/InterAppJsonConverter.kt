@@ -1,15 +1,21 @@
 package com.khosravi.devin.present.formatter
 
+import android.database.Cursor
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
+import com.google.gson.stream.JsonWriter
 import com.khosravi.devin.present.BuildConfig
+import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.getPersianDateTimeFormatted
 import com.khosravi.devin.present.opt
+import com.khosravi.devin.present.optString
 import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.devin.write.room.LogTable
+import java.io.Writer
 import java.util.Date
 
 internal object InterAppJsonConverter {
@@ -20,12 +26,14 @@ internal object InterAppJsonConverter {
     private const val KEY_VERSION_NAME = "version_name"
 
     //log data
-    private const val KEY_ROOT = "logs"
-    private const val KEY_TAG = "tag"
-    private const val KEY_MESSAGE = "message"
-    private const val KEY_DATE = "date"
-    private const val KEY_META = "meta"
+    private const val KEY_LOGS_ROOT = "logs"
+    private const val KEY_ID = LogTable.COLUMN_ID
+    private const val KEY_TAG = LogTable.COLUMN_TAG
+    private const val KEY_VALUE = LogTable.COLUMN_VALUE
+    private const val KEY_DATE = LogTable.COLUMN_DATE
+    private const val KEY_META = LogTable.COLUMN_META
     private const val KEY_CLIENT_ID = LogTable.COLUMN_CLIENT_ID
+    private const val KEY_TYPE_ID = LogTable.COLUMN_TYPE_ID
 
     //provided presenter data
     private const val KEY_JAVA_DATE = "java_date_time"
@@ -33,32 +41,6 @@ internal object InterAppJsonConverter {
 
     //HAR
     private const val KEY_ROOT_HAR = "HAR"
-
-
-    fun export(
-        exporterId: String,
-        versionName: String,
-        logs: List<LogData>
-    ): TextualReport {
-        val root = rootApplicationGsonJson(exporterId, versionName)
-
-        val jsonGroupedLogs = JsonArray()
-        logs.forEach {
-            val item = JsonObject().apply {
-                add(KEY_TAG, JsonPrimitive(it.tag))
-                add(KEY_MESSAGE, JsonPrimitive(it.value))
-                add(KEY_DATE, JsonPrimitive(it.date))
-                add(KEY_JAVA_DATE, JsonPrimitive(Date(it.date).toString()))
-                add(KEY_PERSIAN_DATE_TIME, JsonPrimitive(getPersianDateTimeFormatted(it.date)))
-                add(KEY_META, it.meta)
-                add(KEY_CLIENT_ID, JsonPrimitive(it.packageId))
-            }
-            jsonGroupedLogs.add(item)
-        }
-        root.add(KEY_ROOT, jsonGroupedLogs)
-        val resultString = GsonConverter.instance.toJson(root)
-        return TextualReport(createJsonFileName(), resultString)
-    }
 
     fun exportHARContent(
         harEntryJson: JsonObject,
@@ -76,6 +58,69 @@ internal object InterAppJsonConverter {
         return root.toString()
     }
 
+    fun import(jsonString: String): List<LogData> {
+        return try {
+            JsonParser.parseString(jsonString).asJsonObject.getAsJsonArray(KEY_LOGS_ROOT).mapNotNull { json ->
+                if (json is JsonObject) {
+                    LogData(
+                        0L, json.get(KEY_TAG).asString,
+                        json.get(KEY_VALUE).asString,
+                        json.get(KEY_DATE).asLong,
+                        json.opt(KEY_META)?.asJsonObject,
+                        json.opt(KEY_CLIENT_ID)?.asString ?: "No client id",
+                        json.optString(KEY_TYPE_ID)
+                    )
+                } else null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return emptyList()
+        }
+
+    }
+
+    fun writeLogs(oWriter: Writer, cursor: Cursor, logFilter: ((LogData) -> Boolean)?) {
+        val writer = JsonWriter(oWriter)
+        val rootObj = rootApplicationGsonJson(BuildConfig.APPLICATION_ID, BuildConfig.VERSION_NAME)
+
+        cursor.use {
+            writer.beginObject() // root {
+
+            val agentElement = rootObj.getAsJsonObject(KEY_AGENT)
+            writer.name(KEY_AGENT)
+            writeJsonElement(writer, agentElement)
+
+            writer.name(KEY_LOGS_ROOT)
+            writer.beginArray()
+
+            while (cursor.moveToNext()) {
+                val logModel = ContentProviderLogsDao.readLogModel(cursor)
+                if (logFilter != null) {
+                    if (!logFilter.invoke(logModel)) continue
+                }
+                writer.beginObject()
+                writer.name(KEY_ID).value(logModel.id)
+                writer.name(KEY_TAG).value(logModel.tag)
+                writer.name(KEY_VALUE).value(logModel.value)
+                writer.name(KEY_DATE).value(logModel.date)
+                writer.name(KEY_TYPE_ID).value(logModel.typeId)
+                writer.name(KEY_CLIENT_ID).value(logModel.packageId)
+                logModel.meta?.let {
+                    writer.name(KEY_META)
+                    writeJsonElement(writer, it)
+                }
+                writer.name(KEY_JAVA_DATE).value(Date(logModel.date).toString())
+                writer.name(KEY_PERSIAN_DATE_TIME).value(getPersianDateTimeFormatted(logModel.date))
+                writer.endObject()
+            }
+
+            writer.endArray() // end JSON array
+            writer.endObject() //end root object
+
+            writer.flush()    // flush to output
+        }
+    }
+
     private fun rootApplicationGsonJson(exporterId: String, versionName: String): JsonObject {
         return JsonObject().apply {
             add(KEY_AGENT, JsonObject().apply {
@@ -87,23 +132,37 @@ internal object InterAppJsonConverter {
 
     fun createJsonFileName() = "Devin_${Date()}.json"
 
-    fun import(jsonString: String): List<LogData> {
-        return try {
-            JsonParser.parseString(jsonString).asJsonObject.getAsJsonArray(KEY_ROOT).mapNotNull { json ->
-                if (json is JsonObject) {
-                    LogData(
-                        0L, json.get(KEY_TAG).asString,
-                        json.get(KEY_MESSAGE).asString,
-                        json.get(KEY_DATE).asLong,
-                        json.opt(KEY_META)?.asJsonObject,
-                        json.opt(KEY_CLIENT_ID)?.asString ?: "No client id",
-                    )
-                } else null
+    private fun writeJsonElement(writer: JsonWriter, element: JsonElement) {
+        when {
+            element.isJsonNull -> writer.nullValue()
+            element.isJsonPrimitive -> {
+                val prim = element.asJsonPrimitive
+                when {
+                    prim.isBoolean -> writer.value(prim.asBoolean)
+                    prim.isNumber -> writer.value(prim.asNumber)
+                    prim.isString -> writer.value(prim.asString)
+                    else -> writer.nullValue()
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return emptyList()
-        }
 
+            element.isJsonObject -> {
+                writer.beginObject()
+                val obj = element.asJsonObject
+                for ((key, value) in obj.entrySet()) {
+                    writer.name(key)
+                    writeJsonElement(writer, value)
+                }
+                writer.endObject()
+            }
+
+            element.isJsonArray -> {
+                writer.beginArray()
+                val arr = element.asJsonArray
+                for (item in arr) {
+                    writeJsonElement(writer, item)
+                }
+                writer.endArray()
+            }
+        }
     }
 }

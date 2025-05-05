@@ -65,8 +65,9 @@ internal class OkHttpLoggerImpl internal constructor(
         val value = "..... ${model.request.method} ${model.url.path}"
         val metaJsonString = meta.toString()
         return logCore.insertLog(
-            DevinHttpFlagsApi.LOG_TAG, value, metaJsonString,
-            content = metaJsonString.toByteArray(Charsets.UTF_8)
+            tag = DevinHttpFlagsApi.LOG_TAG, value = value, meta = metaJsonString,
+            typeId = DevinHttpFlagsApi.TYPE_ID,
+            metaIndex = KEY_INDEX_URL to model.url.toString()
         )
     }
 
@@ -81,9 +82,10 @@ internal class OkHttpLoggerImpl internal constructor(
 
         val resultLog = logCore.updateLog(
             model.dbUri,
-            DevinHttpFlagsApi.LOG_TAG,
-            value,
-            metaJsonString
+            tag = DevinHttpFlagsApi.LOG_TAG,
+            value = value,
+            typeId = DevinHttpFlagsApi.TYPE_ID,
+            meta = metaJsonString
         )
         if (resultLog != DevinLogCore.FLAG_OPERATION_SUCCESS) {
             InternalLogger.debug("onResponseReceived updateLog failed:$resultLog")
@@ -96,7 +98,8 @@ internal class OkHttpLoggerImpl internal constructor(
         }
 
         val value = "!!!!!! ${model.request.method} ${model.url.path}"
-        val resultCode = logCore.updateLog(model.dbUri, DevinHttpFlagsApi.LOG_TAG, value, meta.toString())
+        val resultCode =
+            logCore.updateLog(model.dbUri, tag = DevinHttpFlagsApi.LOG_TAG, value = value, typeId = DevinHttpFlagsApi.TYPE_ID, meta = meta.toString())
         if (resultCode != DevinLogCore.FLAG_OPERATION_SUCCESS) {
             InternalLogger.debug("onResponseFailed updateLog failed: $resultCode")
         }
@@ -111,7 +114,7 @@ internal class OkHttpLoggerImpl internal constructor(
     }
 
     private fun createBaseMetaJson(logLevel: Int, throwable: Throwable? = null) = JsonObject().apply {
-        addProperty(DevinLogFlagsApi.KEY_META_TYPE, DevinHttpFlagsApi.LOG_TAG)
+        addProperty(DevinLogFlagsApi.KEY_META_TYPE, DevinHttpFlagsApi.TYPE_ID)
         addProperty(DevinLogFlagsApi.KEY_LOG_LEVEL, logLevel)
             .apply {
                 if (throwable != null) {
@@ -122,4 +125,7 @@ internal class OkHttpLoggerImpl internal constructor(
 
     //endregion
 
+    companion object {
+        private const val KEY_INDEX_URL = "url"
+    }
 }

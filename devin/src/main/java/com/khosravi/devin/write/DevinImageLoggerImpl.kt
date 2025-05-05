@@ -40,7 +40,7 @@ internal class DevinImageLoggerImpl(
         ).put(DevinImageFlagsApi.KEY_IMAGE_URL, url)
             .put(DevinImageFlagsApi.KEY_IMAGE_STATUS, status)
 
-        logger.insertLog(DevinImageFlagsApi.LOG_TAG, fName, meta.toString())
+        logger.insertLog(tag = DevinImageFlagsApi.LOG_TAG, value = fName, typeId = DevinImageFlagsApi.TYPE_ID, meta = meta.toString())
     }
 
     private fun statusToText(status: Int): String {

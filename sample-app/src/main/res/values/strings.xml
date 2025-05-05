@@ -5,4 +5,5 @@
     <string name="field_fetch_image">URL to fetch image</string>
     <string name="with_throwable">with throwable</string>
     <string name="fetch_image">Fetch image</string>
+    <string name="field_log_count">log count</string>
 </resources>

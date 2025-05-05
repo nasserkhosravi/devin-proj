@@ -4,7 +4,8 @@ import com.khosravi.devin.read.DevinLogFlagsApi
 
 object DevinHttpFlagsApi {
 
-    const val LOG_TAG = "devin_http"
+    const val TYPE_ID = "dvn_okhttp"
+    const val LOG_TAG = "okhttp"
     const val KEY_URL = "url"
     const val KEY_STATUS_TYPE = "status_type"
     const val KEY_HAR = "HAR"

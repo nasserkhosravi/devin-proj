@@ -8,6 +8,7 @@ import android.util.Log
 import com.khosravi.devin.api.DevinImageLogger
 import com.khosravi.devin.write.api.DevinLogCore
 import com.khosravi.devin.api.DevinLogger
+ import com.khosravi.devin.read.DevinUriHelper
 import java.lang.Exception
 
 class DevinTool private constructor(
@@ -18,7 +19,7 @@ class DevinTool private constructor(
 
     private fun putClient(appContext: Context, packageName: String) {
         appContext.contentResolver.insert(
-            DevinContentProvider.uriOfClient(),
+            DevinUriHelper.getClientListUri(),
             DevinContentProvider.contentValuePutClient(packageName)
         )
     }

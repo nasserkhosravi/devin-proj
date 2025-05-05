@@ -9,4 +9,5 @@ class LogData(
     val date: Long,
     val meta: JsonObject?,
     val packageId: String,
+    val typeId: String?,
 )

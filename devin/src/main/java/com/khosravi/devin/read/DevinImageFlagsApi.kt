@@ -3,7 +3,8 @@ package com.khosravi.devin.read
 
 object DevinImageFlagsApi {
 
-    const val LOG_TAG = "devin_image"
+    const val TYPE_ID = "dvn_image"
+    const val LOG_TAG = "image"
     const val VALUE_IMAGE_META_TYPE = "image"
     const val KEY_IMAGE_URL = "url"
     const val KEY_IMAGE_STATUS = "status"

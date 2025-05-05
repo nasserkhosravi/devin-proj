@@ -116,9 +116,9 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
 
     }
 
-    private fun requestFileUriForHarExport() {
+    private fun requestFileUriForHarExport(title: String) {
         val intent = requestJsonFileUriToSave()
-        exportIntentLauncher.launch(Intent.createChooser(intent, getString(R.string.menu_export_json)))
+        exportIntentLauncher.launch(Intent.createChooser(intent, title))
     }
 
     private fun showResult(detail: HttpLogDetailData) {
@@ -266,7 +266,7 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
             }
 
             R.id.action_http_export_har_as_json -> {
-                requestFileUriForHarExport()
+                requestFileUriForHarExport(getString(R.string.menu_http_export_har_as_json))
                 true
             }
 

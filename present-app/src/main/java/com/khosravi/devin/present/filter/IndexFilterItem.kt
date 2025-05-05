@@ -11,5 +11,6 @@ class IndexFilterItem(
 
     companion object {
         const val ID = "Index"
+        val instance = IndexFilterItem()
     }
 }
