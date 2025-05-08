@@ -43,4 +43,16 @@ class CalendarProxy(implType: CalendarType) {
         return date
     }
 
+    fun initIfNeed(dateAndTimePresent: DateTimePresent): DateTimePresent {
+        val dumbed = dateAndTimePresent.dumbed
+        if (dumbed == null) {
+            val calendar = calendar.createNewInstance(dateAndTimePresent.timestamp)
+            dateAndTimePresent.dumbed = DumbDateTime(
+                DumbDate(calendar.getYear(), calendar.getMonth(), calendar.getDay()),
+                DumbTime(calendar[Calendar.HOUR_OF_DAY], calendar[Calendar.MINUTE], calendar[Calendar.SECOND])
+            )
+        }
+        return dateAndTimePresent
+    }
+
 }

@@ -1,7 +1,7 @@
 package com.khosravi.devin.present.date
 
 data class DumbTime(
-    val hour: Int,
-    val minute: Int,
-    val second: Int,
-)
+    override val hour: Int,
+    override val minute: Int,
+    override val second: Int,
+) : IDumbTime

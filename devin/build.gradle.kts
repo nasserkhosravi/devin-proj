@@ -18,10 +18,13 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        minSdk = 21
+        minSdk = 24
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
+
+        val pomVersionName = projProps.getStringOrException("POM_VERSION_NAME")
+        buildConfigField("String", "DEVIN_WRITE_VERSION", "\"{$pomVersionName}\"")
     }
 
     buildTypes {
@@ -36,6 +39,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+    buildFeatures {
+        buildConfig = true
     }
 }
 

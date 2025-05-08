@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_http_share_har_json"
+        android:icon="@drawable/baseline_share_24"
+        android:title="@string/menu_http_share_har_as_json" />
+
+    <item
+        android:id="@+id/action_http_share_as_curl"
+        android:icon="@drawable/baseline_share_24"
+        android:title="@string/menu_http_share_as_curl" />
+
+    <item
+        android:id="@+id/action_http_copy_har"
+        android:icon="@drawable/baseline_content_copy_24"
+        android:title="@string/menu_http_copy_har" />
+
+    <item
+        android:id="@+id/action_http_copy_as_curl"
+        android:icon="@drawable/baseline_content_copy_24"
+        android:title="@string/menu_http_copy_as_curl" />
+
+    <item
+        android:id="@+id/action_http_copy_response_content"
+        android:icon="@drawable/baseline_content_copy_24"
+        android:title="@string/menu_http_copy_response_content" />
+
+    <item
+        android:id="@+id/action_http_copy_request_content"
+        android:icon="@drawable/baseline_content_copy_24"
+        android:title="@string/menu_http_copy_request_content" />
+
+    <item
+        android:id="@+id/action_http_export_har_as_json"
+        android:icon="@drawable/baseline_save_24"
+        android:title="@string/menu_http_export_har_as_json" />
+
+
+</menu>

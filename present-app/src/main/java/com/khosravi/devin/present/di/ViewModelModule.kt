@@ -1,6 +1,7 @@
 package com.khosravi.devin.present.di
 
 import android.app.Application
+import com.khosravi.devin.present.data.UserSettings
 import com.khosravi.devin.present.data.CacheRepository
 import dagger.Module
 import dagger.Provides
@@ -17,7 +18,8 @@ class ViewModelModule {
         filterRepository: FilterRepository,
         calendar: CalendarProxy,
         cacheRepository: CacheRepository,
-    ) = ViewModelFactory(application, calendar, filterRepository, cacheRepository)
+        userSettings: UserSettings
+    ) = ViewModelFactory(application, calendar, filterRepository, cacheRepository, userSettings)
 
 }
 

@@ -16,7 +16,7 @@ import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.humanReadableByteCountSI
 import com.khosravi.devin.present.setClipboard
 import com.khosravi.devin.present.tool.adapter.FastBindingItem
-import com.khosravi.devin.write.api.DevinImageFlagsApi
+import com.khosravi.devin.read.DevinImageFlagsApi
 import com.wcabral.spantastic.bold
 import com.wcabral.spantastic.foreground
 import com.wcabral.spantastic.spantastic
@@ -48,23 +48,28 @@ open class ImageLogItem(
                 it.context.setClipboard(data.data.url)
             }
 
-            Glide.with(context).asFile().load(data.data.url)
-                .into(object : CustomTarget<File>() {
-                    override fun onResourceReady(resource: File, transition: Transition<in File>?) {
-                        val filePath: String = resource.path
-                        val bitmap = BitmapFactory.decodeFile(filePath)
-                        imgView.setImageBitmap(bitmap)
-                        tvInfo.text = buildImageInfo(false, bitmap, resource.length())
-                    }
+            if (data.data.isFailed()) {
+                imgView.setImageBitmap(null)
+            } else {
+                Glide.with(context).asFile().load(data.data.url)
+                    .into(object : CustomTarget<File>() {
+                        override fun onResourceReady(resource: File, transition: Transition<in File>?) {
+                            val filePath: String = resource.path
+                            val bitmap = BitmapFactory.decodeFile(filePath)
+                            imgView.setImageBitmap(bitmap)
+                            tvInfo.text = buildImageInfo(false, bitmap, resource.length())
+                        }
 
-                    override fun onLoadCleared(placeholder: Drawable?) {
-                    }
+                        override fun onLoadCleared(placeholder: Drawable?) {
+                        }
 
-                    override fun onLoadFailed(errorDrawable: Drawable?) {
-                        super.onLoadFailed(errorDrawable)
-                        tvInfo.text = buildImageInfo(false,null,null)
-                    }
-                })
+                        override fun onLoadFailed(errorDrawable: Drawable?) {
+                            super.onLoadFailed(errorDrawable)
+                            tvInfo.text = buildImageInfo(false, null, null)
+                            imgView.setImageBitmap(null)
+                        }
+                    })
+            }
         }
     }
 

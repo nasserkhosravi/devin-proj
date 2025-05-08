@@ -22,7 +22,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/field_tag">
+        android:hint="@string/field_filter_tag">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/ed_tag"
@@ -35,7 +35,7 @@
 
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="?attr/spaceXSmall"
+        android:layout_marginTop="?attr/spaceSmall2"
         android:hint="@string/field_search_text">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -49,7 +49,7 @@
         android:id="@+id/btn_confirm"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="?attr/spaceXSmall"
+        android:layout_marginTop="?attr/spaceSmall2"
         android:text="@string/confirm" />
 
 </LinearLayout>

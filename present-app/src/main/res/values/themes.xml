@@ -7,13 +7,14 @@
 
     <style name="Theme.Devin" parent="Base.Theme.Devin">
         <item name="chipStyle">@style/Theme.Base.Devin.Chip</item>
-        <item name="spaceXSmall">4dp</item>
+        <item name="spaceSmall2">4dp</item>
         <item name="spaceSmall">8dp</item>
+        <item name="spaceLarge">16dp</item>
         <item name="borderSizeSmall">1dp</item>
         <item name="borderSizeSmall2">2dp</item>
     </style>
 
-    <style name="DialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog"/>
+    <style name="DialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog" />
 
     <style name="Theme.Base.Devin.Chip" parent="Base.Widget.MaterialComponents.Chip">
         <item name="android:textColor">@color/chip_text_color</item>
@@ -22,5 +23,25 @@
         <item name="chipBackgroundColor">@color/chip_background_color</item>
         <item name="chipStrokeColor">@color/chip_stroke_color</item>
     </style>
+
+    <style name="AppTheme.TextAppearance.Label" parent="android:TextAppearance.Small">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="AppTheme.TextAppearance.Value" parent="android:TextAppearance.Small">
+        <item name="android:paddingLeft">?attr/spaceLarge</item>
+        <item name="android:textIsSelectable">true</item>
+    </style>
+
+    <style name="AppTheme.TextAppearance.Title" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textSize">16sp</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="AppTheme.TextAppearance.Body" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textSize">16sp</item>
+    </style>
+
 
 </resources>

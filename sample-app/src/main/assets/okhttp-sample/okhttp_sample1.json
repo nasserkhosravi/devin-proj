@@ -1,0 +1,38 @@
+{
+  "log": {
+    "version": "1.2",
+    "creator": {
+      "name": "devin_sample",
+      "version": "1.0"
+    },
+    "entries": [
+      {
+        "request": {
+          "method": "POST",
+          "url": "http://10.0.2.2/mysite/inner/location.php",
+          "headers": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer your_access_token"
+            }
+          ],
+          "postData": {
+            "mimeType": "application/json",
+            "text": "{\"lat\":\"37.7749\",\"lng\":\"-122.4194\"}"
+          },
+          "startedDateTime": "",
+          "time": -1,
+          "queryString": [],
+          "headersSize": -1,
+          "bodySize": -1,
+          "httpVersion": "",
+          "cookies": []
+        }
+      }
+    ]
+  }
+}

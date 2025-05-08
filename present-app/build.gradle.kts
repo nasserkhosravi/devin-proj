@@ -13,7 +13,7 @@ android {
         versionCode = 3
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    val versionName = "\"3.0.0\""
+    val versionName = "\"4.0.0\""
 
     buildTypes {
         debug {
@@ -41,6 +41,8 @@ android {
 dependencies {
     implementation(project(mapOf("path" to ":lib-calendar")))
     implementation(project(mapOf("path" to ":devin")))
+    implementation(project(mapOf("path" to ":devin-write-okhttp")))
+    implementation(project(mapOf("path" to ":lib-har")))
 
     implementation("androidx.core:core-ktx:1.9.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
@@ -58,5 +60,6 @@ dependencies {
     implementation("com.mikepenz:fastadapter-extensions-expandable:$fastAdapterVersion")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation ("com.github.wellingtoncabral:android-spantastic:1.0.0")
+    implementation ("com.google.code.gson:gson:2.11.0")
 
 }

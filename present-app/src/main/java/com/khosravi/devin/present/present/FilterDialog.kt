@@ -7,16 +7,16 @@ import android.view.ViewGroup
 import com.khosravi.devin.present.ResourceHelper
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.applyBundle
-import com.khosravi.devin.present.creataNotEmpty
+import com.khosravi.devin.present.itsNotEmpty
 import com.khosravi.devin.present.databinding.DialogFilterBinding
-import com.khosravi.devin.present.filter.DefaultFilterItem
-import com.khosravi.devin.present.filter.FilterCriteria
+import com.khosravi.devin.present.filter.CustomFilterCriteria
+import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.tool.BaseDialog
 
 class FilterDialog : BaseDialog() {
 
-    var onConfirm: ((DefaultFilterItem) -> Unit)? = null
+    var onConfirm: ((CustomFilterItem) -> Unit)? = null
     private var _binding: DialogFilterBinding? = null
     private val binding: DialogFilterBinding
         get() = _binding!!
@@ -52,9 +52,9 @@ class FilterDialog : BaseDialog() {
 
         val searchText = binding.edSearchText.text.toString()
         val chipColor = ResourceHelper.getAFilterColor(context!!, requireArguments().getInt(KEY_LAST_INDEX))
-        val filterItem = DefaultFilterItem(
-            ui = FilterUiData(fTitle, fTitle.creataNotEmpty(), chipColor),
-            criteria = FilterCriteria(tag, searchText)
+        val filterItem = CustomFilterItem(
+            ui = FilterUiData(fTitle, fTitle.itsNotEmpty(), chipColor),
+            criteria = CustomFilterCriteria(tag, searchText)
         )
         onConfirm?.invoke(filterItem)
     }

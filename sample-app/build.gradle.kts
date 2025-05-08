@@ -47,4 +47,10 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.4.0")
     debugImplementation(project(mapOf("path" to ":devin")))
     releaseImplementation(project(mapOf("path" to ":devin-no-op")))
+
+    debugImplementation(project(mapOf("path" to ":devin-write-okhttp")))
+    releaseImplementation(project(mapOf("path" to ":devin-write-okhttp-no-op")))
+
+    //for reading har sample from asset
+    implementation(project(mapOf("path" to ":lib-har")))
 }

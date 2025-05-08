@@ -22,6 +22,8 @@
     <color name="colorOnSurfaceVariant">@color/white_light_2</color>
     <color name="colorOnSurface">@color/black_pearl_alpha_87</color>
     <color name="colorOnSurfaceWeak">@color/black_pearl_alpha_38</color>
+    <color name="colorAccent">@color/gold_drop</color>
+    <color name="colorWhite">@color/white_light_1</color>
 
     <!--component color-->
     <color name="colorLogDebug">@color/black_pearl_alpha_87</color>
@@ -34,4 +36,12 @@
     <color name="bg_dialog">@color/white</color>
     <color name="colorItemBack">@color/gallery</color>
     <color name="colorSurfaceDisparate">@color/alto</color>
+
+    <color name="colorHttpJsonKey">#8B0057</color>
+    <color name="colorHttpJsonValue">#2F00FF</color>
+    <color name="colorHttpJsonDigit_null_value">#E84B31</color>
+    <color name="colorHttpJsonElements">#474747</color>
+    <color name="colorHttpJsonBoolean">#2F99AA</color>
+
+
 </resources>

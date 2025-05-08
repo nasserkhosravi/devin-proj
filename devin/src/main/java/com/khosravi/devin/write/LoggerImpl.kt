@@ -2,7 +2,7 @@ package com.khosravi.devin.write
 
 import android.util.Log
 import com.khosravi.devin.api.DevinLogger
-import com.khosravi.devin.write.api.DevinLogFlagsApi
+import com.khosravi.devin.read.DevinLogFlagsApi
 import org.json.JSONObject
 
 internal class LoggerImpl(
@@ -12,7 +12,7 @@ internal class LoggerImpl(
     private val devinExceptionLogger: DevinExceptionLogger by lazy { DevinExceptionLogger(logCore) }
 
     override fun doIfEnable(action: (DevinLogger) -> Unit) {
-        if (logCore.isEnable) {
+        if (logCore.isEnable()) {
             action(this)
         }
     }
@@ -34,7 +34,7 @@ internal class LoggerImpl(
     }
 
     override fun logCallerFunc() {
-        if (!logCore.isEnable) {
+        if (!logCore.isEnable()) {
             return
         }
         // One for logCallerFunc parent
@@ -59,7 +59,7 @@ internal class LoggerImpl(
     }
 
     private fun sendLog(tag: String?, value: String, meta: JSONObject? = null) {
-        logCore.sendLog(tag, value, meta)
+        logCore.insertLog(tag, value, typeId = null, meta = meta.toString())
     }
 
     /**
@@ -76,7 +76,7 @@ internal class LoggerImpl(
     }
 
     private fun sendUserLog(tag: String?, value: String, logLevel: Int, payload: String?, throwable: Throwable? = null) {
-        if (logCore.isEnable.not()) return
+        if (logCore.isEnable().not()) return
         sendLog(tag, value, createMetaFromUserPayload(logLevel, payload, throwable))
     }
 

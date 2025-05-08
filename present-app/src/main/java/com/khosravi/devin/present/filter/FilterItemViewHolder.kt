@@ -8,7 +8,7 @@ import com.khosravi.devin.present.databinding.ItemFilterBinding
 import com.khosravi.devin.present.tool.adapter.SelectableBindingItem
 
 class FilterItemViewHolder(
-    val data: FilterUiData,
+    val data: FilterItem,
 ) : SelectableBindingItem<ItemFilterBinding>() {
 
     override val type: Int = R.id.vh_item_filter
@@ -20,9 +20,10 @@ class FilterItemViewHolder(
     override fun bindView(binding: ItemFilterBinding, payloads: List<Any>) {
         super.bindView(binding, payloads)
         binding.apply {
-            chip.text = data.title.value
-            chip.setTextColor(data.chipColor.textColor)
-            chip.chipBackgroundColor = ColorStateList.valueOf(data.chipColor.backColor)
+            val ui = data.ui
+            chip.text = ui.title.value
+            chip.setTextColor(ui.chipColor.textColor)
+            chip.chipBackgroundColor = ColorStateList.valueOf(ui.chipColor.backColor)
         }
     }
 

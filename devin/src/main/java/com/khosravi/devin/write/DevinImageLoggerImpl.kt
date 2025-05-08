@@ -2,7 +2,7 @@ package com.khosravi.devin.write
 
 import android.util.Log
 import com.khosravi.devin.api.DevinImageLogger
-import com.khosravi.devin.write.api.DevinImageFlagsApi
+import com.khosravi.devin.read.DevinImageFlagsApi
 import java.lang.IllegalArgumentException
 import java.net.URI
 
@@ -30,7 +30,7 @@ internal class DevinImageLoggerImpl(
         payload: String?,
         throwable: Throwable?
     ) {
-        if (logger.isEnable.not()) return
+        if (logger.isEnable().not()) return
         val fName = (name.takeIf { !it.isNullOrEmpty() } ?: URI(url).path)
             .let {
                 statusToText(status).plus(" $it")
@@ -40,7 +40,7 @@ internal class DevinImageLoggerImpl(
         ).put(DevinImageFlagsApi.KEY_IMAGE_URL, url)
             .put(DevinImageFlagsApi.KEY_IMAGE_STATUS, status)
 
-        logger.sendLog(DevinImageFlagsApi.LOG_TAG, fName, meta)
+        logger.insertLog(tag = DevinImageFlagsApi.LOG_TAG, value = fName, typeId = DevinImageFlagsApi.TYPE_ID, meta = meta.toString())
     }
 
     private fun statusToText(status: Int): String {
