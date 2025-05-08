@@ -6,7 +6,8 @@
     android:layout_marginTop="10dp"
     android:layout_marginBottom="10dp"
     android:padding="8dp"
-    android:textSize="@dimen/textSizeH5"
+    android:layout_marginHorizontal="?attr/spaceLarge"
+    android:textSize="@dimen/textSizeH3"
     android:background="@color/colorItemBack"
     android:textColor="@color/colorOnSurface" />
 
