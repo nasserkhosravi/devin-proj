@@ -270,7 +270,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         viewModel.clearCustomFilters()
     }
 
-    private fun exportLogs() {
+    private fun showExportDialog() {
         LogExportDialog.newInstance().apply {
             show(supportFragmentManager, LogExportDialog.TAG)
         }
@@ -304,7 +304,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             }
 
             R.id.action_export -> {
-                exportLogs()
+                showExportDialog()
                 true
             }
 
@@ -353,8 +353,8 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     override fun onDestroy() {
         super.onDestroy()
+        endlessRecyclerOnScrollListener?.let { _binding?.rvMain?.removeOnScrollListener(it) }
         _binding = null
-        endlessRecyclerOnScrollListener?.let { binding.rvMain.removeOnScrollListener(it) }
         mainAdapter.onClickListener = null
         filterAdapter.onClickListener = null
     }
