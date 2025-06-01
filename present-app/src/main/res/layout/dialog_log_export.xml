@@ -1,38 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/dialog_rounded_bg"
-    android:minWidth="@dimen/dialogMinWidth"
-    android:orientation="vertical"
     android:padding="?attr/spaceSmall">
 
-    <com.google.android.material.textfield.TextInputLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Filter tags like a,b,c">
+        android:orientation="vertical">
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/ed_filter_tag"
-            android:hint="default is index"
+        <RadioGroup
+            android:id="@+id/rg_mode"
+            android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content">
 
-    </com.google.android.material.textfield.TextInputLayout>
+            <androidx.appcompat.widget.AppCompatRadioButton
+                android:id="@+id/rd_default"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Default" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btn_export_logs"
-        android:layout_width="match_parent"
+            <androidx.appcompat.widget.AppCompatRadioButton
+                android:id="@+id/rd_custom_builder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Builder" />
+        </RadioGroup>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/cvg_builder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="invisible"
+                android:orientation="vertical">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/field_whitelist_tag_filter">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/ed_filter_tag"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_marginTop="?attr/spaceSmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/field_day_filter">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/ed_filter_day_number"
+                        android:inputType="number"
+                        android:text="1"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content" />
+
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <CheckBox
+                    android:id="@+id/ch_separate_tag_files"
+                    android:checked="false"
+                    android:text="@string/field_separate_tag_files"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_default_option_info"
+                android:text="@string/msg_default_export_explain"
+                android:layout_margin="?attr/spaceSmall"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </FrameLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_save_logs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_save_logs"
+            android:textAllCaps="false" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btn_share_logs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_share_logs"
+            android:textAllCaps="false" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        style="?android:attr/progressBarStyleLarge"
+        android:indeterminateTint="@color/colorProgressBar"
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/btn_export_logs"
-        android:textAllCaps="false" />
+        android:indeterminate="true"
+        android:visibility="gone" />
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btn_share_logs"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/btn_share_logs"
-        android:textAllCaps="false" />
-
-</LinearLayout>
+</FrameLayout>

@@ -7,7 +7,7 @@ class IndexFilterItem(
     override val id: String = ID
 ) : FilterItem {
 
-    override val ui: FilterUiData = FilterUiData(id, title = NotEmptyString(id), Defaults.filterColor)
+    override val ui: FilterUiData = FilterUiData(id, title = NotEmptyString("All"), Defaults.filterColor)
 
     companion object {
         const val ID = "Index"

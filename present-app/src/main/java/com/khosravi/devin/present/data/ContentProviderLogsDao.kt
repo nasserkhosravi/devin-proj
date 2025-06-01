@@ -29,15 +29,6 @@ object ContentProviderLogsDao {
 
     private const val TAG = "PresenterLogQuery"
 
-    fun getAllLogsAsCursor(context: Context, clientId: String): Cursor? {
-        val args = arrayListOf(clientId)
-        val where = "${LogTable.COLUMN_CLIENT_ID} = ?"
-        val uri = DevinUriHelper.getLogListUri(clientId, isRawQuery = true)
-        val cursor = context.contentResolver
-            .query(uri, null, where, args.toTypedArray(), "${LogTable.COLUMN_DATE} DESC") ?: return null
-        return cursor
-    }
-
     fun queryLogList(
         context: Context,
         clientId: String,
@@ -57,6 +48,31 @@ object ContentProviderLogsDao {
             )
         }
 
+    }
+
+    fun queryLogListAsCursor(context: Context, clientId: String, model: GetLogsQueryModel?): Cursor? {
+        if (model == null) {
+            return getAllLogsAsCursor(context, clientId)
+        }
+        return queryLogListAsCursor(
+            context,
+            clientId,
+            model.typeId,
+            model.tag,
+            model.value,
+            model.metaParam,
+            model.timeLessThan,
+            model.page
+        )
+    }
+
+    private fun getAllLogsAsCursor(context: Context, clientId: String): Cursor? {
+        val args = arrayListOf(clientId)
+        val where = "${LogTable.COLUMN_CLIENT_ID} = ?"
+        val uri = DevinUriHelper.getLogListUri(clientId, isRawQuery = true)
+        val cursor = context.contentResolver
+            .query(uri, null, where, args.toTypedArray(), "${LogTable.COLUMN_DATE} DESC") ?: return null
+        return cursor
     }
 
     fun clear(context: Context, clientId: String) {
@@ -157,13 +173,40 @@ object ContentProviderLogsDao {
         tag: OpStringValue? = null,
         value: OpStringValue? = null,
         metaSearch: DevinUriHelper.OpStringParam? = null,
+        timeConstraintLessThan: Long? = null,
         page: PageInfo? = null,
     ): List<LogData> {
+        try {
+            val cursor = queryLogListAsCursor(context, clientId, typeId, tag, value, metaSearch, timeConstraintLessThan, page)
+                ?: return emptyList()
+            val result = cursor.toLogList()
+            cursor.close()
+            return result
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return emptyList()
+    }
+
+    private fun queryLogListAsCursor(
+        context: Context,
+        clientId: String,
+        typeId: String? = null,
+        tag: OpStringValue? = null,
+        value: OpStringValue? = null,
+        metaSearch: DevinUriHelper.OpStringParam? = null,
+        timeLessThan: Long? = null,
+        page: PageInfo? = null,
+    ): Cursor? {
         val args = arrayListOf(clientId)
         val where = StringBuilder("${LogTable.COLUMN_CLIENT_ID} = ?").apply {
             if (!typeId.isNullOrEmpty()) {
                 args.add(typeId)
                 append(" AND ${LogTable.COLUMN_TAG} = ?")
+            }
+            if (timeLessThan != null) {
+                args.add(timeLessThan.toString())
+                append(" AND ${LogTable.COLUMN_DATE} < ?")
             }
             if (tag != null) {
                 args.add(tag.toSqlStringArgs())
@@ -186,14 +229,12 @@ object ContentProviderLogsDao {
             val cursor = context.contentResolver.query(
                 uri,
                 null, where, args.toTypedArray(), "${LogTable.COLUMN_DATE} DESC"
-            ) ?: return emptyList()
-            val result = cursor.toLogList()
-            cursor.close()
-            return result
+            ) ?: return null
+            return cursor
         } catch (e: Exception) {
             e.printStackTrace()
+            return null
         }
-        return emptyList()
     }
 
     private fun Cursor.asLogModel(): LogData {

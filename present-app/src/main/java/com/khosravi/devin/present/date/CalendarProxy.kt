@@ -55,4 +55,10 @@ class CalendarProxy(implType: CalendarType) {
         return dateAndTimePresent
     }
 
+    fun getFormattedCurrentDateTime(): String {
+        val dateTimePresent = DateTimePresent(System.currentTimeMillis())
+        initIfNeed(dateTimePresent)
+        return dateTimePresent.getFormatted()
+    }
+
 }

@@ -16,17 +16,21 @@ import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.DialogLogExportBinding
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
-import com.khosravi.devin.present.requestJsonFileUriToSave
+import com.khosravi.devin.present.gone
+import com.khosravi.devin.present.invisible
 import com.khosravi.devin.present.sendOrShareFileIntent
+import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.present.tool.BaseDialog
+import com.khosravi.devin.present.visible
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 class LogExportDialog : BaseDialog(), CoroutineScope by MainScope() {
@@ -38,18 +42,22 @@ class LogExportDialog : BaseDialog(), CoroutineScope by MainScope() {
     lateinit var vmFactory: ViewModelFactory
 
     private val viewModel by lazy {
-        ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
+        ViewModelProvider(this, vmFactory)[ExportViewModel::class.java]
     }
-    private lateinit var exportIntentLauncher: ActivityResultLauncher<Intent>
+    private lateinit var saveIntentLauncher: ActivityResultLauncher<Intent>
+
+    private var exportJob: Job? = null
+    private var saveTmpFile: File? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NO_TITLE, R.style.DialogTheme);
         getAppComponent().inject(this)
 
-        exportIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            onExportFileIntentResult(it)
+        saveIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            onSaveFileIntentResult(it)
         }
+
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -62,53 +70,119 @@ class LogExportDialog : BaseDialog(), CoroutineScope by MainScope() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.run {
-            btnExportLogs.setOnClickListener {
-                val intent = requestJsonFileUriToSave()
-                exportIntentLauncher.launch(Intent.createChooser(intent, getString(R.string.menu_export_logs)))
+            rdDefault.setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) {
+                    tvDefaultOptionInfo.visible()
+                    cvgBuilder.invisible()
+                } else {
+                    cvgBuilder.visible()
+                    tvDefaultOptionInfo.invisible()
+                }
             }
+
+            btnSaveLogs.setOnClickListener {
+                startExportProcess()
+                saveTmpFile?.delete()
+                saveTmpFile = null
+
+                exportJob = launch {
+                    viewModel.prepareLogsForExport(getCurrentExportOption())
+                        .flowOn(Dispatchers.Main)
+                        .collect {
+                            stopExportProcess()
+                            saveTmpFile = it
+
+                            val intent = viewModel.createIntentForSave(needZipFile())
+                            saveIntentLauncher.launch(Intent.createChooser(intent, getString(R.string.menu_export_logs)))
+                        }
+                }
+            }
+
             btnShareLogs.setOnClickListener {
-                viewModel.shareAllLogs(getWhitelistTags())
-                    .map { sendOrShareFileIntent(it, MIME_APP_JSON) }
+                startExportProcess()
+                exportJob = viewModel.prepareLogsForExport(getCurrentExportOption())
                     .flowOn(Dispatchers.Main)
-                    .onEach {
+                    .onEach { exportFile ->
+                        stopExportProcess()
+                        context?.toUriByFileProvider(exportFile)?.let {
+                            val intent = sendOrShareFileIntent(it, MIME_APP_JSON)
+                            startActivity(Intent.createChooser(intent, getString(R.string.title_of_share)))
+                        }
                         dismiss()
-                        startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
+
                     }
                     .launchIn(this@LogExportDialog)
             }
         }
-
     }
 
-    private fun onExportFileIntentResult(activityResult: ActivityResult) {
-        val tags = getWhitelistTags()
+    private fun onSaveFileIntentResult(activityResult: ActivityResult) {
         val returnedIntent = activityResult.data
         val uriData = returnedIntent?.data
+        val context = context ?: return
+
         if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
-            launch {
-                viewModel.exportLogsToUri(uriData, tags)
+            startExportProcess()
+            saveTmpFile?.let {
+                exportJob = viewModel.copyFileToUri(uriData, it)
+                    .onEach {
+                        saveTmpFile?.delete()
+                        saveTmpFile = null
+                    }
                     .flowOn(Dispatchers.Main)
-                    .collect {
-                        val msg = if (it) getString(R.string.msg_export_done)
+                    .onEach {
+                        stopExportProcess()
+                        val msg = if (it) getString(R.string.msg_save_done)
                         else getString(R.string.error_msg_something_went_wrong)
                         Toast.makeText(this@LogExportDialog.context, msg, Toast.LENGTH_LONG).show()
                         dismiss()
-                    }
+                    }.launchIn(this)
             }
         }
     }
 
+    private fun stopExportProcess() {
+        _binding?.progressBar?.gone()
+    }
 
-    private fun getWhitelistTags(): List<String> {
-        val filterTagRaw = binding.edFilterTag.text?.toString()
-        return if (filterTagRaw.isNullOrEmpty()) emptyList()
-        else {
-            if (filterTagRaw.contains(',')) {
-                filterTagRaw.split(',')
+    private fun startExportProcess() {
+        exportJob?.cancel()
+        binding.progressBar.visible()
+    }
+
+
+    private fun getWhitelistText() = binding.edFilterTag.text?.toString()
+
+    private fun needZipFile(): Boolean {
+        binding.run {
+            if (rdDefault.isChecked) {
+                return true
             } else {
-                listOf(filterTagRaw)
+                return chSeparateTagFiles.isChecked
             }
         }
+    }
+
+    private fun getCurrentExportOption(): ExportOptions = binding.run {
+        if (rdDefault.isChecked) {
+            viewModel.getExportDefaultOption()
+        } else {
+            viewModel.buildExportCustom(
+                getWhitelistText(),
+                edFilterDayNumber.text.toString().toIntOrNull(),
+                chSeparateTagFiles.isChecked
+            )
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        exportJob?.cancel()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        exportJob?.cancel()
     }
 
     companion object {

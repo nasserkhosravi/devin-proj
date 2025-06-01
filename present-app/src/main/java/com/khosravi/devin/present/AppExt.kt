@@ -16,7 +16,6 @@ import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.DumbDate
 import com.khosravi.devin.present.date.DumbTime
 import com.khosravi.devin.present.date.TimePresent
-import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HeaderLogDateItem
@@ -47,6 +46,7 @@ import java.util.Date
 
 const val KEY_DATA = "key_data"
 const val MIME_APP_JSON = "application/json"
+const val MIME_APP_ZIP = "application/zip"
 
 fun getPersianDateTimeFormatted(timestamp: Long): String {
     val persianCalendar = PersianCalendar.getInstance().createNewInstance(timestamp)
@@ -116,7 +116,7 @@ fun humanReadableByteCountSI(bytes: Long): String {
 }
 
 fun Context.createCacheShareFile(textualReport: TextualReport): Uri {
-    val file = fileForCache(textualReport.fileName)
+    val file = tmpFileForCache(textualReport.fileName)
     file.printWriter().use { out ->
         out.print(textualReport.content)
     }
@@ -132,7 +132,7 @@ fun AppCompatActivity.createFlowForExportFileIntentResult(content: String, activ
             .map { contentResolver.writeTextToUri(uriData, content) }
             .flowOn(Dispatchers.Main)
             .onEach { uriWriteResult ->
-                val msg = if (uriWriteResult) getString(R.string.msg_export_done)
+                val msg = if (uriWriteResult) getString(R.string.msg_save_done)
                 else getString(R.string.error_msg_something_went_wrong)
                 Toast.makeText(this@createFlowForExportFileIntentResult, msg, Toast.LENGTH_LONG).show()
             }.map { Unit }
@@ -150,10 +150,17 @@ fun Context.setClipboardSafe(text: String): Boolean {
     }
 }
 
-fun requestJsonFileUriToSave(fileName: String = InterAppJsonConverter.createJsonFileName()): Intent {
+fun requestJsonFileUriToSave(fileName: String): Intent {
     return writeOrSaveFileIntent(fileName, MIME_APP_JSON)
 }
 
+fun requestZipFileUriToSave(fileName: String): Intent {
+    return writeOrSaveFileIntent(fileName, MIME_APP_ZIP)
+}
+
+fun createZipFileNameForExport(dateData: String) = "Devin_${dateData}.zip"
+
+fun createJsonFileNameForExport(dateData: String) = "Devin_${dateData}.json"
 
 fun JsonObject.opt(key: String): JsonElement? {
     if (has(key)) {

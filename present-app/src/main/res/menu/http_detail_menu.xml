@@ -35,7 +35,7 @@
     <item
         android:id="@+id/action_http_export_har_as_json"
         android:icon="@drawable/baseline_save_24"
-        android:title="@string/menu_http_export_har_as_json" />
+        android:title="@string/menu_http_save_har_as_json" />
 
 
 </menu>
