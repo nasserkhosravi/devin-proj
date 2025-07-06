@@ -82,8 +82,8 @@ class ExportViewModel(
                 //need a zip file for multi file saving.
                 val fileName = createZipFileNameForExport(calendarProxy.getFormattedCurrentDateTime())
                 val mainFile = context.tmpFileForCache(fileName)
+                val filesInZip = ArrayList<File>()
                 if (exportOptions.tagWhitelist.isNullOrEmpty()) {
-                    val filesInZip = ArrayList<File>()
 
                     ContentProviderLogsDao.getAllTags(context, clientId).forEach { tag ->
                         val newFile = context.tmpFileForCache("filter_$tag.json")
@@ -95,11 +95,10 @@ class ExportViewModel(
                     val indexFile = context.tmpFileForCache("index.json")
                     writeFileOfZip(context, clientId, null, dateConstraint, indexFile, exportOptions, filesInZip)
                     zipFiles(filesInZip, mainFile)
-                    //TODO: should we remove temp files?
+                    filesInZip.forEach { it.delete() }
 
                     emit(mainFile)
                 } else {
-                    val filesInZip = ArrayList<File>()
                     exportOptions.tagWhitelist.forEach { tag ->
                         val newFile = context.tmpFileForCache("filter_$tag.json")
 
@@ -117,9 +116,11 @@ class ExportViewModel(
                         }
                     }
                     zipFiles(filesInZip, mainFile)
+                    filesInZip.forEach { it.delete() }
 
                     emit(mainFile)
                 }
+
             } else {
                 val fileName = createJsonFileNameForExport(calendarProxy.getFormattedCurrentDateTime())
                 val mainFile = context.tmpFileForCache(fileName)
