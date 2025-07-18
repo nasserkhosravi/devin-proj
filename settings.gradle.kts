@@ -13,7 +13,13 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven {
-            url = URI("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            name = "Central Portal Snapshots"
+            url = URI("https://central.sonatype.com/repository/maven-snapshots/")
+
+            // Only search this repository for the specific dependency
+            content {
+                includeModule("io.github.nasserkhosravi.devin", "write")
+            }
         }
         maven { url = URI("https://jitpack.io") }
     }

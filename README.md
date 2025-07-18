@@ -25,14 +25,24 @@ dependencies {
 ## Snapshot version
 
 For using snapshot versions
-```groovy
-maven {
-            url = URI("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+```kotlin
+//in dependencyResolutionManagement->repositories
+    maven {
+        name = "Central Portal Snapshots"
+        url = URI("https://central.sonatype.com/repository/maven-snapshots/")
+    
+        // Only search this repository for the specific dependency
+        content {
+            includeModule("io.github.nasserkhosravi.devin", "write")
         }
+    }
 ```
 
+## Publishing version
 To upload the version, double check versions in gradle of your module, then run these two gradle tasks:
 $module$->build->assemble 
-$module$->publishing->publish
+$module$->publishing->publishToMavenCentral
 
+Check your module for publishing:
+https://central.sonatype.com/publishing
 
