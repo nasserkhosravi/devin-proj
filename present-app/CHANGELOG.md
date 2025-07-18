@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.1.0
+- Improve exporting by create a dedicated dialog.
+- Add default and custom export options.
+- Improve client list UI UX by having refresh and changing UI.
+- Fix StarterActivity crash when user back from LogActivity.
+
 ## 4.0.0
 - Support ok-http special logs.
 - Add search and pagination feature.
