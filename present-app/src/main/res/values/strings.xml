@@ -4,7 +4,7 @@
 
     <string name="menu_share_json">Share all logs in json</string>
     <string name="menu_import_json">Import logs as json</string>
-    <string name="menu_export_logs">Export logs</string>
+    <string name="menu_export_logs">Share/Save logs</string>
     <string name="menu_clear_logs">Clear all logs</string>
     <string name="menu_clear_filters">Clear custom filters</string>
     <string name="msg_empty_filter">Empty filter</string>
@@ -20,7 +20,7 @@
     <string name="choosing_intent_title">Choose a file</string>
     <string name="error_msg_empty_file_text">Empty file text!</string>
     <string name="error_msg_something_went_wrong">Something went wrong!</string>
-    <string name="msg_export_done">Export done</string>
+    <string name="msg_save_done">Save done</string>
     <string name="msg_permission_denied">permission denied</string>
     <string name="loading">loading</string>
     <string name="no_client_found">No client found, run client app or send logs by devin</string>
@@ -54,11 +54,17 @@
     <string name="menu_http_copy_as_curl">Copy CURL command</string>
     <string name="menu_http_share_as_curl">Share CURL command</string>
     <string name="menu_http_share_har_as_json">Share HAR (whole log) as json</string>
-    <string name="menu_http_export_har_as_json">Export HAR as json</string>
+    <string name="menu_http_save_har_as_json">Save HAR as json</string>
     <string name="menu_http_copy_har">Copy HAR (whole log)</string>
     <string name="msg_response_null">Response is null</string>
     <string name="total_size">Total size</string>
-    <string name="btn_export_logs">Export Logs</string>
+    <string name="btn_save_logs">Save Logs</string>
     <string name="btn_share_logs">Share Logs</string>
+    <string name="field_day_number_tmpl">%s day before</string>
+    <!--Always sync me to current default options-->
+    <string name="msg_default_export_explain">It export all logs in a zip file that contain: \n - index file that has all logs. \n  - logs for each tag.</string>
+    <string name="field_separate_tag_files">Separate tag files</string>
+    <string name="field_day_filter">Day filter, default is no filter</string>
+    <string name="field_whitelist_tag_filter">Whitelist tag filter,(example: a,b,c), Default is all</string>
 
 </resources>

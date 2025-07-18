@@ -2,7 +2,6 @@ package com.khosravi.devin.present.present
 
 import android.app.Application
 import android.content.Context
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,21 +19,17 @@ import com.khosravi.devin.present.data.model.PageInfo
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.TimePresent
-import com.khosravi.devin.present.fileForCache
 import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
-import com.khosravi.devin.present.formatter.InterAppJsonConverter.createJsonFileName
-import com.khosravi.devin.present.formatter.InterAppJsonConverter.writeLogs
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HttpLogItemData
 import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.optInt
-import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.read.DevinImageFlagsApi
 import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.read.DevinUriHelper
@@ -46,16 +41,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
-import java.io.BufferedWriter
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.io.Writer
 
 class ReaderViewModel constructor(
     application: Application,
@@ -176,55 +166,6 @@ class ReaderViewModel constructor(
     }
 
 
-    fun exportLogsToUri(fileUri: Uri, whitelistTags: List<String>): Flow<Boolean> {
-        return flowOf(fileUri).map {
-            val context = getContext()
-            val cursor = ContentProviderLogsDao.getAllLogsAsCursor(getContext(), getSelectedClientIdOrError())
-            if (cursor != null) {
-                context.contentResolver.openOutputStream(fileUri)?.use { outputStream ->
-                    val writer = OutputStreamWriter(outputStream, "UTF-8")
-                    writeLogs(writer, cursor, tagListToFilterFunction(whitelistTags))
-                } ?: run {
-                    cursor.close()
-                    throw IllegalStateException("Cannot open output stream for URI: $fileUri")
-                }
-                cursor.close()
-                true
-            } else false
-        }.flowOn(Dispatchers.Default)
-    }
-
-    private fun tagListToFilterFunction(tags: List<String>): ((LogData) -> Boolean)? {
-        if (tags.isEmpty()) return null
-        return { logData ->
-            tags.any { it.equals(logData.tag, true) }
-        }
-
-    }
-
-    fun shareAllLogs(whiteListTags: List<String>): Flow<Uri> {
-        val context = getContext()
-        return flow {
-            val file = context.fileForCache(createJsonFileName())
-            emit(file)
-        }.map { file ->
-            val cursor = ContentProviderLogsDao.getAllLogsAsCursor(getContext(), getSelectedClientIdOrError())
-            if (cursor != null) {
-                val writer: Writer = OutputStreamWriter(FileOutputStream(file), "UTF-8")
-                // Optional: buffer it for efficient writes
-                val bufferedWriter: Writer = BufferedWriter(writer)
-                writer.use {
-                    writeLogs(bufferedWriter, cursor,tagListToFilterFunction(whiteListTags) )
-                }
-                cursor.close()
-                file
-            } else {
-                throw IllegalStateException("Cannot get logs for sharing")
-            }
-        }.map { getContext().toUriByFileProvider(it) }
-            .flowOn(Dispatchers.IO)
-
-    }
 
     fun getClientList() = flow {
         val result = ClientContentProvider.getClientList(getContext())
@@ -362,6 +303,7 @@ class ReaderViewModel constructor(
     }
 
     fun refreshLogsAndFilters(filter: FilterItem, callbackId: String? = null) {
+        lastDayHeaderDate = null
         viewModelScope.launch {
             resetPagination()
             val queryModel = buildQueryGet(filter)
@@ -418,7 +360,7 @@ class ReaderViewModel constructor(
                 valueOp = null
             }
         }
-        return GetLogsQueryModel(null, tagOp, valueOp, metaParam = metaParam, page = pageInfo)
+        return GetLogsQueryModel(null, tagOp, valueOp, metaParam = metaParam, page = pageInfo, timeLessThan = null)
     }
 
     private fun defaultFilterQuery() = buildQueryGet(IndexFilterItem.instance)

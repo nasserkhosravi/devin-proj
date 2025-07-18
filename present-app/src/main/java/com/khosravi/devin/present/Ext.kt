@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
+import android.view.View
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -16,18 +17,22 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.khosravi.devin.present.tool.NotEmptyString
+import okio.IOException
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedWriter
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.io.Serializable
-import java.util.Date
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 
-fun Context.fileForCache(name: String = "DevinShareFile: ${Date()}.txt"): File {
+fun Context.tmpFileForCache(name: String): File {
     val imagePath = File(cacheDir, "/temp_shared")
     if (!imagePath.exists()) {
         imagePath.mkdir()
@@ -37,6 +42,18 @@ fun Context.fileForCache(name: String = "DevinShareFile: ${Date()}.txt"): File {
 
 fun Context.toUriByFileProvider(file: File): Uri {
     return FileProvider.getUriForFile(this, "com.khosravi.devin.present.fileprovider", file)
+}
+
+fun View.visible() {
+    visibility = View.VISIBLE
+}
+
+fun View.invisible() {
+    visibility = View.INVISIBLE
+}
+
+fun View.gone() {
+    visibility = View.GONE
 }
 
 fun sendOrShareFileIntent(fileUri: Uri, type: String): Intent {
@@ -161,3 +178,43 @@ private fun JsonElement?.notNullOrReturnNull(): JsonElement? {
     return null
 }
 
+/**
+ * Zips multiple files into one zip file.
+ *
+ * @param filesToZip List of files to include in the zip.
+ * @param zipFile The output zip file.
+ * @throws IOException If an I/O error occurs.
+ */
+@Throws(IOException::class)
+fun zipFiles(filesToZip: List<File>, zipFile: File) {
+    val buffer = ByteArray(1024)
+
+    FileOutputStream(zipFile).use { fos ->
+        ZipOutputStream(fos).use { zos ->
+            for (file in filesToZip) {
+                FileInputStream(file).use { fis ->
+                    val zipEntry = ZipEntry(file.name)
+                    zos.putNextEntry(zipEntry)
+                    var length: Int
+                    while (fis.read(buffer).also { length = it } > 0) {
+                        zos.write(buffer, 0, length)
+                    }
+                    zos.closeEntry()
+                }
+            }
+        }
+    }
+}
+
+
+fun copyFileToOutputStream(file: File, outputStream: OutputStream) {
+    FileInputStream(file).use { inputStream ->
+        val buffer = ByteArray(1024) // Buffer size
+        var bytesRead: Int
+
+        // Read from the file and write to the OutputStream
+        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+            outputStream.write(buffer, 0, bytesRead)
+        }
+    }
+}
