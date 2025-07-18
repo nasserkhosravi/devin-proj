@@ -7,6 +7,7 @@ import com.khosravi.devin.present.data.UserSettings
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.present.ExportViewModel
 import com.khosravi.devin.present.present.http.HttpDetailViewModel
 import com.khosravi.devin.present.present.ReaderViewModel
 import java.lang.IllegalArgumentException
@@ -25,7 +26,11 @@ class ViewModelFactory(
             }
 
             modelClass.isAssignableFrom(HttpDetailViewModel::class.java) -> {
-                HttpDetailViewModel(application, cacheRepo) as T
+                HttpDetailViewModel(application, cacheRepo, calendar) as T
+            }
+
+            modelClass.isAssignableFrom(ExportViewModel::class.java) -> {
+                ExportViewModel(application, cacheRepo, calendar) as T
             }
 
             else -> throw IllegalArgumentException()

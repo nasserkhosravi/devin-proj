@@ -3,6 +3,9 @@ package com.khosravi.devin.present.present
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.R
@@ -17,6 +20,7 @@ import com.mikepenz.fastadapter.adapters.ItemAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -41,16 +45,22 @@ class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         super.onCreate(savedInstanceState)
         _binding = ActivityStarterBinding.inflate(LayoutInflater.from(this), null, false)
         setContentView(binding.root)
+        setSupportActionBar(binding.toolbar)
 
         adapter.onClickListener = { _, _, item: ClientItem, _ ->
             onSelectClient(item.data)
             true
         }
+
+        launchGettingClientList()
+
     }
 
-    override fun onStart() {
-        super.onStart()
+    private fun launchGettingClientList() {
         launch {
+            binding.tvMessage.text = getString(R.string.loading)
+            //delay to let user see loading text a
+            delay(100)
             viewModel.getClientList()
                 .flowOn(Dispatchers.Main)
                 .collect(::onClientListFetchResult)
@@ -66,6 +76,27 @@ class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         super.onDestroy()
         _binding = null
     }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.starter_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_refresh -> {
+                refreshClients()
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun refreshClients() {
+        launchGettingClientList()
+    }
+
 
     private fun ClientLoadedState.toStateMessage(): String {
         return when (this) {

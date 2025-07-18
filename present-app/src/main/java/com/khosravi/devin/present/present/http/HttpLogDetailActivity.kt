@@ -19,6 +19,7 @@ import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.createCacheShareFile
 import com.khosravi.devin.present.createFlowForExportFileIntentResult
+import com.khosravi.devin.present.createJsonFileNameForExport
 import com.khosravi.devin.present.data.LogId
 import com.khosravi.devin.present.data.http.HttpLogDetailData
 import com.khosravi.devin.present.databinding.ActivityHttpLogDetailBinding
@@ -31,7 +32,6 @@ import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.getLongExtraOrFail
 import com.khosravi.devin.present.present.http.items.HttpDetailContentItemView
 import com.khosravi.devin.present.present.http.items.HttpDetailOverviewItemView
-import com.khosravi.devin.present.requestJsonFileUriToSave
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.setClipboardSafe
 import com.khosravi.devin.present.tool.adapter.isEmpty
@@ -67,7 +67,7 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[HttpDetailViewModel::class.java]
     }
-    private lateinit var exportIntentLauncher: ActivityResultLauncher<Intent>
+    private lateinit var saveIntentLauncher: ActivityResultLauncher<Intent>
 
 
     private val itemAdapter = GenericItemAdapter()
@@ -80,8 +80,8 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
 
         val logId = LogId(intent.getLongExtraOrFail(KEY_LOG_ID))
 
-        exportIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            onExportHarJsonFileIntentResult(it)
+        saveIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            onSaveHarJsonFileIntentResult(it)
         }
 
         launch {
@@ -116,9 +116,9 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
 
     }
 
-    private fun requestFileUriForHarExport(title: String) {
-        val intent = requestJsonFileUriToSave()
-        exportIntentLauncher.launch(Intent.createChooser(intent, title))
+    private fun requestFileUriForHarSave(title: String) {
+        val intent = viewModel.createIntentForSave()
+        saveIntentLauncher.launch(Intent.createChooser(intent, title))
     }
 
     private fun showResult(detail: HttpLogDetailData) {
@@ -179,7 +179,11 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
         launch {
             toSharableContent(data)
                 .flowOn(Dispatchers.Main)
-                .map { createCacheShareFile(TextualReport(InterAppJsonConverter.createJsonFileName(), it)) }
+                .map {
+                    val fileName = createJsonFileNameForExport(calendar.getFormattedCurrentDateTime())
+                    val textualReport = TextualReport(fileName, it)
+                    createCacheShareFile(textualReport)
+                }
                 .map { sendOrShareFileIntent(it, MIME_APP_JSON) }
                 .collect {
                     startActivity(Intent.createChooser(it, getString(R.string.title_of_share)))
@@ -202,11 +206,11 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
     private fun toSharableContent(data: HttpLogDetailData): Flow<String> {
         return flow {
             val harEntryJson = data.getHarEntryAsGsonJsonObject()
-            emit(InterAppJsonConverter.exportHARContent(harEntryJson))
+            emit(InterAppJsonConverter.exportHARContent(harEntryJson, viewModel.getSelectedClientId()!!))
         }.flowOn(Dispatchers.Default)
     }
 
-    private fun onExportHarJsonFileIntentResult(activityResult: ActivityResult) {
+    private fun onSaveHarJsonFileIntentResult(activityResult: ActivityResult) {
         val value = viewModel.detailData.value ?: return
         launch {
             toSharableContent(value).flatMapConcat {
@@ -219,7 +223,7 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
-        exportIntentLauncher.unregister()
+        saveIntentLauncher.unregister()
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -266,7 +270,7 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
             }
 
             R.id.action_http_export_har_as_json -> {
-                requestFileUriForHarExport(getString(R.string.menu_http_export_har_as_json))
+                requestFileUriForHarSave(getString(R.string.menu_http_save_har_as_json))
                 true
             }
 

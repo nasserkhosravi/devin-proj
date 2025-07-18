@@ -7,5 +7,6 @@ data class GetLogsQueryModel(
     val tag: DevinUriHelper.OpStringValue?,
     val value: DevinUriHelper.OpStringValue?,
     val metaParam: DevinUriHelper.OpStringParam?,
+    val timeLessThan: Long?,
     val page: PageInfo? = null,
 )

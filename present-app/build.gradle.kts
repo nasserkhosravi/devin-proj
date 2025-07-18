@@ -10,10 +10,10 @@ android {
 
     defaultConfig {
         minSdk = 26
-        versionCode = 3
+        versionCode = 4
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    val versionName = "\"4.0.0\""
+    val versionName = "\"4.1.0\""
 
     buildTypes {
         debug {

@@ -6,10 +6,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:menu="@menu/starter_menu"
+        app:title="Client selection"
+        android:minHeight="?attr/actionBarSize"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/tv_message"
         android:text="@string/loading"
         android:textSize="@dimen/textSizeH3"
+        android:textStyle="bold"
+        android:layout_marginHorizontal="?attr/spaceLarge"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
