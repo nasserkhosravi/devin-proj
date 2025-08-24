@@ -2,10 +2,13 @@ package com.khosravi.devin.present
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.HashMap
 
 fun JSONArray?.isNullOrEmpty() = this == null || isEmpty()
 
 fun JSONArray.isEmpty() = length() == 0
+
+fun JSONObject.isEmpty() = length() == 0
 
 fun JSONArray.isNotEmpty() = length() > 0
 
@@ -13,6 +16,17 @@ inline fun JSONObject.forEach(action: (key: String, value: Any) -> Unit) {
     keys().forEach {
         action(it as String, get(it))
     }
+}
+
+fun JSONObject.toMap(): Map<String, Any> {
+    val length = length()
+    if (length == 0) return emptyMap()
+
+    val result = HashMap<String, Any>(length)
+    keys().forEach {
+        result[it] = get(it)
+    }
+    return result
 }
 
 inline fun JSONArray.forEach(action: (Any) -> Unit) {
@@ -80,4 +94,18 @@ fun JSONObject.flatPut(from: JSONObject?): JSONObject {
         put(it, from.get(it))
     }
     return this
+}
+
+fun JSONObject.optIntOrNull(key: String): Int? {
+    if (has(key)) {
+        return optInt(key)
+    }
+    return null
+}
+
+fun JSONObject.optStringOrNull(key: String): String? {
+    if (has(key)) {
+        return getString(key)
+    }
+    return null
 }
