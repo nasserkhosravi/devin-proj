@@ -1,7 +1,12 @@
 # Changelog
+**Write module:**
+
+## 4.1.0
+- Update gradle to 8.11.1, and agp to 8.10.0.
+- Add presenterConfig feature through write module to presenter.
+- Add special sessionStart function to logger.
 
 ## 4.0.0
-**Write module:**
 - DevinTool now accept a boolean to config being enable.
 - Add metaIndex table to presenter be able to query something in meta.
 - Break-change, DevinTool getOrCreate function changed to init() and get().
