@@ -8,7 +8,8 @@ import android.util.Log
 import com.khosravi.devin.api.DevinImageLogger
 import com.khosravi.devin.write.api.DevinLogCore
 import com.khosravi.devin.api.DevinLogger
- import com.khosravi.devin.read.DevinUriHelper
+import com.khosravi.devin.read.DevinUriHelper
+import org.json.JSONObject
 import java.lang.Exception
 
 class DevinTool private constructor(
@@ -17,10 +18,10 @@ class DevinTool private constructor(
     private val logCore: DevinLogCore? = null,
 ) {
 
-    private fun putClient(appContext: Context, packageName: String) {
+    private fun putClient(appContext: Context, packageName: String, presenterConfig: JSONObject?) {
         appContext.contentResolver.insert(
             DevinUriHelper.getClientListUri(),
-            DevinContentProvider.contentValuePutClient(packageName)
+            DevinContentProvider.contentValuePutClient(packageName, presenterConfig)
         )
     }
 
@@ -38,7 +39,7 @@ class DevinTool private constructor(
         private var instance: DevinTool? = null
 
 
-        private fun create(appContext: Context, isEnable: Boolean): DevinTool {
+        private fun create(appContext: Context, isEnable: Boolean, presenterConfig: JSONObject?): DevinTool {
             val packageName = appContext.packageName
             val devinTool = if (isEnable) {
                 val logCore = LogCore(appContext, true)
@@ -49,7 +50,7 @@ class DevinTool private constructor(
                 disableComponent(appContext, packageName, DevinContentProvider::class.java.name)
             } else {
                 try {
-                    devinTool.putClient(appContext, packageName)
+                    devinTool.putClient(appContext, packageName, presenterConfig)
                 } catch (e: Exception) {
                     Log.e(TAG, "No Devin receiver found. Please ensure a devin presenter application is installed.")
                     e.printStackTrace()
@@ -67,10 +68,10 @@ class DevinTool private constructor(
             }
         }
 
-        fun init(context: Context, isEnable: Boolean? = null) {
+        fun init(context: Context, isEnable: Boolean? = null, presenterConfig: JSONObject? = null) {
             if (instance == null) {
                 val fIsEnable: Boolean = isEnable ?: context.isDebuggable()
-                instance = create(context, fIsEnable)
+                instance = create(context, fIsEnable, presenterConfig)
             }
         }
 

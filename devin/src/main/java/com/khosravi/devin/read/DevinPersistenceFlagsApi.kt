@@ -9,5 +9,6 @@ object DevinPersistenceFlagsApi {
     const val KEY_META = "_meta"
     const val KEY_CLIENT_ID = "_clientId"
     const val KEY_CONTENT = "_content"
+    const val KEY_PRESENTER_CONFIG = "_presenterConfig"
 
 }

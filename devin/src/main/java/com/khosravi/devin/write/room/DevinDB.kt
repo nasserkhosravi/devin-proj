@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [LogTable::class, ClientTable::class, MetaIndexTable::class], version = 3)
+@Database(entities = [LogTable::class, ClientTable::class, MetaIndexTable::class], version = 4)
 abstract class DevinDB : RoomDatabase() {
 
     abstract fun logDao(): LogDao

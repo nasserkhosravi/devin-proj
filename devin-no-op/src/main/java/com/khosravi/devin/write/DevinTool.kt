@@ -4,11 +4,14 @@ import android.content.Context
 import com.khosravi.devin.api.DevinImageLogger
 import com.khosravi.devin.api.DevinLogger
 import com.khosravi.devin.write.api.DevinLogCore
+import org.json.JSONObject
 
 class DevinTool private constructor(
     val logger: DevinLogger?,
     val imageLogger: DevinImageLogger?,
+    private val logCore: DevinLogCore? = null,
 ) {
+
     /**
      * Give available [DevinLogCore] instance.
      */
@@ -25,7 +28,7 @@ class DevinTool private constructor(
             //no impl
         }
 
-        fun init(context: Context, isEnable: Boolean? = null) {
+        fun init(context: Context, isEnable: Boolean? = null, presenterConfig: JSONObject? = null) {
             //no impl
         }
 
