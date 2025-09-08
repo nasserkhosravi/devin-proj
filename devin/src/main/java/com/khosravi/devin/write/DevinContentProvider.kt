@@ -17,6 +17,7 @@ import com.khosravi.devin.write.room.ClientTable
 import com.khosravi.devin.write.room.DevinDB
 import com.khosravi.devin.write.room.LogTable
 import com.khosravi.devin.write.room.MetaIndexTable
+import org.json.JSONObject
 import java.io.File
 import java.util.Date
 
@@ -229,6 +230,7 @@ class DevinContentProvider : ContentProvider() {
 
     private fun ContentValues.readAsNewClientTable() = ClientTable(
         packageId = getAsString(ClientTable.COLUMN_PACKAGE_ID),
+        presenterConfig = getAsString(ClientTable.COLUMN_PRESENTER_CONFIG)
     )
 
     private fun ContentValues.readMetaIndexPair(): Pair<String, String>? {
@@ -288,8 +290,9 @@ class DevinContentProvider : ContentProvider() {
                 }
             }
 
-        fun contentValuePutClient(packageId: String) = ContentValues().apply {
-            put(LogTable.COLUMN_CLIENT_ID, packageId)
+        fun contentValuePutClient(packageId: String, presenterConfig: JSONObject?) = ContentValues().apply {
+            put(ClientTable.COLUMN_PACKAGE_ID, packageId)
+            put(ClientTable.COLUMN_PRESENTER_CONFIG, presenterConfig?.toString())
         }
 
         @Deprecated("", replaceWith = ReplaceWith("DevinUriHelper.getClientListUri()"))
