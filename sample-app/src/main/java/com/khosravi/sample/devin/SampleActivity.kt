@@ -38,6 +38,8 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
         setupSpinnerAdapter(binding)
 
+        logger.logSessionStart(this)
+
         binding.btnSend.setOnClickListener {
             sendLog(binding, logger)
         }
