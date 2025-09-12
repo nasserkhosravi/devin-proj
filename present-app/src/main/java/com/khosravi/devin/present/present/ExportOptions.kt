@@ -14,7 +14,7 @@ data class ExportOptions(
     fun toJson(): JsonObject {
         return JsonObject().apply {
             addProperty("id", id)
-            addProperty("tagWhitelist", tagWhitelist.toString())
+            addProperty("tagWhitelist", tagWhitelist?.toString())
             addProperty("withSeparationTagFiles", withSeparationTagFiles)
             addProperty("upToDaysNumber", upToDaysNumber?.value)
         }

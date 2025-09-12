@@ -11,10 +11,11 @@ import com.khosravi.devin.present.createJsonFileNameForExport
 import com.khosravi.devin.present.createZipFileNameForExport
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.ContentProviderLogsDao
-import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.data.model.GetLogsQueryModel
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.filter.TagFilterItem
+import com.khosravi.devin.present.formatter.InterAppJsonConverter.getUpDaysConstraintAsCurrentMills
+import com.khosravi.devin.present.formatter.InterAppJsonConverter.tagListToFilterFunction
 import com.khosravi.devin.present.formatter.InterAppJsonConverter.writeLogsFlattenFormat
 import com.khosravi.devin.present.formatter.InterAppJsonConverter.writeLogsSeparatedFormat
 import com.khosravi.devin.present.requestJsonFileUriToSave
@@ -170,25 +171,12 @@ class ExportViewModel(
         }
     }
 
-    private fun ExportOptions.getUpDaysConstraintAsCurrentMills(mills: Long = System.currentTimeMillis()): Long? {
-        return upToDaysNumber?.value?.let {
-            mills - it.days.inWholeMicroseconds
-        }
-    }
-
     private fun getFormattedCurrentDate(needZipFile: Boolean): String {
         val dateTime = calendarProxy.getFormattedCurrentDateTime()
         return if (needZipFile) {
             createZipFileNameForExport(dateTime)
         } else {
             createJsonFileNameForExport(dateTime)
-        }
-    }
-
-    private fun tagListToFilterFunction(tags: List<String>?): ((LogData) -> Boolean)? {
-        if (tags.isNullOrEmpty()) return null
-        return { logData ->
-            tags.any { it.equals(logData.tag, true) }
         }
     }
 
