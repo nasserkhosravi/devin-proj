@@ -17,6 +17,7 @@ import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.devin.write.room.LogTable
 import java.io.Writer
 import java.util.Date
+import kotlin.time.Duration.Companion.days
 
 internal object InterAppJsonConverter {
 
@@ -121,6 +122,20 @@ internal object InterAppJsonConverter {
         }
     }
 
+    fun tagListToFilterFunction(tags: List<String>?): ((LogData) -> Boolean)? {
+        if (tags.isNullOrEmpty()) return null
+        return { logData ->
+            tags.any { it.equals(logData.tag, true) }
+        }
+    }
+
+    fun ExportOptions.getUpDaysConstraintAsCurrentMills(mills: Long = System.currentTimeMillis()): Long? {
+        return upToDaysNumber?.value?.let {
+            mills - it.days.inWholeMicroseconds
+        }
+    }
+
+
     private fun createBasicExportStructure(
         exportConfig: ExportOptions,
         oWriter: Writer,
@@ -219,3 +234,4 @@ internal object InterAppJsonConverter {
         }
     }
 }
+
