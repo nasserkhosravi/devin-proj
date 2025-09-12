@@ -3,6 +3,7 @@ package com.khosravi.devin.present.data
 import android.content.Context
 import android.database.Cursor
 import com.khosravi.devin.present.client.ClientData
+import com.khosravi.devin.present.toSafeJSONObject
 import com.khosravi.devin.read.DevinUriHelper
 
 object ClientContentProvider {
@@ -19,8 +20,13 @@ object ClientContentProvider {
         return result
     }
 
+    fun getClient(context: Context, clientId: String): ClientData? {
+        return getClientList(context).firstOrNull { it.packageId == clientId }
+    }
+
     private fun Cursor.asClientData() = ClientData(
-        getString(0)
+        getString(0),
+        getString(1).toSafeJSONObject()
     )
 
 

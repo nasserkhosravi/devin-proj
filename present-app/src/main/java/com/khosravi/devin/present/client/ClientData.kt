@@ -1,3 +1,8 @@
 package com.khosravi.devin.present.client
 
-data class ClientData(val packageId: String)
+import org.json.JSONObject
+
+data class ClientData(
+    val packageId: String,
+    val presenterConfig: JSONObject?
+)
