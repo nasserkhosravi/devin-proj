@@ -26,9 +26,16 @@ object ClientContentProvider {
 
     private fun Cursor.asClientData() = ClientData(
         getString(0),
-        getString(1).toSafeJSONObject()
+        optString(1)?.toSafeJSONObject()
     )
 
+    private fun Cursor.optString(index: Int): String? {
+        return try {
+            getString(index)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
 }
 
