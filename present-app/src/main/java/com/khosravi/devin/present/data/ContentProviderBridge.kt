@@ -29,7 +29,6 @@ import java.io.Writer
 
 object ContentProviderBridge {
     private const val TAG = "ContentProviderBridge"
-    private const val FILE_NAME = "all_http_logs"
     private const val KEY_AutoSaveHttpLog = "autoSaveHttpLogs"
 
 
@@ -41,7 +40,7 @@ object ContentProviderBridge {
     private var presenterConfig: JSONObject? = null
 
     fun onInsertLog(logUri: Uri, context: Context, logTable: LogTable) {
-        Log.d(TAG, "onInsertLog $logUri")
+        Log.d(TAG, "onInsertLog for ${logTable.clientId}")
         val clientId = logTable.clientId
         if (logTable.typeId != DevinHttpFlagsApi.TYPE_ID) {
             return
@@ -56,15 +55,15 @@ object ContentProviderBridge {
         }
         if (isAutoSaveHttpLogs == false) return
         if (logDirectory == null) {
-            logDirectory = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+            logDirectory = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
             // Check if the directory exists. Create it if it doesn't.
             if (logDirectory == null) {
-                Log.d("xosro", "Error: Could not get external documents directory.")
+                Log.d(TAG, "Error: Could not get external documents directory.")
                 return
             }
             if (!logDirectory!!.exists()) {
                 if (!logDirectory!!.mkdirs()) {
-                    Log.d("xosro", "Error: Could not create log directory.")
+                    Log.d(TAG, "Error: Could not create log directory.")
                     return
                 }
             }
@@ -82,7 +81,7 @@ object ContentProviderBridge {
                 false, PositiveNumber(1)
             )
 
-            val fileName = createJsonFileNameForExport(FILE_NAME)
+            val fileName = createJsonFileNameForExport(clientId)
             val mainFile = File(logDirectory, fileName)
             if (mainFile.exists()) {
                 mainFile.delete()
