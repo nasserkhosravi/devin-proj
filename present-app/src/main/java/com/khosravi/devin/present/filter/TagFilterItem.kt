@@ -11,4 +11,9 @@ class TagFilterItem(
         get() = tagValue
 
     override val ui: FilterUiData = FilterUiData(tagValue, NotEmptyString(tagValue), Defaults.filterColor)
+
+    override fun toString(): String {
+        return "TagFilterItem(tagValue='$tagValue')"
+    }
+
 }

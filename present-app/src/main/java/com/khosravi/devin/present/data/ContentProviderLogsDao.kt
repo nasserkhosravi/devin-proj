@@ -44,7 +44,8 @@ object ContentProviderLogsDao {
                 tag = model.tag,
                 value = model.value,
                 metaSearch = model.metaParam,
-                page = model.page
+                page = model.page,
+                timeConstraintLessThan = model.timeLessThan
             )
         }
 
@@ -202,11 +203,11 @@ object ContentProviderLogsDao {
         val where = StringBuilder("${LogTable.COLUMN_CLIENT_ID} = ?").apply {
             if (!typeId.isNullOrEmpty()) {
                 args.add(typeId)
-                append(" AND ${LogTable.COLUMN_TAG} = ?")
+                append(" AND ${LogTable.COLUMN_TYPE_ID} = ?")
             }
             if (timeLessThan != null) {
                 args.add(timeLessThan.toString())
-                append(" AND ${LogTable.COLUMN_DATE} < ?")
+                append(" AND ${LogTable.COLUMN_DATE} > ?")
             }
             if (tag != null) {
                 args.add(tag.toSqlStringArgs())

@@ -13,6 +13,7 @@ import com.khosravi.devin.read.DevinPersistenceFlagsApi
 import com.khosravi.devin.read.DevinUriHelper
 import com.khosravi.devin.read.DevinUriHelper.getMsl1
 import com.khosravi.devin.write.api.DevinLogCore
+import com.khosravi.devin.write.bridge.BridgeSignaler
 import com.khosravi.devin.write.room.ClientTable
 import com.khosravi.devin.write.room.DevinDB
 import com.khosravi.devin.write.room.LogTable
@@ -23,6 +24,8 @@ import java.util.Date
 
 
 class DevinContentProvider : ContentProvider() {
+
+    private var bridgeSignaler: BridgeSignaler? = BridgeSignaler()
 
     override fun onCreate(): Boolean {
         return true
@@ -70,6 +73,16 @@ class DevinContentProvider : ContentProvider() {
         }
         Log.d(TAG, "unknown query() operation with uri: $uri")
         return null
+    }
+
+    private fun onInsertLog(logUri: Uri, context: Context, logTable: LogTable) {
+        try {
+            bridgeSignaler?.signalOnInsertLog(logUri,context, logTable)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e(TAG, "bridgeSignaler failed")
+            bridgeSignaler = null
+        }
     }
 
     private fun getLogListByTagAsCursor(context: Context, clientId: String, tag: String) =
@@ -135,6 +148,7 @@ class DevinContentProvider : ContentProvider() {
         val instance = DevinDB.getInstance(context)
         if (uri.isLogPath()) {
             val logTable = values?.readAsNewLogTable() ?: return null
+
             val id: Long = instance.logDao().insert(logTable)
             values.readMetaIndexPair()?.let {
                 val resultId = instance.metaIndexDao().put(MetaIndexTable(id, it.first, it.second))
@@ -143,6 +157,7 @@ class DevinContentProvider : ContentProvider() {
             writeContentFileIfItsPossible(values, context, logTable.clientId, logTable.id)
             context.contentResolver.notifyChange(uri, null)
             return ContentUris.withAppendedId(uri, id).apply {
+                onInsertLog(uri,context, logTable)
                 Log.d(TAG, "Insert log: $uri")
             }
         }
