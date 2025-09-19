@@ -1,4 +1,6 @@
 # Changelog
+## 4.2.0
+- Implement client login (log password) feature. 
 
 ## 4.1.0
 - Improve exporting by create a dedicated dialog.
