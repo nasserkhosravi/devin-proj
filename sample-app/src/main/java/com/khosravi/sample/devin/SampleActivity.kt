@@ -20,7 +20,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import org.json.JSONObject
 
-
 class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +27,10 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val binding = ActivitySampleBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
 
-        DevinTool.init(this, presenterConfig = JSONObject().put("autoHttpLogs", true))
+        DevinTool.init(
+            this, presenterConfig = JSONObject()
+                .put("logPassword", "1234")
+        )
 
         val devinTool: DevinTool? = DevinTool.get()
         val logger = devinTool?.logger

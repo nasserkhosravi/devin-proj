@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.R
@@ -15,6 +14,7 @@ import com.khosravi.devin.present.data.ClientLoadedState
 import com.khosravi.devin.present.databinding.ActivityStarterBinding
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
+import com.khosravi.devin.present.domain.ClientLoginInteractor
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import kotlinx.coroutines.CoroutineScope
@@ -30,13 +30,17 @@ class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     @Inject
     lateinit var vmFactory: ViewModelFactory
 
+    @Inject
+    lateinit var clientLoginInteractor: ClientLoginInteractor
+
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
+
     private var _binding: ActivityStarterBinding? = null
+
     private val binding: ActivityStarterBinding
         get() = _binding!!
-
     private val itemAdapter = ItemAdapter<ClientItem>()
     private val adapter = FastAdapter.with(itemAdapter)
 
@@ -69,7 +73,9 @@ class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private fun onSelectClient(clientData: ClientData) {
         viewModel.setSelectedClientId(clientData)
-        openNextActivity()
+        clientLoginInteractor.onClientSelect(this, clientData) {
+            isRouteSuccessful(it)
+        }
     }
 
     override fun onDestroy() {
@@ -109,23 +115,39 @@ class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun onClientListFetchResult(loadState: ClientLoadedState) {
         when (loadState) {
             is ClientLoadedState.Single -> {
-                viewModel.setSelectedClientId(loadState.client)
-                openNextActivity()
-                finish()
+                val clientData = loadState.client
+                itemAdapter.set(listOf(ClientItem(clientData)))
+
+                binding.tvMessage.text = loadState.toStateMessage()
+                viewModel.setSelectedClientId(clientData)
+                clientLoginInteractor.onClientSelect(this, clientData) {
+                    isRouteSuccessful(it)
+                }
+                binding.rvClients.adapter = adapter
             }
+
             is ClientLoadedState.Multi -> {
                 itemAdapter.set(loadState.clients.map { ClientItem(it) })
                 binding.tvMessage.text = loadState.toStateMessage()
                 binding.rvClients.adapter = adapter
             }
+
             is ClientLoadedState.Zero -> {
                 binding.tvMessage.text = loadState.toStateMessage()
             }
         }
     }
 
-    private fun openNextActivity() {
-        startActivity(Intent(this@StarterActivity, LogActivity::class.java))
+    private fun isRouteSuccessful(canRoute: Boolean) {
+        if (canRoute) {
+            openNextActivity(this)
+        } else {
+            clientLoginInteractor.showManyTryPasswordToast(this)
+        }
+    }
+
+    private fun openNextActivity(activity: AppCompatActivity) {
+        activity.startActivity(Intent(activity, LogActivity::class.java))
     }
 
 }
