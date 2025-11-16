@@ -32,4 +32,9 @@
         android:id="@+id/action_clear_filters"
         android:title="@string/menu_clear_filters" />
 
+
+    <item
+        android:id="@+id/action_client_params"
+        android:title="@string/menu_client_params" />
+
 </menu>

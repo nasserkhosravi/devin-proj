@@ -313,6 +313,12 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 true
             }
 
+            R.id.action_client_params -> {
+                val newIntent = ClientParamsActivity.newIntent(this, viewModel.getSelectedClientIdOrError())
+                startActivity(newIntent)
+                true
+            }
+
             else -> super.onOptionsItemSelected(item)
         }
     }

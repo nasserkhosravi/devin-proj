@@ -10,6 +10,7 @@ import com.khosravi.devin.present.present.LogExportDialog
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.ImportLogActivity
 import com.khosravi.devin.present.present.StarterActivity
+import com.khosravi.devin.present.present.ClientParamsActivity
 import javax.inject.Singleton
 
 
@@ -26,6 +27,8 @@ interface AppComponent {
     fun inject(activity: ImportLogActivity)
 
     fun inject(activity: HttpLogDetailActivity)
+
+    fun inject(activity: ClientParamsActivity)
 
     fun inject(dialog: LogExportDialog)
 

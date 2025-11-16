@@ -67,4 +67,10 @@
     <string name="field_day_filter">Day filter, default is no filter</string>
     <string name="field_whitelist_tag_filter">Whitelist tag filter,(example: a,b,c), Default is all</string>
 
+    <string name="title_client_params">Client Parameters</string>
+    <string name="hint_client_params">Enter parameters (JSON)</string>
+    <string name="action_save">Save</string>
+    <string name="msg_params_saved">Parameters saved successfully</string>
+    <string name="menu_client_params">Client params</string>
+
 </resources>
