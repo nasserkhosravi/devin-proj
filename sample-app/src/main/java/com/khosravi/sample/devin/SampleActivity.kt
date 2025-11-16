@@ -18,7 +18,7 @@ import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
-
+import org.json.JSONObject
 
 class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -27,7 +27,11 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val binding = ActivitySampleBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
 
-        DevinTool.init(this)
+        DevinTool.init(
+            this, presenterConfig = JSONObject()
+                .put("logPassword", "1234")
+        )
+
         val devinTool: DevinTool? = DevinTool.get()
         val logger = devinTool?.logger
         if (logger == null) {
@@ -35,6 +39,8 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             return
         }
         setupSpinnerAdapter(binding)
+
+        logger.logSessionStart(this)
 
         binding.btnSend.setOnClickListener {
             sendLog(binding, logger)

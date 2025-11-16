@@ -3,6 +3,7 @@ package com.khosravi.devin.present.data
 import android.content.Context
 import android.database.Cursor
 import com.khosravi.devin.present.client.ClientData
+import com.khosravi.devin.present.toSafeJSONObject
 import com.khosravi.devin.read.DevinUriHelper
 
 object ClientContentProvider {
@@ -20,8 +21,18 @@ object ClientContentProvider {
     }
 
     private fun Cursor.asClientData() = ClientData(
-        getString(0)
+        getString(0),
+        optString(1)?.toSafeJSONObject()
     )
+
+    private fun Cursor.optString(index: Int, onException: ((Exception)-> Unit)? = null): String? {
+        return try {
+            getString(index)
+        } catch (e: Exception) {
+            onException?.invoke(e)
+            null
+        }
+    }
 
 
 }

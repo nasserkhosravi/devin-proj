@@ -1,5 +1,7 @@
 package com.khosravi.devin.api
 
+import android.content.Context
+
 
 interface DevinLogger {
 
@@ -20,5 +22,10 @@ interface DevinLogger {
      * See [com.khosravi.devin.write.DevinExceptionLogger]
      */
     fun generalUncaughtExceptionLogging(isEnable: Boolean)
+
+    /**
+     * Log some application and device info that extracted from [context], with a reserved tag.
+     */
+    fun logSessionStart(context: Context)
 }
 
