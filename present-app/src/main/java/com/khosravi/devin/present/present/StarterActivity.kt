@@ -5,8 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.client.ClientItem
@@ -19,9 +21,12 @@ import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -38,11 +43,11 @@ class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private var _binding: ActivityStarterBinding? = null
-
     private val binding: ActivityStarterBinding
         get() = _binding!!
     private val itemAdapter = ItemAdapter<ClientItem>()
     private val adapter = FastAdapter.with(itemAdapter)
+    private var publicApiActionJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
@@ -57,7 +62,21 @@ class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
 
         launchGettingClientList()
+        handlePublicApiAction()
+    }
 
+    private fun handlePublicApiAction() {
+        publicApiActionJob?.cancel()
+        publicApiActionJob = viewModel.processIntentAction(intent, this).flowOn(Dispatchers.Main).onEach {
+            if (it != null) {
+                Toast.makeText(this@StarterActivity,it, Toast.LENGTH_SHORT).show()
+            }
+        }.launchIn(lifecycleScope)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        handlePublicApiAction()
     }
 
     private fun launchGettingClientList() {

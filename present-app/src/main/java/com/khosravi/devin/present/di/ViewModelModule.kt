@@ -7,6 +7,7 @@ import dagger.Module
 import dagger.Provides
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.export.PublicApiHandler
 
 
 @Module
@@ -18,8 +19,9 @@ class ViewModelModule {
         filterRepository: FilterRepository,
         calendar: CalendarProxy,
         cacheRepository: CacheRepository,
-        userSettings: UserSettings
-    ) = ViewModelFactory(application, calendar, filterRepository, cacheRepository, userSettings)
+        userSettings: UserSettings,
+        generalApiChecker: PublicApiHandler,
+    ) = ViewModelFactory(application, calendar, filterRepository, cacheRepository, userSettings, generalApiChecker)
 
 }
 

@@ -2,6 +2,7 @@ package com.khosravi.devin.present.present
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,6 +20,7 @@ import com.khosravi.devin.present.data.model.PageInfo
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.TimePresent
+import com.khosravi.devin.present.export.PublicApiHandler
 import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
@@ -39,6 +41,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -52,7 +55,8 @@ class ReaderViewModel constructor(
     private val calendar: CalendarProxy,
     private val filterRepository: FilterRepository,
     private val cacheRepo: CacheRepository,
-    private val userSettings: UserSettings
+    private val userSettings: UserSettings,
+    private val publicApiHandler: PublicApiHandler
 ) : AndroidViewModel(application) {
     private var pageInfo = PageInfo()
     private val _uiStateFlow = MutableStateFlow(ResultUiState(null, null, ResultUiState.UpdateInfo(), pageInfo = pageInfo))
@@ -164,7 +168,6 @@ class ReaderViewModel constructor(
                 }
         }
     }
-
 
 
     fun getClientList() = flow {
@@ -404,6 +407,17 @@ class ReaderViewModel constructor(
         return null
 
     }
+
+
+    fun processIntentAction(intent: Intent?, context: Context): Flow<String?> = flow {
+        val action = publicApiHandler.createAction(intent)
+        if (action != null) {
+            val result = publicApiHandler.process(action, context).firstOrNull()
+            emit("Action: $result")
+        } else {
+            emit(null)
+        }
+    }.flowOn(Dispatchers.Default)
 
     data class ResultUiState(
         val filterList: List<FilterItem>?,
