@@ -7,6 +7,7 @@ import com.khosravi.devin.present.data.UserSettings
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.export.PublicApiHandler
 import com.khosravi.devin.present.present.ExportViewModel
 import com.khosravi.devin.present.present.http.HttpDetailViewModel
 import com.khosravi.devin.present.present.ReaderViewModel
@@ -18,11 +19,12 @@ class ViewModelFactory(
     private val filterRepository: FilterRepository,
     private val cacheRepo: CacheRepository,
     private val userSettings: UserSettings,
+    private val generalApiChecker: PublicApiHandler,
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(ReaderViewModel::class.java) -> {
-                ReaderViewModel(application, calendar, filterRepository, cacheRepo, userSettings) as T
+                ReaderViewModel(application, calendar, filterRepository, cacheRepo, userSettings, generalApiChecker) as T
             }
 
             modelClass.isAssignableFrom(HttpDetailViewModel::class.java) -> {

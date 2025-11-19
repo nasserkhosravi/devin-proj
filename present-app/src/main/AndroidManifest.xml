@@ -39,6 +39,13 @@
             android:name=".present.http.HttpLogDetailActivity"
             android:exported="false" />
 
+        <receiver android:name=".broadcast.DevinReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="devin.intent.action.EXPORT_LOGS"/>
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.khosravi.devin.present.fileprovider"

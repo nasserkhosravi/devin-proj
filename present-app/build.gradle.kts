@@ -51,6 +51,8 @@ dependencies {
 
     implementation("androidx.room:room-runtime:2.5.1")
 
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+
     implementation("com.google.dagger:dagger-android:2.24")
     kapt("com.google.dagger:dagger-compiler:2.24")
 

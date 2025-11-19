@@ -6,6 +6,7 @@ import dagger.BindsInstance
 import dagger.Component
 import com.khosravi.devin.present.present.LogActivity
 import com.khosravi.devin.present.PresentApplication
+import com.khosravi.devin.present.broadcast.DevinReceiver
 import com.khosravi.devin.present.present.LogExportDialog
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.ImportLogActivity
@@ -28,6 +29,8 @@ interface AppComponent {
     fun inject(activity: HttpLogDetailActivity)
 
     fun inject(dialog: LogExportDialog)
+
+    fun inject(devinReceiver: DevinReceiver)
 
     @Component.Builder
     interface Builder {
