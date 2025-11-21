@@ -53,7 +53,7 @@ class FilterDialog : BaseDialog() {
         val searchText = binding.edSearchText.text.toString()
         val chipColor = ResourceHelper.getAFilterColor(context!!, requireArguments().getInt(KEY_LAST_INDEX))
         val filterItem = CustomFilterItem(
-            ui = FilterUiData(fTitle, fTitle.itsNotEmpty(), chipColor),
+            ui = FilterUiData(fTitle, fTitle.itsNotEmpty(), chipColor, false),
             criteria = CustomFilterCriteria(tag, searchText)
         )
         onConfirm?.invoke(filterItem)
