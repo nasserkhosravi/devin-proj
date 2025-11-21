@@ -24,36 +24,40 @@ import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
-import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
 import com.khosravi.devin.present.filter.isIndexFilterItem
+import com.khosravi.devin.present.gone
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.itemview.SearchItemView
+import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toItemViewHolder
+import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.present.uikit.component.EndlessScrollListener
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
+import com.khosravi.devin.present.visible
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
 import com.mikepenz.fastadapter.expandable.getExpandableExtension
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
-class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
+class LogActivity : AppCompatActivity() {
 
     private val filterItemAdapter = SingleSelectionItemAdapter<FilterItemViewHolder>()
     private val filterAdapter = FastAdapter.with(filterItemAdapter)
@@ -74,6 +78,8 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
+
+    private var shareFilterJob: Job?=null
 
     private lateinit var importIntentLauncher: ActivityResultLauncher<Intent>
     private var endlessRecyclerOnScrollListener: EndlessScrollListener? = null
@@ -142,7 +148,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val popup = PopupMenu(this, v)
         popup.inflate(R.menu.menu_filter_item_quick_action)
 
-        normalizeMenuToItsAvailableActions(item, popup)
+        normalizeMenuToItsAvailableActions(item.data, popup)
 
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
@@ -152,7 +158,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                 }
 
                 R.id.action_share_as_json -> {
-                    shareFilterItem(item.data)
+                    shareFilterItemLogs(item.data)
                     true
                 }
 
@@ -167,18 +173,18 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         popup.show()
     }
 
-    private fun normalizeMenuToItsAvailableActions(item: FilterItemViewHolder, popup: PopupMenu) {
-        if (item.data is TagFilterItem) {
+    private fun normalizeMenuToItsAvailableActions(data: FilterItem, popup: PopupMenu) {
+        if (data is TagFilterItem) {
             popup.menu.findItem(R.id.action_remove).apply {
                 isVisible = false
             }
-        } else if (item.data is CustomFilterItem) {
+        } else if (data is CustomFilterItem) {
             popup.menu.findItem(R.id.action_share_as_json).apply {
                 isVisible = false
             }
         }
 
-        val togglePinMenuItemId = if (item.data.ui.isPinned) {
+        val togglePinMenuItemId = if (data.ui.isPinned) {
             R.id.action_pin
         } else R.id.action_unpin
 
@@ -192,7 +198,30 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun shareFilterItem(data: FilterItem) {
+
+    private fun shareFilterItemLogs(data: FilterItem) {
+        if (data !is TagFilterItem) return
+        shareFilterJob?.cancel()
+
+        startLoading()
+        shareFilterJob = viewModel.shareFilterItem(data).flowOn(Dispatchers.Main)
+            .onEach { exportFile ->
+                stopLoading()
+
+                this.toUriByFileProvider(exportFile).let {
+                    val intent = sendOrShareFileIntent(it, MIME_APP_JSON)
+                    startActivity(Intent.createChooser(intent, getString(R.string.title_of_share)))
+                }
+            }.launchIn(lifecycleScope)
+    }
+
+    private fun stopLoading() {
+        _binding?.progressBar?.gone()
+    }
+
+    private fun startLoading() {
+        shareFilterJob?.cancel()
+        binding.progressBar.visible()
     }
 
 
@@ -297,7 +326,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val possibleSearchItem = getSearchItem()
         updateSearchItem(data, possibleSearchItem)
 
-        launch {
+        lifecycleScope.launch {
             viewModel.newFilterSelected(data).collect()
         }
     }
