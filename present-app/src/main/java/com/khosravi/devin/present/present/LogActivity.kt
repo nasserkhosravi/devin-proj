@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -20,8 +21,12 @@ import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
+import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
+import com.khosravi.devin.present.filter.IndexFilterItem
+import com.khosravi.devin.present.filter.TagFilterItem
+import com.khosravi.devin.present.filter.isIndexFilterItem
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
@@ -34,7 +39,6 @@ import com.khosravi.devin.present.tool.adapter.lastIndex
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
-import com.mikepenz.fastadapter.LongClickListener
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
 import com.mikepenz.fastadapter.expandable.getExpandableExtension
 import kotlinx.coroutines.CoroutineScope
@@ -91,16 +95,9 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             selectNewFilter(item.data)
             true
         }
-        filterAdapter.onLongClickListener = object : LongClickListener<FilterItemViewHolder> {
-            override fun invoke(
-                p1: View,
-                p2: IAdapter<FilterItemViewHolder>,
-                itemViewHolder: FilterItemViewHolder,
-                position: Int
-            ): Boolean {
-                return onLongClickFilter(itemViewHolder, position)
-            }
-
+        filterAdapter.onLongClickListener = { v, _, item, position ->
+            showFilterContextMenu(v, item, position)
+            true
         }
 
         mainAdapter.onClickListener = { _, _, item, _ ->
@@ -138,6 +135,66 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         setupNextPageFlow()
         setupSearchFlow()
     }
+
+    private fun showFilterContextMenu(v: View, item: FilterItemViewHolder, position: Int) {
+        if (item.data.isIndexFilterItem()) return
+
+        val popup = PopupMenu(this, v)
+        popup.inflate(R.menu.menu_filter_item_quick_action)
+
+        normalizeMenuToItsAvailableActions(item, popup)
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_pin,R.id.action_unpin -> {
+                    reverseIsPinned(item.data, position)
+                    true
+                }
+
+                R.id.action_share_as_json -> {
+                    shareFilterItem(item.data)
+                    true
+                }
+
+                R.id.action_remove -> {
+                    removeFilter(item.data, position)
+                    true
+                }
+
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun normalizeMenuToItsAvailableActions(item: FilterItemViewHolder, popup: PopupMenu) {
+        if (item.data is TagFilterItem) {
+            popup.menu.findItem(R.id.action_remove).apply {
+                isVisible = false
+            }
+        } else if (item.data is CustomFilterItem) {
+            popup.menu.findItem(R.id.action_share_as_json).apply {
+                isVisible = false
+            }
+        }
+
+        val togglePinMenuItemId = if (item.data.ui.isPinned) {
+            R.id.action_pin
+        } else R.id.action_unpin
+
+        popup.menu.findItem(togglePinMenuItemId).apply {
+            isVisible = false
+        }
+    }
+
+    private fun removeFilter(data: FilterItem, position: Int) {
+        lifecycleScope.launch {
+        }
+    }
+
+    private fun shareFilterItem(data: FilterItem) {
+    }
+
 
     private fun setupNextPageFlow() {
         lifecycleScope.launch {
@@ -291,12 +348,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun onLongClickFilter(p3: FilterItemViewHolder, position: Int): Boolean {
-        val filterItem = p3.data
-        reverseIsPinned(filterItem, position)
-        return true
-    }
-
     private fun reverseIsPinned(filterItem: FilterItem, position: Int) {
         lifecycleScope.launch {
             //last unpinned is new position.
@@ -403,5 +454,4 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"
         private const val TAG = "LogActivity"
     }
-
 }

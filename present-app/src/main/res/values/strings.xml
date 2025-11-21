@@ -66,5 +66,9 @@
     <string name="field_separate_tag_files">Separate tag files</string>
     <string name="field_day_filter">Day filter, default is no filter</string>
     <string name="field_whitelist_tag_filter">Whitelist tag filter,(example: a,b,c), Default is all</string>
+    <string name="menu_action_pin">Pin</string>
+    <string name="menu_action_unpin">Unpin</string>
+    <string name="menu_action_share_as_json">Share as json</string>
+    <string name="menu_action_remove">Remove</string>
 
 </resources>

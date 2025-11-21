@@ -34,3 +34,5 @@ fun FilterItem.setIsPinned(isPinned: Boolean): FilterItem {
         }
     }
 }
+
+fun FilterItem.isIndexFilterItem() = this is IndexFilterItem
