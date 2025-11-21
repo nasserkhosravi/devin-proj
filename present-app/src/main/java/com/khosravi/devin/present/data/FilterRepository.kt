@@ -126,6 +126,10 @@ class FilterRepository @Inject constructor(appContext: Context) {
         pinnedFiltersPref.edit { remove(filterItem.id) }
     }
 
+    fun removeFilter(data: CustomFilterItem) {
+        pref.edit { remove(data.id) }
+    }
+
 
     companion object {
         private const val KEY_ID = "_id"

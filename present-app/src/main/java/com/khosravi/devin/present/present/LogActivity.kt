@@ -24,6 +24,7 @@ import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
+import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
 import com.khosravi.devin.present.filter.isIndexFilterItem
 import com.khosravi.devin.present.gone
@@ -194,10 +195,22 @@ class LogActivity : AppCompatActivity() {
     }
 
     private fun removeFilter(data: FilterItem, position: Int) {
+        if (data !is CustomFilterItem) return
+
         lifecycleScope.launch {
+            val isSelected = filterItemAdapter.selectedIndex == position
+            viewModel.removeFilter(data, position).collect {
+                filterItemAdapter.remove(position)
+                if (isSelected) {
+                    resetToDefaultFilter()
+                }
+            }
         }
     }
 
+    private fun resetToDefaultFilter() {
+        selectNewFilter(IndexFilterItem.instance)
+    }
 
     private fun shareFilterItemLogs(data: FilterItem) {
         if (data !is TagFilterItem) return

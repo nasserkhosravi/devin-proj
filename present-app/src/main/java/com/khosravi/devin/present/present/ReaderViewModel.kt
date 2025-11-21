@@ -432,6 +432,17 @@ class ReaderViewModel constructor(
         return ExportViewModel.Common.prepareLogsForExport(getAppContext(), getSelectedClientIdOrError(), calendar, exportOptions)
     }
 
+    fun removeFilter(data: CustomFilterItem, position: Int): Flow<Unit> {
+        return flow {
+            filterRepository.removeFilter(data)
+            _uiStateFlow.value.filterList?.toMutableList()?.also { list ->
+                list.removeAt(position)
+                _uiStateFlow.update { it.copy(filterList = list) }
+            }
+            emit(Unit)
+        }.flowOn(Dispatchers.IO)
+    }
+
     data class ResultUiState(
         val filterList: List<FilterItem>?,
         val logList: List<LogItemData>?,
