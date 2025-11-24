@@ -163,9 +163,9 @@ class ExportViewModel(
         return if (tagWhitelist.isEmpty()) emptyList()
         else {
             if (tagWhitelist.contains(',')) {
-                tagWhitelist.split(',').map { TagFilterItem(it) }
+                tagWhitelist.split(',').map { TagFilterItem(it, false) }
             } else {
-                listOf(TagFilterItem(tagWhitelist))
+                listOf(TagFilterItem(tagWhitelist, false))
             }
         }
     }

@@ -23,6 +23,7 @@ import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
+import com.khosravi.devin.present.filter.setIsPinned
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HttpLogItemData
@@ -41,6 +42,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -166,7 +168,6 @@ class ReaderViewModel constructor(
     }
 
 
-
     fun getClientList() = flow {
         val result = ClientContentProvider.getClientList(getContext())
         emit(result)
@@ -225,7 +226,7 @@ class ReaderViewModel constructor(
 
     private fun getAllFiltersFlow(): Flow<List<FilterItem>> {
         return flow {
-            val allComputableFilters = provideAllComputableFilters()
+            val allComputableFilters = provideAllComputableFilters().sortedByDescending { it.ui.isPinned }
             val result = ArrayList<FilterItem>(allComputableFilters.size + 1).apply {
                 add(IndexFilterItem.instance)
                 addAll(allComputableFilters)
@@ -309,6 +310,26 @@ class ReaderViewModel constructor(
             val queryModel = buildQueryGet(filter)
             refreshLogsAndFilters(filter.id, queryModel, callbackId).collect {}
         }
+    }
+
+    fun markAsPinned(filterItem: FilterItem): Flow<FilterItem> {
+        if (filterItem.ui.isPinned) return flowOf(filterItem)
+
+        return flow {
+            filterRepository.saveAsPinned(filterItem)
+            val newItem = filterItem.setIsPinned(true)
+            emit(newItem)
+        }.flowOn(Dispatchers.Default)
+    }
+
+    fun removeAsPinned(filterItem: FilterItem): Flow<FilterItem> {
+        if (!filterItem.ui.isPinned) return flowOf(filterItem)
+
+        return flow {
+            filterRepository.removeAsPinned(filterItem)
+            val newItem = filterItem.setIsPinned(isPinned = false)
+            emit(newItem)
+        }.flowOn(Dispatchers.Default)
     }
 
     private fun checkPaginationFinish(it: List<LogItemData>) {

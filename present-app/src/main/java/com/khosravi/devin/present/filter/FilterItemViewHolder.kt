@@ -3,6 +3,7 @@ package com.khosravi.devin.present.filter
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import com.google.android.material.chip.ChipDrawable
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemFilterBinding
 import com.khosravi.devin.present.tool.adapter.SelectableBindingItem
@@ -24,6 +25,11 @@ class FilterItemViewHolder(
             chip.text = ui.title.value
             chip.setTextColor(ui.chipColor.textColor)
             chip.chipBackgroundColor = ColorStateList.valueOf(ui.chipColor.backColor)
+            if (ui.isPinned) {
+                chip.setChipIconResource(R.drawable.keep_24px)
+            } else {
+                chip.chipIcon = null
+            }
         }
     }
 

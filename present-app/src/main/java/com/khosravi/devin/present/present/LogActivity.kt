@@ -34,14 +34,17 @@ import com.khosravi.devin.present.tool.adapter.lastIndex
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
+import com.mikepenz.fastadapter.LongClickListener
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
 import com.mikepenz.fastadapter.expandable.getExpandableExtension
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -88,6 +91,18 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             selectNewFilter(item.data)
             true
         }
+        filterAdapter.onLongClickListener = object : LongClickListener<FilterItemViewHolder> {
+            override fun invoke(
+                p1: View,
+                p2: IAdapter<FilterItemViewHolder>,
+                itemViewHolder: FilterItemViewHolder,
+                position: Int
+            ): Boolean {
+                return onLongClickFilter(itemViewHolder, position)
+            }
+
+        }
+
         mainAdapter.onClickListener = { _, _, item, _ ->
             when (item) {
                 is TextLogItem -> {
@@ -274,6 +289,30 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         LogExportDialog.newInstance().apply {
             show(supportFragmentManager, LogExportDialog.TAG)
         }
+    }
+
+    private fun onLongClickFilter(p3: FilterItemViewHolder, position: Int): Boolean {
+        val filterItem = p3.data
+        reverseIsPinned(filterItem, position)
+        return true
+    }
+
+    private fun reverseIsPinned(filterItem: FilterItem, position: Int) {
+        lifecycleScope.launch {
+            //last unpinned is new position.
+            val lastPinnedPosition = filterItemAdapter.adapterItems.indexOfFirst { !it.data.ui.isPinned }
+            if (filterItem.ui.isPinned) {
+                viewModel.removeAsPinned(filterItem)
+            } else {
+                viewModel.markAsPinned(filterItem)
+            }.flowOn(Dispatchers.Main).collect {
+                filterItemAdapter[position] = FilterItemViewHolder(it)
+                if (lastPinnedPosition >= -1) {
+                    filterItemAdapter.move(position, lastPinnedPosition)
+                }
+            }
+        }
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
