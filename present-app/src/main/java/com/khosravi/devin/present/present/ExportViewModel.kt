@@ -25,7 +25,6 @@ import com.khosravi.devin.present.zipFiles
 import com.khosravi.devin.read.DevinUriHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import java.io.BufferedWriter
@@ -149,43 +148,29 @@ class ExportViewModel(
             val fileName = createZipFileNameForExport(calendarProxy.getFormattedCurrentDateTime())
             val mainFile = context.tmpFileForCache(fileName)
             val filesInZip = ArrayList<File>()
-            if (exportOptions.tagWhitelist.isNullOrEmpty()) {
 
-                ContentProviderLogsDao.getAllTags(context, clientId).forEach { tag ->
-                    val newFile = context.tmpFileForCache("filter_$tag.json")
-                    writeFileOfZip(
-                        context, clientId, DevinUriHelper.OpStringValue.EqualTo(tag),
-                        dateConstraint, newFile, exportOptions, filesInZip
-                    )
-                }
+            val tagsToExport = if (exportOptions.tagWhitelist.isNullOrEmpty()) {
+                ContentProviderLogsDao.getAllTags(context, clientId)
+            } else {
+                exportOptions.tagWhitelist.map { it.tagValue }
+            }
+
+            tagsToExport.forEach { tag ->
+                val newFile = context.tmpFileForCache("filter_$tag.json")
+                writeFileOfZip(
+                    context, clientId, DevinUriHelper.OpStringValue.EqualTo(tag),
+                    dateConstraint, newFile, exportOptions, filesInZip
+                )
+            }
+
+            val needToWriteIndexFile = exportOptions.tagWhitelist.isNullOrEmpty()
+            if (needToWriteIndexFile) {
                 val indexFile = context.tmpFileForCache("index.json")
                 writeFileOfZip(context, clientId, null, dateConstraint, indexFile, exportOptions, filesInZip)
-                zipFiles(filesInZip, mainFile)
-                filesInZip.forEach { it.delete() }
-
-                return mainFile
-            } else {
-                exportOptions.tagWhitelist.forEach { tag ->
-                    val newFile = context.tmpFileForCache("filter_$tag.json")
-
-                    val cursor = ContentProviderLogsDao.queryLogListAsCursor(
-                        context, clientId,
-                        GetLogsQueryModel(
-                            null, DevinUriHelper.OpStringValue.EqualTo(tag.tagValue),
-                            null, null, dateConstraint, null
-                        )
-                    )
-                    if (cursor != null) {
-                        writeInTagFormat(mainFile, exportOptions, cursor, clientId)
-                        cursor.close()
-                        filesInZip.add(newFile)
-                    }
-                }
-                zipFiles(filesInZip, mainFile)
-                filesInZip.forEach { it.delete() }
-
-                return mainFile
             }
+            zipFiles(filesInZip, mainFile)
+            filesInZip.forEach { it.delete() }
+            return mainFile
         }
 
         private fun createJsonLogFile(
