@@ -75,79 +75,7 @@ class ExportViewModel(
     fun prepareLogsForExport(exportOptions: ExportOptions): Flow<File> {
         val context = getContext()
         val clientId = getSelectedClientIdOrError()
-        return flow {
-            val dateConstraint = exportOptions.getUpDaysConstraintAsCurrentMills()
-
-            if (exportOptions.withSeparationTagFiles) {
-                //need a zip file for multi file saving.
-                val fileName = createZipFileNameForExport(calendarProxy.getFormattedCurrentDateTime())
-                val mainFile = context.tmpFileForCache(fileName)
-                val filesInZip = ArrayList<File>()
-                if (exportOptions.tagWhitelist.isNullOrEmpty()) {
-
-                    ContentProviderLogsDao.getAllTags(context, clientId).forEach { tag ->
-                        val newFile = context.tmpFileForCache("filter_$tag.json")
-                        writeFileOfZip(
-                            context, clientId, DevinUriHelper.OpStringValue.EqualTo(tag),
-                            dateConstraint, newFile, exportOptions, filesInZip
-                        )
-                    }
-                    val indexFile = context.tmpFileForCache("index.json")
-                    writeFileOfZip(context, clientId, null, dateConstraint, indexFile, exportOptions, filesInZip)
-                    zipFiles(filesInZip, mainFile)
-                    filesInZip.forEach { it.delete() }
-
-                    emit(mainFile)
-                } else {
-                    exportOptions.tagWhitelist.forEach { tag ->
-                        val newFile = context.tmpFileForCache("filter_$tag.json")
-
-                        val cursor = ContentProviderLogsDao.queryLogListAsCursor(
-                            context, clientId,
-                            GetLogsQueryModel(
-                                null, DevinUriHelper.OpStringValue.EqualTo(tag.tagValue),
-                                null, null, dateConstraint, null
-                            )
-                        )
-                        if (cursor != null) {
-                            writeInTagFormat(mainFile, exportOptions, cursor, clientId)
-                            cursor.close()
-                            filesInZip.add(newFile)
-                        }
-                    }
-                    zipFiles(filesInZip, mainFile)
-                    filesInZip.forEach { it.delete() }
-
-                    emit(mainFile)
-                }
-
-            } else {
-                val fileName = createJsonFileNameForExport(calendarProxy.getFormattedCurrentDateTime())
-                val mainFile = context.tmpFileForCache(fileName)
-                // all logs in one file.
-                val cursor = ContentProviderLogsDao.queryLogListAsCursor(
-                    context, clientId,
-                    GetLogsQueryModel(null, null, null, null, dateConstraint, null)
-                )
-
-                if (cursor != null) {
-                    val writer: Writer = OutputStreamWriter(FileOutputStream(mainFile), "UTF-8")
-                    // Optional: buffer it for efficient writes
-                    val bufferedWriter: Writer = BufferedWriter(writer)
-                    writer.use {
-                        writeLogsFlattenFormat(
-                            exportOptions, bufferedWriter, cursor,
-                            clientId, tagListToFilterFunction(exportOptions.tagWhitelist?.map { it.tagValue })
-                        )
-                    }
-                    cursor.close()
-                } else {
-                    throw IllegalStateException("Cannot get logs for sharing")
-                }
-                emit(mainFile)
-            }
-
-        }.flowOn(Dispatchers.IO)
+        return Common.prepareLogsForExport(context, clientId, calendarProxy, exportOptions)
     }
 
     private fun getSelectedClientId() = cacheRepo.getSelectedClientId()
@@ -170,12 +98,6 @@ class ExportViewModel(
         }
     }
 
-    private fun ExportOptions.getUpDaysConstraintAsCurrentMills(mills: Long = System.currentTimeMillis()): Long? {
-        return upToDaysNumber?.value?.let {
-            mills - it.days.inWholeMicroseconds
-        }
-    }
-
     private fun getFormattedCurrentDate(needZipFile: Boolean): String {
         val dateTime = calendarProxy.getFormattedCurrentDateTime()
         return if (needZipFile) {
@@ -185,50 +107,142 @@ class ExportViewModel(
         }
     }
 
-    private fun tagListToFilterFunction(tags: List<String>?): ((LogData) -> Boolean)? {
-        if (tags.isNullOrEmpty()) return null
-        return { logData ->
-            tags.any { it.equals(logData.tag, true) }
-        }
-    }
+    object Common {
 
-    private fun writeFileOfZip(
-        context: Context,
-        clientId: String,
-        tagFilter: DevinUriHelper.OpStringValue.EqualTo?,
-        dateConstraint: Long?,
-        newFile: File,
-        exportOptions: ExportOptions,
-        filesInZip: ArrayList<File>
-    ) {
-        val cursor = ContentProviderLogsDao.queryLogListAsCursor(
-            context, clientId,
-            GetLogsQueryModel(
-                null, tagFilter,
-                null, null, dateConstraint, null
+        fun ExportOptions.getUpDaysConstraintAsCurrentMills(mills: Long = System.currentTimeMillis()): Long? {
+            return upToDaysNumber?.value?.let {
+                mills - it.days.inWholeMicroseconds
+            }
+        }
+
+        fun buildExportOptionsForSingleFilterItemShare(data: TagFilterItem) =
+            ExportOptions("single_share_filter", listOf(data), false, null)
+
+        fun prepareLogsForExport(
+            context: Context,
+            clientId: String,
+            calendarProxy: CalendarProxy,
+            exportOptions: ExportOptions
+        ): Flow<File> {
+            return flow {
+                val dateConstraint = exportOptions.getUpDaysConstraintAsCurrentMills()
+
+                if (exportOptions.withSeparationTagFiles) {
+                    //need a zip file for multi file saving.
+                    val fileName = createZipFileNameForExport(calendarProxy.getFormattedCurrentDateTime())
+                    val mainFile = context.tmpFileForCache(fileName)
+                    val filesInZip = ArrayList<File>()
+                    if (exportOptions.tagWhitelist.isNullOrEmpty()) {
+
+                        ContentProviderLogsDao.getAllTags(context, clientId).forEach { tag ->
+                            val newFile = context.tmpFileForCache("filter_$tag.json")
+                            writeFileOfZip(
+                                context, clientId, DevinUriHelper.OpStringValue.EqualTo(tag),
+                                dateConstraint, newFile, exportOptions, filesInZip
+                            )
+                        }
+                        val indexFile = context.tmpFileForCache("index.json")
+                        writeFileOfZip(context, clientId, null, dateConstraint, indexFile, exportOptions, filesInZip)
+                        zipFiles(filesInZip, mainFile)
+                        filesInZip.forEach { it.delete() }
+
+                        emit(mainFile)
+                    } else {
+                        exportOptions.tagWhitelist.forEach { tag ->
+                            val newFile = context.tmpFileForCache("filter_$tag.json")
+
+                            val cursor = ContentProviderLogsDao.queryLogListAsCursor(
+                                context, clientId,
+                                GetLogsQueryModel(
+                                    null, DevinUriHelper.OpStringValue.EqualTo(tag.tagValue),
+                                    null, null, dateConstraint, null
+                                )
+                            )
+                            if (cursor != null) {
+                                writeInTagFormat(mainFile, exportOptions, cursor, clientId)
+                                cursor.close()
+                                filesInZip.add(newFile)
+                            }
+                        }
+                        zipFiles(filesInZip, mainFile)
+                        filesInZip.forEach { it.delete() }
+
+                        emit(mainFile)
+                    }
+
+                } else {
+                    val fileName = createJsonFileNameForExport(calendarProxy.getFormattedCurrentDateTime())
+                    val mainFile = context.tmpFileForCache(fileName)
+                    // all logs in one file.
+                    val cursor = ContentProviderLogsDao.queryLogListAsCursor(
+                        context, clientId,
+                        GetLogsQueryModel(null, null, null, null, dateConstraint, null)
+                    )
+
+                    if (cursor != null) {
+                        val writer: Writer = OutputStreamWriter(FileOutputStream(mainFile), "UTF-8")
+                        // Optional: buffer it for efficient writes
+                        val bufferedWriter: Writer = BufferedWriter(writer)
+                        writer.use {
+                            writeLogsFlattenFormat(
+                                exportOptions, bufferedWriter, cursor,
+                                clientId, tagListToFilterFunction(exportOptions.tagWhitelist?.map { it.tagValue })
+                            )
+                        }
+                        cursor.close()
+                    } else {
+                        throw IllegalStateException("Cannot get logs for sharing")
+                    }
+                    emit(mainFile)
+                }
+
+            }.flowOn(Dispatchers.IO)
+        }
+
+        fun writeFileOfZip(
+            context: Context,
+            clientId: String,
+            tagFilter: DevinUriHelper.OpStringValue.EqualTo?,
+            dateConstraint: Long?,
+            newFile: File,
+            exportOptions: ExportOptions,
+            filesInZip: ArrayList<File>
+        ) {
+            val cursor = ContentProviderLogsDao.queryLogListAsCursor(
+                context, clientId,
+                GetLogsQueryModel(
+                    null, tagFilter,
+                    null, null, dateConstraint, null
+                )
             )
-        )
-        if (cursor != null) {
-            writeInTagFormat(newFile, exportOptions, cursor, clientId)
-            cursor.close()
-            filesInZip.add(newFile)
+            if (cursor != null) {
+                writeInTagFormat(newFile, exportOptions, cursor, clientId)
+                cursor.close()
+                filesInZip.add(newFile)
+            }
+        }
+
+        fun writeInTagFormat(
+            file: File,
+            exportOptions: ExportOptions,
+            cursor: Cursor,
+            clientId: String
+        ) {
+            val writer: Writer = OutputStreamWriter(FileOutputStream(file), "UTF-8")
+            // Optional: buffer it for efficient writes
+            val bufferedWriter: Writer = BufferedWriter(writer)
+            writer.use {
+                writeLogsSeparatedFormat(exportOptions, bufferedWriter, cursor, clientId, null)
+            }
+        }
+
+
+        fun tagListToFilterFunction(tags: List<String>?): ((LogData) -> Boolean)? {
+            if (tags.isNullOrEmpty()) return null
+            return { logData ->
+                tags.any { it.equals(logData.tag, true) }
+            }
         }
     }
-
-    private fun writeInTagFormat(
-        file: File,
-        exportOptions: ExportOptions,
-        cursor: Cursor,
-        clientId: String
-    ) {
-        val writer: Writer = OutputStreamWriter(FileOutputStream(file), "UTF-8")
-        // Optional: buffer it for efficient writes
-        val bufferedWriter: Writer = BufferedWriter(writer)
-        writer.use {
-            writeLogsSeparatedFormat(exportOptions, bufferedWriter, cursor, clientId, null)
-        }
-    }
-
-
 }
 

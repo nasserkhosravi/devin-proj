@@ -48,6 +48,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
+import java.io.File
 
 class ReaderViewModel constructor(
     application: Application,
@@ -124,7 +125,7 @@ class ReaderViewModel constructor(
         val customFilterList = _uiStateFlow.value.filterList?.filterIsInstance<CustomFilterItem>() ?: emptyList()
         viewModelScope.launch {
             flow {
-                ContentProviderLogsDao.clear(context = getContext(), clientId = getSelectedClientIdOrError())
+                ContentProviderLogsDao.clear(context = getAppContext(), clientId = getSelectedClientIdOrError())
                 emit(Unit)
             }.flowOn(Dispatchers.Default)
                 .collect {
@@ -169,7 +170,7 @@ class ReaderViewModel constructor(
 
 
     fun getClientList() = flow {
-        val result = ClientContentProvider.getClientList(getContext())
+        val result = ClientContentProvider.getClientList(getAppContext())
         emit(result)
     }.flowOn(Dispatchers.Default).map {
         if (it.isEmpty()) ClientLoadedState.Zero
@@ -179,7 +180,7 @@ class ReaderViewModel constructor(
 
     private fun collectLogs(model: GetLogsQueryModel): Flow<List<LogData>> = flow {
         val result = getClientIdOrReturnEmptyList { clientId ->
-            ContentProviderLogsDao.queryLogList(getContext(), clientId, model)
+            ContentProviderLogsDao.queryLogList(getAppContext(), clientId, model)
         }
         emit(result)
     }
@@ -196,7 +197,7 @@ class ReaderViewModel constructor(
 
     fun setSelectedClientId(clientData: ClientData) = cacheRepo.setSelectedClientId(clientData)
 
-    private fun getContext(): Context = getApplication<Application>().applicationContext
+    private fun getAppContext(): Context = getApplication<Application>().applicationContext
 
     fun addFilter(data: CustomFilterItem, callbackId: String? = null) {
         viewModelScope.launch {
@@ -241,7 +242,7 @@ class ReaderViewModel constructor(
         val result = ArrayList<FilterItem>(userDefinedFilterList)
         if (userSettings.isEnableTagAsFilter) {
             //we consider developer tag as filter
-            val tags = ContentProviderLogsDao.getAllTags(getContext(), getSelectedClientIdOrError())
+            val tags = ContentProviderLogsDao.getAllTags(getAppContext(), getSelectedClientIdOrError())
             val developerFilters = filterRepository.createTagFilterList(tags, userDefinedFilterList).values.toList()
             result.addAll(developerFilters)
 
@@ -426,6 +427,22 @@ class ReaderViewModel constructor(
 
     }
 
+    fun shareFilterItem(data: TagFilterItem): Flow<File> {
+        val exportOptions = ExportViewModel.Common.buildExportOptionsForSingleFilterItemShare(data)
+        return ExportViewModel.Common.prepareLogsForExport(getAppContext(), getSelectedClientIdOrError(), calendar, exportOptions)
+    }
+
+    fun removeFilter(data: CustomFilterItem, position: Int): Flow<Unit> {
+        return flow {
+            filterRepository.removeFilter(data)
+            _uiStateFlow.value.filterList?.toMutableList()?.also { list ->
+                list.removeAt(position)
+                _uiStateFlow.update { it.copy(filterList = list) }
+            }
+            emit(Unit)
+        }.flowOn(Dispatchers.IO)
+    }
+
     data class ResultUiState(
         val filterList: List<FilterItem>?,
         val logList: List<LogItemData>?,
@@ -433,6 +450,7 @@ class ReaderViewModel constructor(
         val pageInfo: PageInfo
     ) {
 
+        //TODO: events should be triggered by shared flow.
         data class UpdateInfo(
             val filterIdSelection: String? = null,
             val callbackId: String? = null,

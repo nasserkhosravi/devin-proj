@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
@@ -20,36 +21,44 @@ import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
+import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterItemViewHolder
+import com.khosravi.devin.present.filter.IndexFilterItem
+import com.khosravi.devin.present.filter.TagFilterItem
+import com.khosravi.devin.present.filter.isIndexFilterItem
+import com.khosravi.devin.present.gone
 import com.khosravi.devin.present.importFileIntent
 import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.itemview.SearchItemView
+import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toItemViewHolder
+import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.present.uikit.component.EndlessScrollListener
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
+import com.khosravi.devin.present.visible
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
 import com.mikepenz.fastadapter.IAdapter
-import com.mikepenz.fastadapter.LongClickListener
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
 import com.mikepenz.fastadapter.expandable.getExpandableExtension
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
-class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
+class LogActivity : AppCompatActivity() {
 
     private val filterItemAdapter = SingleSelectionItemAdapter<FilterItemViewHolder>()
     private val filterAdapter = FastAdapter.with(filterItemAdapter)
@@ -71,6 +80,8 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
 
+    private var shareFilterJob: Job?=null
+
     private lateinit var importIntentLauncher: ActivityResultLauncher<Intent>
     private var endlessRecyclerOnScrollListener: EndlessScrollListener? = null
     private val searchInput = MutableSharedFlow<String?>(replay = 0, extraBufferCapacity = 1)
@@ -91,16 +102,9 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             selectNewFilter(item.data)
             true
         }
-        filterAdapter.onLongClickListener = object : LongClickListener<FilterItemViewHolder> {
-            override fun invoke(
-                p1: View,
-                p2: IAdapter<FilterItemViewHolder>,
-                itemViewHolder: FilterItemViewHolder,
-                position: Int
-            ): Boolean {
-                return onLongClickFilter(itemViewHolder, position)
-            }
-
+        filterAdapter.onLongClickListener = { v, _, item, position ->
+            showFilterContextMenu(v, item, position)
+            true
         }
 
         mainAdapter.onClickListener = { _, _, item, _ ->
@@ -138,6 +142,101 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         setupNextPageFlow()
         setupSearchFlow()
     }
+
+    private fun showFilterContextMenu(v: View, item: FilterItemViewHolder, position: Int) {
+        if (item.data.isIndexFilterItem()) return
+
+        val popup = PopupMenu(this, v)
+        popup.inflate(R.menu.menu_filter_item_quick_action)
+
+        normalizeMenuToItsAvailableActions(item.data, popup)
+
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_pin,R.id.action_unpin -> {
+                    reverseIsPinned(item.data, position)
+                    true
+                }
+
+                R.id.action_share_as_json -> {
+                    shareFilterItemLogs(item.data)
+                    true
+                }
+
+                R.id.action_remove -> {
+                    removeFilter(item.data, position)
+                    true
+                }
+
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun normalizeMenuToItsAvailableActions(data: FilterItem, popup: PopupMenu) {
+        if (data is TagFilterItem) {
+            popup.menu.findItem(R.id.action_remove).apply {
+                isVisible = false
+            }
+        } else if (data is CustomFilterItem) {
+            popup.menu.findItem(R.id.action_share_as_json).apply {
+                isVisible = false
+            }
+        }
+
+        val togglePinMenuItemId = if (data.ui.isPinned) {
+            R.id.action_pin
+        } else R.id.action_unpin
+
+        popup.menu.findItem(togglePinMenuItemId).apply {
+            isVisible = false
+        }
+    }
+
+    private fun removeFilter(data: FilterItem, position: Int) {
+        if (data !is CustomFilterItem) return
+
+        lifecycleScope.launch {
+            val isSelected = filterItemAdapter.selectedIndex == position
+            viewModel.removeFilter(data, position).collect {
+                filterItemAdapter.remove(position)
+                if (isSelected) {
+                    resetToDefaultFilter()
+                }
+            }
+        }
+    }
+
+    private fun resetToDefaultFilter() {
+        selectNewFilter(IndexFilterItem.instance)
+    }
+
+    private fun shareFilterItemLogs(data: FilterItem) {
+        if (data !is TagFilterItem) return
+        shareFilterJob?.cancel()
+
+        startLoading()
+        shareFilterJob = viewModel.shareFilterItem(data).flowOn(Dispatchers.Main)
+            .onEach { exportFile ->
+                stopLoading()
+
+                this.toUriByFileProvider(exportFile).let {
+                    val intent = sendOrShareFileIntent(it, MIME_APP_JSON)
+                    startActivity(Intent.createChooser(intent, getString(R.string.title_of_share)))
+                }
+            }.launchIn(lifecycleScope)
+    }
+
+    private fun stopLoading() {
+        _binding?.progressBar?.gone()
+    }
+
+    private fun startLoading() {
+        shareFilterJob?.cancel()
+        binding.progressBar.visible()
+    }
+
 
     private fun setupNextPageFlow() {
         lifecycleScope.launch {
@@ -240,7 +339,7 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val possibleSearchItem = getSearchItem()
         updateSearchItem(data, possibleSearchItem)
 
-        launch {
+        lifecycleScope.launch {
             viewModel.newFilterSelected(data).collect()
         }
     }
@@ -289,12 +388,6 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         LogExportDialog.newInstance().apply {
             show(supportFragmentManager, LogExportDialog.TAG)
         }
-    }
-
-    private fun onLongClickFilter(p3: FilterItemViewHolder, position: Int): Boolean {
-        val filterItem = p3.data
-        reverseIsPinned(filterItem, position)
-        return true
     }
 
     private fun reverseIsPinned(filterItem: FilterItem, position: Int) {
@@ -403,5 +496,4 @@ class LogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"
         private const val TAG = "LogActivity"
     }
-
 }
