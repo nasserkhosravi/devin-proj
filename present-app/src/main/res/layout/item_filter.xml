@@ -5,6 +5,7 @@
     style="?attr/chipStyle"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
+    android:layout_marginTop="?attr/spaceSmall2"
     android:layout_marginHorizontal="?attr/spaceSmall2"
     app:chipIconTint="@null"
     app:closeIconVisible="false"
