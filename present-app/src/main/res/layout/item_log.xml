@@ -6,9 +6,10 @@
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/tv_text"
+        style="@style/AppTheme.TextAppearance.Body"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="?attr/spaceSmall2" />
+        android:layout_margin="?attr/spaceSmall" />
 
     <View
         android:layout_width="match_parent"
