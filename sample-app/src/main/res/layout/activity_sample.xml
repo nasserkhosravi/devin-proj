@@ -1,123 +1,137 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="40dp">
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="@string/field_tag">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/ed_tag"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:hint="@string/field_message">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/ed_message"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <androidx.appcompat.widget.AppCompatSpinner
-        android:id="@+id/sp_log_level"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp" />
-
-    <CheckBox
-        android:id="@+id/cb_with_exception"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:checked="false"
-        android:text="@string/with_throwable" />
-
-    <Button
-        android:id="@+id/btn_send"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="send log" />
+   >
 
     <LinearLayout
         android:layout_width="match_parent"
+        android:padding="40dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <Button
-            android:id="@+id/btn_send_logs"
-            android:layout_width="wrap_content"
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="send iterated logs" />
+            android:hint="@string/field_tag">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/ed_tag"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:hint="@string/field_log_count">
+            android:hint="@string/field_message">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/ed_log_count"
+                android:id="@+id/ed_message"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:layout_height="wrap_content" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
-
-    </LinearLayout>
-
-    <Button
-        android:id="@+id/btn_go_to_http_sample"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Ok Http sample" />
-
-    <Button
-        android:id="@+id/btn_cause_crash"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Make a uncaught exception(crash)" />
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:hint="@string/field_fetch_image">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/ed_url_image"
+        <androidx.appcompat.widget.AppCompatSpinner
+            android:id="@+id/sp_log_level"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textUri" />
+            android:layout_marginTop="8dp" />
 
-    </com.google.android.material.textfield.TextInputLayout>
+        <CheckBox
+            android:id="@+id/cb_with_exception"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:checked="false"
+            android:text="@string/with_throwable" />
 
-    <Button
-        android:id="@+id/btn_fetch_image"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/fetch_image" />
+        <Button
+            android:id="@+id/btn_send"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="send log" />
 
-    <ImageView
-        android:id="@+id/img"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-</LinearLayout>
+            <Button
+                android:id="@+id/btn_send_logs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="send iterated logs" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:hint="@string/field_log_count">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/ed_log_count"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_go_to_http_sample"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Ok Http sample" />
+
+        <Button
+            android:id="@+id/btn_cause_crash"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Make a uncaught exception(crash)" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:hint="@string/field_fetch_image">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/ed_url_image"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textUri" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/btn_generate_logs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Generate logs" />
+
+        <Button
+            android:id="@+id/btn_fetch_image"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/fetch_image" />
+
+        <ImageView
+            android:id="@+id/img"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+</ScrollView>
