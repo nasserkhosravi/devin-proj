@@ -3,8 +3,8 @@ package com.khosravi.devin.present.present
 import android.app.Application
 import android.content.Context
 import android.content.Intent
-import android.database.Cursor
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import com.khosravi.devin.present.copyFileToOutputStream
 import com.khosravi.devin.present.createJsonFileNameForExport
@@ -21,17 +21,23 @@ import com.khosravi.devin.present.requestJsonFileUriToSave
 import com.khosravi.devin.present.requestZipFileUriToSave
 import com.khosravi.devin.present.tmpFileForCache
 import com.khosravi.devin.present.tool.PositiveNumber
-import com.khosravi.devin.present.zipFiles
 import com.khosravi.devin.read.DevinUriHelper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import java.io.BufferedOutputStream
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
 import java.io.Writer
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.time.Duration.Companion.days
 
 class ExportViewModel(
@@ -131,14 +137,14 @@ class ExportViewModel(
                     //need a zip file for multi file saving.
                     createZipMultiLogFile(calendarProxy, context, clientId, dateConstraint, exportOptions)
                 } else {
-                     createJsonLogFile(calendarProxy, context, clientId, dateConstraint, exportOptions)
+                    createJsonLogFile(calendarProxy, context, clientId, dateConstraint, exportOptions)
                 }
                 emit(mainFile)
 
             }.flowOn(Dispatchers.IO)
         }
 
-        private fun createZipMultiLogFile(
+        private suspend fun createZipMultiLogFile(
             calendarProxy: CalendarProxy,
             context: Context,
             clientId: String,
@@ -146,31 +152,54 @@ class ExportViewModel(
             exportOptions: ExportOptions,
         ): File {
             val fileName = createZipFileNameForExport(calendarProxy.getFormattedCurrentDateTime())
-            val mainFile = context.tmpFileForCache(fileName)
-            val filesInZip = ArrayList<File>()
+            val zipFile = context.tmpFileForCache(fileName)
 
-            val tagsToExport = if (exportOptions.tagWhitelist.isNullOrEmpty()) {
+            val tagsToExport: Collection<String> = if (exportOptions.tagWhitelist.isNullOrEmpty()) {
                 ContentProviderLogsDao.getAllTags(context, clientId)
             } else {
                 exportOptions.tagWhitelist.map { it.tagValue }
             }
 
-            tagsToExport.forEach { tag ->
-                val newFile = context.tmpFileForCache("filter_$tag.json")
-                writeFileOfZip(
-                    context, clientId, DevinUriHelper.OpStringValue.EqualTo(tag),
-                    dateConstraint, newFile, exportOptions, filesInZip
-                )
+            // A coroutineScope ensures that all launched jobs complete before this function returns.
+            coroutineScope {
+                // 1. === WRITE AND FETCH IN A STREAMING MANNER ===
+                ZipOutputStream(BufferedOutputStream(zipFile.outputStream())).use { zos ->
+
+                    // Produce a channel of deferred log data. 'async' starts fetching immediately.
+                    val logDataProducer = produce(Dispatchers.IO) {
+                        // Fetch logs for each tag
+                        tagsToExport.forEach { tag ->
+                            send(tag to async(Dispatchers.IO) {
+                                getLogsAsString(
+                                    context, clientId, DevinUriHelper.OpStringValue.EqualTo(tag), dateConstraint, exportOptions
+                                )
+                            })
+                        }
+                        // Also fetch the index file if needed
+                        if (exportOptions.tagWhitelist.isNullOrEmpty()) {
+                            send("index" to async(Dispatchers.IO) {
+                                getLogsAsString(context, clientId, null, dateConstraint, exportOptions)
+                            })
+                        }
+                    }
+
+                    // Consume the results as they become available from the channel
+                    logDataProducer.consumeEach { (tag, deferredContent) ->
+                        try {
+                            zos.putNextEntry(ZipEntry("$tag.json"))
+                            // await() suspends only until this specific result is ready
+                            zos.write(deferredContent.await().toByteArray(Charsets.UTF_8))
+                            zos.closeEntry()
+                        } catch (e: Exception) {
+                            // Using supervisorScope would be even better to prevent one failure from stopping others.
+                            // For now, we just log and the exception will propagate, canceling the scope.
+                            Log.e("Export", "Failed to write tag '$tag' to zip", e)
+                        }
+                    }
+                }
             }
 
-            val needToWriteIndexFile = exportOptions.tagWhitelist.isNullOrEmpty()
-            if (needToWriteIndexFile) {
-                val indexFile = context.tmpFileForCache("index.json")
-                writeFileOfZip(context, clientId, null, dateConstraint, indexFile, exportOptions, filesInZip)
-            }
-            zipFiles(filesInZip, mainFile)
-            filesInZip.forEach { it.delete() }
-            return mainFile
+            return zipFile
         }
 
         private fun createJsonLogFile(
@@ -205,43 +234,33 @@ class ExportViewModel(
             return mainFile
         }
 
-        fun writeFileOfZip(
+        /**
+         * Queries logs and returns them as a JSON String. This is the workload we can parallelize.
+         */
+        private fun getLogsAsString(
             context: Context,
             clientId: String,
-            tagFilter: DevinUriHelper.OpStringValue.EqualTo?,
+            tagFilter: DevinUriHelper.OpStringValue?,
             dateConstraint: Long?,
-            newFile: File,
-            exportOptions: ExportOptions,
-            filesInZip: ArrayList<File>
-        ) {
-            val cursor = ContentProviderLogsDao.queryLogListAsCursor(
-                context, clientId,
-                GetLogsQueryModel(
-                    null, tagFilter,
-                    null, null, dateConstraint, null
-                )
+            exportOptions: ExportOptions
+        ): String {
+            // Use StringWriter to capture the output in memory instead of writing to a file.
+            val stringWriter = java.io.StringWriter()
+            val bufferedStringWriter = BufferedWriter(stringWriter)
+
+            val query = GetLogsQueryModel(
+                null, tagFilter,
+                null, null, dateConstraint, null
             )
-            if (cursor != null) {
-                writeInTagFormat(newFile, exportOptions, cursor, clientId)
-                cursor.close()
-                filesInZip.add(newFile)
-            }
-        }
+            ContentProviderLogsDao.queryLogListAsCursor(context, clientId, query)?.use { cursor ->
+                writeLogsSeparatedFormat(
+                    exportConfig = exportOptions, oWriter = bufferedStringWriter, cursor = cursor,
+                    clientId = clientId, logFilter = null
+                )
+            } ?: return "[]" // Return an empty JSON array if no logs are found.
 
-        fun writeInTagFormat(
-            file: File,
-            exportOptions: ExportOptions,
-            cursor: Cursor,
-            clientId: String
-        ) {
-            val writer: Writer = OutputStreamWriter(FileOutputStream(file), "UTF-8")
-            // Optional: buffer it for efficient writes
-            val bufferedWriter: Writer = BufferedWriter(writer)
-            writer.use {
-                writeLogsSeparatedFormat(exportOptions, bufferedWriter, cursor, clientId, null)
-            }
+            return stringWriter.toString()
         }
-
 
         fun tagListToFilterFunction(tags: List<String>?): ((LogData) -> Boolean)? {
             if (tags.isNullOrEmpty()) return null
