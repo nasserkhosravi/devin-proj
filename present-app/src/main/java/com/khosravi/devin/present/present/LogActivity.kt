@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ActivityLogBinding
@@ -80,7 +81,7 @@ class LogActivity : AppCompatActivity() {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
 
-    private var shareFilterJob: Job?=null
+    private var shareFilterJob: Job? = null
 
     private lateinit var importIntentLauncher: ActivityResultLauncher<Intent>
     private var endlessRecyclerOnScrollListener: EndlessScrollListener? = null
@@ -121,7 +122,6 @@ class LogActivity : AppCompatActivity() {
         }
         //this call enable being expandable
         mainAdapter.getExpandableExtension()
-
         endlessRecyclerOnScrollListener = object : EndlessScrollListener(binding.rvMain.layoutManager as LinearLayoutManager) {
             override fun onLoadMore(page: Int, totalItemsCount: Int) {
                 loadMoreItems(page)
@@ -153,7 +153,7 @@ class LogActivity : AppCompatActivity() {
 
         popup.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.action_pin,R.id.action_unpin -> {
+                R.id.action_pin, R.id.action_unpin -> {
                     reverseIsPinned(item.data, position)
                     true
                 }
@@ -264,6 +264,7 @@ class LogActivity : AppCompatActivity() {
         result: ReaderViewModel.ResultUiState,
     ) {
         result.filterList?.let {
+            fixLayoutManagerIfNeed(it)
             if (!result.updateInfo.skipFilterList) {
                 filterItemAdapter.set(it.map { item -> FilterItemViewHolder(item) })
             }
@@ -301,6 +302,19 @@ class LogActivity : AppCompatActivity() {
             }
         }
         endlessRecyclerOnScrollListener?.setLoaded(result.pageInfo.isFinished)
+    }
+
+    private fun fixLayoutManagerIfNeed(items: List<FilterItem>) {
+        val rvFilter = binding.rvFilter
+        val lm = rvFilter.layoutManager
+        val fLm = if (items.size > 4) {
+            if (lm is StaggeredGridLayoutManager) return
+            else StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.HORIZONTAL)
+        } else {
+            if (lm is LinearLayoutManager) return
+            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        }
+        rvFilter.layoutManager = fLm
     }
 
     private fun loadMoreItems(currentPage: Int) {
