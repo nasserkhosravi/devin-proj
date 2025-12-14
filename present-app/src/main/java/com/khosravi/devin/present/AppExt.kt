@@ -64,6 +64,7 @@ fun getPersianDateTimeFormatted(timestamp: Long): String {
 }
 
 fun TextLogItemData.getLogColor(context: Context): Int {
+    //TODO: support verbose
     return when (logLevel) {
         Log.DEBUG -> context.getColor(R.color.colorLogDebug)
         Log.ERROR -> context.getColor(R.color.colorLogError)
