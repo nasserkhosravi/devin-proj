@@ -26,6 +26,6 @@ interface DevinLogger {
     /**
      * Log some application and device info that extracted from [context], with a reserved tag.
      */
-    fun logSessionStart(context: Context)
+    fun logSessionStart(context: Context, message: String? = null, payload: String? = null)
 }
 

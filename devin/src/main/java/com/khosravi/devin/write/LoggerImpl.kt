@@ -1,16 +1,12 @@
 package com.khosravi.devin.write
 
 import android.content.Context
-import android.os.Build
-import android.util.DisplayMetrics
 import android.util.Log
 import com.khosravi.devin.api.DevinLogger
 import com.khosravi.devin.read.DevinLogFlagsApi
+import com.khosravi.devin.write.ext.InternalExt.getAppVersionNameAndCode
+import com.khosravi.devin.write.ext.InternalExt.getSessionStartPayload
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 internal class LoggerImpl(
     private val logCore: LogCore,
@@ -61,38 +57,28 @@ internal class LoggerImpl(
         }
     }
 
-    override fun logSessionStart(context: Context) {
-        val packageManager = context.packageManager
-        val packageName = context.packageName
+    override fun logSessionStart(
+        context: Context,
+        message: String?,
+        payload: String?,
+    ) {
+        val packageInfo = try {
+            val packageManager = context.packageManager
+            val packageName = context.packageName
+            packageManager.getPackageInfo(packageName, 0)
+        } catch (_: Exception) {
+            Log.e("Devin", "Can't get package-info for session start")
+            null
+        } ?: return
 
-        val packageInfo = packageManager.getPackageInfo(packageName, 0)
-        val appVersionName = packageInfo.versionName
-        val appVersionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            packageInfo.longVersionCode
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo.versionCode.toLong()
+        try {
+            val (appVersionName, appVersionCode) = getAppVersionNameAndCode(packageInfo)
+            val fPayload = payload ?: getSessionStartPayload(context, packageInfo)
+            val fMessage = message ?: "----Session Started: ${appVersionName}($appVersionCode) ---- "
+            info(tag = "SessionStart", fMessage, payload = fPayload)
+        } catch (e: Exception) {
+            Log.e("Devin", "Can't log session start")
         }
-
-        val deviceManufacturer = Build.MANUFACTURER
-        val deviceModel = Build.MODEL
-        val androidVersion = Build.VERSION.RELEASE
-        val sdkInt = Build.VERSION.SDK_INT
-        val metrics: DisplayMetrics = context.resources.displayMetrics
-        val screenResolution = "${metrics.widthPixels}x${metrics.heightPixels}"
-        val screenDensity = metrics.densityDpi
-
-        val timestamp = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-            .apply { timeZone = TimeZone.getTimeZone("UTC") }
-            .format(Date())
-
-        val payload = """Timestamp: $timestamp
-        App Version: $appVersionName ($appVersionCode)
-        Android: $androidVersion (SDK $sdkInt)
-        Device: $deviceManufacturer $deviceModel
-        Screen: $screenResolution @${screenDensity}dpi"""
-
-        debug("DevinClientSessionStart", "----Session Started: $appVersionName---- ", payload = payload)
     }
 
     override fun generalUncaughtExceptionLogging(isEnable: Boolean) {
