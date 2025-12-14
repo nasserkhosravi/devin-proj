@@ -2,7 +2,6 @@ package com.khosravi.devin.api
 
 import android.content.Context
 
-
 interface DevinLogger {
 
     fun doIfEnable(action: (logger: DevinLogger) -> Unit)
@@ -11,6 +10,8 @@ interface DevinLogger {
     fun info(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
     fun warning(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
     fun error(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
+    fun verbose(tag: String?, message: String, payload: String?, throwable: Throwable? = null)
+    fun send(logLevel: Int, tag: String?, message: String, payload: String?, throwable: Throwable? = null)
 
     fun logCallerFunc()
 

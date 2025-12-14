@@ -36,6 +36,14 @@ internal class LoggerImpl(
         sendUserLog(tag, message, Log.WARN, payload, throwable)
     }
 
+    override fun verbose(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.VERBOSE, payload, throwable)
+    }
+
+    override fun send(logLevel: Int, tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, logLevel, payload, throwable)
+    }
+
     override fun logCallerFunc() {
         if (!logCore.isEnable()) {
             return
