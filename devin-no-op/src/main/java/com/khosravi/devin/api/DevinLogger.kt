@@ -10,6 +10,8 @@ interface DevinLogger {
     fun info(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
     fun warning(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
     fun error(tag: String?, message: String, payload: String? = null, throwable: Throwable? = null)
+    fun verbose(tag: String?, message: String, payload: String?, throwable: Throwable? = null)
+    fun send(logLevel: Int, tag: String?, message: String, payload: String?, throwable: Throwable? = null)
 
     fun logCallerFunc()
 
@@ -25,6 +27,6 @@ interface DevinLogger {
     /**
      * Log some application and device info that extracted from [context], with a reserved tag.
      */
-    fun logSessionStart(context: Context)
+    fun logSessionStart(context: Context, message: String? = null, payload: String? = null)
 }
 
