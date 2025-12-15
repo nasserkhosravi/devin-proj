@@ -43,6 +43,7 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("io.coil-kt:coil:2.7.0")
+//    implementation("io.github.nasserkhosravi.devin:write:4.2.0")
 
     implementation("androidx.fragment:fragment-ktx:1.4.0")
     debugImplementation(project(mapOf("path" to ":devin")))
