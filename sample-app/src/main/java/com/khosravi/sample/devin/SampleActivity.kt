@@ -145,34 +145,25 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val message = binding.edMessage.text.toString()
         val selectedItemPosition = binding.spLogLevel.selectedItemPosition
         val throwable = if (binding.cbWithException.isChecked) Throwable("Something went wrong") else null
-        //+3 to sync selectedItemPosition to [android.util.Log] levels
-        action(tag, message, selectedItemPosition + 3, throwable)
+        action(tag, message, selectedItemPosition, throwable)
     }
 
     private fun sendLog(
         logger: DevinLogger,
         tag: String,
-        logLevel: Int,
+        itemPosition: Int,
         message: String,
         throwable: Throwable?
     ) {
-        when (logLevel) {
-            Log.DEBUG -> {
-                logger.debug(tag, message, null, throwable)
-            }
-
-            Log.INFO -> {
-                logger.info(tag, message, null, throwable)
-            }
-
-            Log.WARN -> {
-                logger.warning(tag, message, null, throwable)
-            }
-
-            Log.ERROR -> {
-                logger.error(tag, message, null, throwable)
-            }
+        val logLevel = when (itemPosition) {
+            0 -> Log.VERBOSE
+            1 -> Log.DEBUG
+            2 -> Log.INFO
+            3 -> Log.WARN
+            4 -> Log.ERROR
+            else -> 1
         }
+        logger.send(logLevel, tag, message, null, throwable)
     }
 
     private fun setupSpinnerAdapter(binding: ActivitySampleBinding) {

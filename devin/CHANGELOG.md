@@ -1,6 +1,11 @@
 # Changelog
 **Write module:**
 
+## 4.2.0
+- Change sessionStart to customize message and payload.
+- Add verbose log function.
+- Add send log function.
+
 ## 4.1.0
 - Update gradle to 8.11.1, and agp to 8.10.0.
 - Add presenterConfig feature through write module to presenter.
