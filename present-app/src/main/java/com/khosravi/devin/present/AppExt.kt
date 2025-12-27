@@ -5,7 +5,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
 import androidx.appcompat.app.AppCompatActivity
@@ -63,22 +62,11 @@ fun getPersianDateTimeFormatted(timestamp: Long): String {
     return "${DatePresent.getFormatted(dumbDate)} ${TimePresent.getFormatted(dumbTime)}"
 }
 
-fun TextLogItemData.getLogColor(context: Context): Int {
-    //TODO: support verbose
-    return when (logLevel) {
-        Log.DEBUG -> context.getColor(R.color.colorLogDebug)
-        Log.ERROR -> context.getColor(R.color.colorLogError)
-        Log.INFO -> context.getColor(R.color.colorLogInfo)
-        Log.WARN -> context.getColor(R.color.colorLogWarning)
-        else -> context.getColor(R.color.colorOnSurface)
-    }
-}
-
-fun List<LogItemData>.toItemViewHolder(calendar: CalendarProxy): List<GenericItem> {
+fun List<LogItemData>.toItemViewHolder(calendar: CalendarProxy, ignoreShowingTag: Boolean?): List<GenericItem> {
     return map { item ->
         when (item) {
             is DateLogItemData -> HeaderLogDateItem(calendar, item)
-            is TextLogItemData -> TextLogItem(calendar, item)
+            is TextLogItemData -> TextLogItem(calendar, item, ignoreShowingTag)
             is HttpLogItemData -> HttpLogItemView(calendar, item)
             is ImageLogItemData -> ImageLogItem(calendar, item)
             is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, item).apply {

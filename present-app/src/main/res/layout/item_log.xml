@@ -1,19 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical">
-
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/tv_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="?attr/spaceSmall2" />
+    android:background="?attr/selectableItemBackground"
+    android:orientation="horizontal"
+    android:paddingHorizontal="?attr/spaceSmall"
+    android:paddingBottom="?attr/spaceSmall">
 
     <View
+        android:id="@+id/divider_1"
         android:layout_width="match_parent"
         android:layout_height="?attr/borderSizeSmall"
-        android:background="@android:color/darker_gray" />
+        android:layout_marginBottom="?attr/spaceSmall"
+        android:background="@color/divider" />
 
-</LinearLayout>
+    <!-- Icon Container with Material 3 Expressive Circle -->
+    <FrameLayout
+        android:id="@+id/iconContainer"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_below="@+id/divider_1"
+        android:layout_marginEnd="?attr/spaceLarge">
 
+        <ImageView
+            android:id="@+id/levelIcon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center" />
+    </FrameLayout>
+
+    <!-- Text content -->
+    <LinearLayout
+        android:id="@+id/cvg_content"
+        android:paddingBottom="?attr/spaceSmall"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/divider_1"
+        android:layout_toEndOf="@+id/iconContainer"
+        android:orientation="vertical">
+
+        <!-- Metadata row with Material 3 chips -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Level badge -->
+            <TextView
+                android:id="@+id/levelBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/level_badge_background"
+                android:letterSpacing="0.05"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="4dp"
+                android:text="INFO"
+                android:textAllCaps="true"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/timeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="10:30:15"
+                android:textColor="@color/text_tertiary"
+                android:textSize="12sp" />
+
+            <!-- Tag chip -->
+            <TextView
+                android:id="@+id/tagChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:background="@drawable/tag_chip_background"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="2dp"
+                android:text="System"
+                android:textColor="@color/on_secondary_container"
+                android:textSize="10sp" />
+
+        </LinearLayout>
+
+        <!-- Message with enhanced typography -->
+        <TextView
+            android:id="@+id/messageText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="2dp"
+            android:text="Log message goes here"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,42 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--color palate-->
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="black_pearl_alpha_87">#DE040A1F</color>
-    <color name="black_pearl_alpha_38">#61040A1F</color>
+    <!--old color palate-->
     <color name="green_dark_2">#22A958</color>
-    <color name="green_light_1">#00DD7F</color>
     <color name="white_light_1">#ffffff</color>
-    <color name="white_light_2">#EBECF2</color>
     <color name="persian_red">#d32f2f</color>
-    <color name="denim">#1976d2</color>
-    <color name="gold_drop">#F57C00</color>
-    <color name="gallery">#EFEFEF</color>
-    <color name="alto">#DCDCDC</color>
 
-    <!--scheme color-->
-    <color name="colorPrimary">@color/green_dark_2</color>
-    <color name="colorPrimaryVariant">@color/green_light_1</color>
-    <color name="colorSurface">@color/white_light_1</color>
-    <color name="colorOnSurfaceVariant">@color/white_light_2</color>
-    <color name="colorOnSurface">@color/black_pearl_alpha_87</color>
-    <color name="colorOnSurfaceWeak">@color/black_pearl_alpha_38</color>
-    <color name="colorAccent">@color/gold_drop</color>
-    <color name="colorWhite">@color/white_light_1</color>
+    <!-- Material 3 Expressive Theme Colors -->
+    <color name="background">#FEF7FF</color>
+    <color name="surface">#FFFFFF</color>
+
+    <!-- Primary colors -->
+    <color name="primary">#6750A4</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="primary_container">#EADDFF</color>
+    <color name="on_primary_container">#21005D</color>
+
+    <!-- Secondary colors -->
+    <color name="secondary">#625B71</color>
+    <color name="on_secondary">#FFFFFF</color>
+    <color name="secondary_container">#E8DEF8</color>
+    <color name="on_secondary_container">#1D192B</color>
+
+    <!-- Surface colors -->
+    <color name="surface_variant">#E7E0EC</color>
+    <color name="on_surface">#1C1B1F</color>
+    <color name="on_surface_variant">#49454F</color>
+    <color name="outline">#79747E</color>
+    <color name="outline_variant">#CAC4D0</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#1C1B1F</color>
+    <color name="text_secondary">#49454F</color>
+    <color name="text_tertiary">#79747E</color>
 
     <!--component color-->
-    <color name="colorLogDebug">@color/black_pearl_alpha_87</color>
-    <color name="colorLogError">@color/persian_red</color>
-    <color name="colorLogInfo">@color/denim</color>
-    <color name="colorLogWarning">@color/gold_drop</color>
-    <color name="colorStatusSuccess">@color/green_dark_2</color>
-    <color name="colorStatusError">@color/persian_red</color>
-
-    <color name="colorProgressBar">@color/denim</color>
-    <color name="bg_dialog">@color/white</color>
-    <color name="colorItemBack">@color/gallery</color>
-    <color name="colorSurfaceDisparate">@color/alto</color>
 
     <color name="colorHttpJsonKey">#8B0057</color>
     <color name="colorHttpJsonValue">#2F00FF</color>
@@ -44,5 +41,38 @@
     <color name="colorHttpJsonElements">#474747</color>
     <color name="colorHttpJsonBoolean">#2F99AA</color>
 
+    <!-- Error level (Material 3) -->
+    <color name="log_error_container">#F9DEDC</color>
+    <color name="log_error_icon_bg">#B3261E</color>
+    <color name="log_error_text">#410E0B</color>
+    <color name="log_error_icon">#FFFFFF</color>
+
+    <!-- Warning level (Material 3) -->
+    <color name="log_warning_container">#FFE0B2</color>
+    <color name="log_warning_icon_bg">#E65100</color>
+    <color name="log_warning_text">#663C00</color>
+    <color name="log_warning_icon">#FFFFFF</color>
+
+    <!-- Info level (Material 3) -->
+    <color name="log_info_container">#D0E4FF</color>
+    <color name="log_info_icon_bg">#0061A4</color>
+    <color name="log_info_text">#001D36</color>
+    <color name="log_info_icon">#FFFFFF</color>
+
+    <!-- Debug level (Material 3) -->
+    <color name="log_debug_container">#E3E2E6</color>
+    <color name="log_debug_icon_bg">#625B71</color>
+    <color name="log_debug_text">#45464F</color>
+    <color name="log_debug_icon">#FFFFFF</color>
+
+    <!-- Chip colors -->
+    <color name="chip_selected">#6750A4</color>
+    <color name="chip_unselected">#E8DEF8</color>
+    <color name="chip_text_selected">#FFFFFF</color>
+    <color name="chip_text_unselected">#21005D</color>
+
+    <color name="divider">@color/surface_variant</color>
+    <color name="status_error">@color/persian_red</color>
+    <color name="status_success">@color/green_dark_2</color>
 
 </resources>

@@ -1,8 +1,8 @@
 package com.khosravi.devin.present.data
 
+import android.annotation.SuppressLint
 import android.content.Context
 import com.khosravi.devin.present.itsNotEmpty
-import com.khosravi.devin.present.filter.ChipColor
 import com.khosravi.devin.present.filter.CustomFilterCriteria
 import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
@@ -11,12 +11,16 @@ import com.khosravi.devin.present.filter.TagFilterItem
 import org.json.JSONObject
 import java.util.Date
 import javax.inject.Inject
+import androidx.core.content.edit
 
 class FilterRepository @Inject constructor(appContext: Context) {
 
     private val pref = appContext.applicationContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    private val pinnedFiltersPref =
+        appContext.applicationContext.getSharedPreferences(PREF_NAME_PINNED, Context.MODE_PRIVATE)
 
     fun getCustomFilterItemList(clientId: String): List<FilterItem> {
+        val pinnedList = getPinnedListIds()
         return pref.all.map {
             val jsonString = it.value as String
             JSONObject(jsonString)
@@ -27,9 +31,10 @@ class FilterRepository @Inject constructor(appContext: Context) {
                 true
             } else savedClientId == clientId
         }.sortedBy { it.getLong(KEY_TIMESTAMP) }
-            .mapNotNull { createCustomFilterItem(it) }
+            .mapNotNull { createCustomFilterItem(it, pinnedList) }
     }
 
+    @SuppressLint("UseKtx")
     fun saveFilter(data: CustomFilterItem, clientId: String): Boolean {
         if (data.id.isEmpty()) {
             return false
@@ -46,8 +51,6 @@ class FilterRepository @Inject constructor(appContext: Context) {
         val uiJson = ui.let {
             JSONObject()
                 .put(KEY_UI_TITLE, it.title.value)
-                .put(KEY_UI_BACK_COLOR, it.chipColor.backColor)
-                .put(KEY_UI_TEXT_COLOR, it.chipColor.textColor)
         }
         return JSONObject()
             .put(KEY_ID, id)
@@ -58,11 +61,12 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
     }
 
+    @SuppressLint("UseKtx")
     fun clearSync(): Boolean {
         return pref.edit().clear().commit()
     }
 
-    private fun createCustomFilterItem(json: JSONObject): FilterItem? {
+    private fun createCustomFilterItem(json: JSONObject, pinnedList: List<String>): FilterItem? {
         val id = json.getString(KEY_ID)
         val criteria = json.optJSONObject(KEY_CRITERIA)?.let {
             CustomFilterCriteria(
@@ -71,12 +75,11 @@ class FilterRepository @Inject constructor(appContext: Context) {
         } ?: return null
 
         val uiJson = json.getJSONObject(KEY_UI)
+
+        val isPinned = pinnedList.contains(id)
         val present = FilterUiData(
             id, uiJson.getString(KEY_UI_TITLE).itsNotEmpty(),
-            ChipColor(
-                uiJson.getInt(KEY_UI_BACK_COLOR),
-                uiJson.getInt(KEY_UI_TEXT_COLOR)
-            )
+            isPinned = isPinned
         )
         return CustomFilterItem(present, criteria)
     }
@@ -84,15 +87,40 @@ class FilterRepository @Inject constructor(appContext: Context) {
     fun createTagFilterList(tags: Set<String>, userFilterList: List<FilterItem>): HashMap<String, FilterItem> {
         val userFilterListId = userFilterList.map { it.id }
         val result = HashMap<String, FilterItem>()
+        val pinnedList = getPinnedListIds()
         tags.filter {
             val key = it
             //first see if the tag exist in user tags
             //second see if the tag already added to [result] for removing duplicate tags
             !userFilterListId.contains(key) && !result.contains(key)
         }.forEach {
-            result[it] = TagFilterItem(it)
+            val isPinned = pinnedList.contains(it)
+            result[it] = TagFilterItem(it, isPinned)
         }
         return result
+    }
+
+    fun getPinnedListIds(): List<String> {
+        try {
+            return pinnedFiltersPref.all.map {
+                it.value as String
+            }.toList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return emptyList()
+        }
+    }
+
+    fun saveAsPinned(filterItem: FilterItem) {
+        pinnedFiltersPref.edit { putString(filterItem.id, filterItem.ui.title.value) }
+    }
+
+    fun removeAsPinned(filterItem: FilterItem) {
+        pinnedFiltersPref.edit { remove(filterItem.id) }
+    }
+
+    fun removeFilter(data: CustomFilterItem) {
+        pref.edit { remove(data.id) }
     }
 
 
@@ -107,10 +135,9 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
         private const val KEY_UI = "_UI"
         private const val KEY_UI_TITLE = "_TITLE"
-        private const val KEY_UI_BACK_COLOR = "_BACK_COLOR"
-        private const val KEY_UI_TEXT_COLOR = "_TEXT_COLOR"
 
         private const val PREF_NAME = "filter"
+        private const val PREF_NAME_PINNED = "pinned_filter_ids"
     }
 
 }

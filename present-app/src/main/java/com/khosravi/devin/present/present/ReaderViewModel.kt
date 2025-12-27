@@ -3,10 +3,12 @@ package com.khosravi.devin.present.present
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.JsonObject
 import com.khosravi.devin.present.client.ClientData
+import com.khosravi.devin.present.data.AppPref
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.ClientContentProvider
 import com.khosravi.devin.present.data.ClientLoadedState
@@ -23,6 +25,7 @@ import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
+import com.khosravi.devin.present.filter.setIsPinned
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HttpLogItemData
@@ -41,19 +44,23 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
+import java.io.File
 
 class ReaderViewModel constructor(
     application: Application,
     private val calendar: CalendarProxy,
     private val filterRepository: FilterRepository,
     private val cacheRepo: CacheRepository,
-    private val userSettings: UserSettings
+    private val userSettings: UserSettings,
+    private val appPref: AppPref,
 ) : AndroidViewModel(application) {
+
     private var pageInfo = PageInfo()
     private val _uiStateFlow = MutableStateFlow(ResultUiState(null, null, ResultUiState.UpdateInfo(), pageInfo = pageInfo))
     private var lastDayHeaderDate: Int? = null
@@ -122,7 +129,7 @@ class ReaderViewModel constructor(
         val customFilterList = _uiStateFlow.value.filterList?.filterIsInstance<CustomFilterItem>() ?: emptyList()
         viewModelScope.launch {
             flow {
-                ContentProviderLogsDao.clear(context = getContext(), clientId = getSelectedClientIdOrError())
+                ContentProviderLogsDao.clear(context = getAppContext(), clientId = getSelectedClientIdOrError())
                 emit(Unit)
             }.flowOn(Dispatchers.Default)
                 .collect {
@@ -166,9 +173,8 @@ class ReaderViewModel constructor(
     }
 
 
-
     fun getClientList() = flow {
-        val result = ClientContentProvider.getClientList(getContext())
+        val result = ClientContentProvider.getClientList(getAppContext())
         emit(result)
     }.flowOn(Dispatchers.Default).map {
         if (it.isEmpty()) ClientLoadedState.Zero
@@ -178,7 +184,7 @@ class ReaderViewModel constructor(
 
     private fun collectLogs(model: GetLogsQueryModel): Flow<List<LogData>> = flow {
         val result = getClientIdOrReturnEmptyList { clientId ->
-            ContentProviderLogsDao.queryLogList(getContext(), clientId, model)
+            ContentProviderLogsDao.queryLogList(getAppContext(), clientId, model)
         }
         emit(result)
     }
@@ -195,7 +201,7 @@ class ReaderViewModel constructor(
 
     fun setSelectedClientId(clientData: ClientData) = cacheRepo.setSelectedClientId(clientData)
 
-    private fun getContext(): Context = getApplication<Application>().applicationContext
+    private fun getAppContext(): Context = getApplication<Application>().applicationContext
 
     fun addFilter(data: CustomFilterItem, callbackId: String? = null) {
         viewModelScope.launch {
@@ -225,7 +231,7 @@ class ReaderViewModel constructor(
 
     private fun getAllFiltersFlow(): Flow<List<FilterItem>> {
         return flow {
-            val allComputableFilters = provideAllComputableFilters()
+            val allComputableFilters = provideAllComputableFilters().sortedByDescending { it.ui.isPinned }
             val result = ArrayList<FilterItem>(allComputableFilters.size + 1).apply {
                 add(IndexFilterItem.instance)
                 addAll(allComputableFilters)
@@ -240,7 +246,7 @@ class ReaderViewModel constructor(
         val result = ArrayList<FilterItem>(userDefinedFilterList)
         if (userSettings.isEnableTagAsFilter) {
             //we consider developer tag as filter
-            val tags = ContentProviderLogsDao.getAllTags(getContext(), getSelectedClientIdOrError())
+            val tags = ContentProviderLogsDao.getAllTags(getAppContext(), getSelectedClientIdOrError())
             val developerFilters = filterRepository.createTagFilterList(tags, userDefinedFilterList).values.toList()
             result.addAll(developerFilters)
 
@@ -309,6 +315,26 @@ class ReaderViewModel constructor(
             val queryModel = buildQueryGet(filter)
             refreshLogsAndFilters(filter.id, queryModel, callbackId).collect {}
         }
+    }
+
+    fun markAsPinned(filterItem: FilterItem): Flow<FilterItem> {
+        if (filterItem.ui.isPinned) return flowOf(filterItem)
+
+        return flow {
+            filterRepository.saveAsPinned(filterItem)
+            val newItem = filterItem.setIsPinned(true)
+            emit(newItem)
+        }.flowOn(Dispatchers.Default)
+    }
+
+    fun removeAsPinned(filterItem: FilterItem): Flow<FilterItem> {
+        if (!filterItem.ui.isPinned) return flowOf(filterItem)
+
+        return flow {
+            filterRepository.removeAsPinned(filterItem)
+            val newItem = filterItem.setIsPinned(isPinned = false)
+            emit(newItem)
+        }.flowOn(Dispatchers.Default)
     }
 
     private fun checkPaginationFinish(it: List<LogItemData>) {
@@ -405,6 +431,32 @@ class ReaderViewModel constructor(
 
     }
 
+    fun shareFilterItem(data: TagFilterItem): Flow<File> {
+        val exportOptions = ExportViewModel.Common.buildExportOptionsForSingleFilterItemShare(data)
+        return ExportViewModel.Common.prepareLogsForExport(getAppContext(), getSelectedClientIdOrError(), calendar, exportOptions)
+    }
+
+    fun removeFilter(data: CustomFilterItem, position: Int): Flow<Unit> {
+        return flow {
+            filterRepository.removeFilter(data)
+            _uiStateFlow.value.filterList?.toMutableList()?.also { list ->
+                list.removeAt(position)
+                _uiStateFlow.update { it.copy(filterList = list) }
+            }
+            emit(Unit)
+        }.flowOn(Dispatchers.IO)
+    }
+
+    fun toggleTheme() {
+        val newNightMode = if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) {
+            AppCompatDelegate.MODE_NIGHT_NO
+        } else {
+            AppCompatDelegate.MODE_NIGHT_YES
+        }
+        appPref.theme = newNightMode
+        AppCompatDelegate.setDefaultNightMode(newNightMode)
+    }
+
     data class ResultUiState(
         val filterList: List<FilterItem>?,
         val logList: List<LogItemData>?,
@@ -412,6 +464,7 @@ class ReaderViewModel constructor(
         val pageInfo: PageInfo
     ) {
 
+        //TODO: events should be triggered by shared flow.
         data class UpdateInfo(
             val filterIdSelection: String? = null,
             val callbackId: String? = null,

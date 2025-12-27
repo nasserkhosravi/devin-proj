@@ -1,6 +1,7 @@
 package com.khosravi.devin.present.data
 
 import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
 import java.util.Date
 import javax.inject.Inject
@@ -9,6 +10,10 @@ import kotlin.time.Duration.Companion.hours
 class AppPref @Inject constructor(appContext: Context) {
 
     private val pref = appContext.getSharedPreferences("AppPref", Context.MODE_PRIVATE)
+
+    var theme: Int
+        get() = pref.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        set(value) = pref.edit { putInt(KEY_THEME, value) }
 
     fun getLastWrongPasswordCountWithConstrainCheck(clientId: String): Int {
         val now = Date().time
@@ -52,6 +57,7 @@ class AppPref @Inject constructor(appContext: Context) {
     }
 
     companion object {
+        private const val KEY_THEME = "theme"
         private const val KEY_LAST_CONFIRMED_PASSWORD = "LAST_CONFIRMED_PASSWORD"
         private const val KEY_WRONG_PASSWORD_COUNT = "KEY_WRONG_PASSWORD_COUNT"
         private const val KEY_WRONG_PASSWORD_DATE = "KEY_WRONG_PASSWORD_DATE"

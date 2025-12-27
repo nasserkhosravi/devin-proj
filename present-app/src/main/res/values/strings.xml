@@ -23,9 +23,9 @@
     <string name="msg_save_done">Save done</string>
     <string name="msg_permission_denied">permission denied</string>
     <string name="loading">loading</string>
-    <string name="no_client_found">No client found, run client app or send logs by devin</string>
+    <string name="no_client_found">No client data found, run client app or send logs to devin</string>
     <string name="one_client_found">One client found</string>
-    <string name="choose_client">Choose client app</string>
+    <string name="choose_client">Choose client source</string>
     <string name="copied">Copied</string>
     <string name="msg_failed_to_copy">Failed to copy, User other available options</string>
     <string name="share_curl_command">Share CURL command</string>
@@ -66,5 +66,24 @@
     <string name="field_separate_tag_files">Separate tag files</string>
     <string name="field_day_filter">Day filter, default is no filter</string>
     <string name="field_whitelist_tag_filter">Whitelist tag filter,(example: a,b,c), Default is all</string>
+    <string name="menu_action_pin">Pin</string>
+    <string name="menu_action_unpin">Unpin</string>
+    <string name="menu_action_share_as_json">Share as json</string>
+    <string name="menu_action_remove">Remove</string>
+    <string name="menu_action_toggle_theme">Toggle theme</string>
+    <string name="image_status_failed">Failed</string>
+    <string name="image_status_success">Succeed</string>
+    <string name="image_tag_loading">Loading</string>
+    <string name="image_tag_status_prefix">"Status: "</string>
+    <string name="image_tag_name_prefix">"Name: "</string>
+    <string name="image_tag_file_size_prefix">"File size: "</string>
+    <string name="image_tag_image_size_prefix">"Image size: "</string>
+    <string name="image_tag_date_prefix">"Date: "</string>
+    <string name="image_tag_time_prefix">"Time: "</string>
+    <string name="log_item_error">Error</string>
+    <string name="log_item_warn">Warn</string>
+    <string name="log_item_info">Info</string>
+    <string name="log_item_debug">Debug</string>
+    <string name="log_item_verbose">Info</string>
 
 </resources>

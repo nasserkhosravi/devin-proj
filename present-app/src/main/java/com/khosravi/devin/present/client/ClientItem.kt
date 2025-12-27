@@ -19,7 +19,7 @@ class ClientItem(
     override fun bindView(binding: ItemClientBinding, payloads: List<Any>) {
         super.bindView(binding, payloads)
         binding.apply {
-            view.text = data.packageId
+            tvText.text = data.packageId
         }
     }
 

@@ -28,6 +28,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.io.OutputStreamWriter
 import java.io.Serializable
+import java.text.DecimalFormat
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -217,4 +218,26 @@ fun copyFileToOutputStream(file: File, outputStream: OutputStream) {
             outputStream.write(buffer, 0, bytesRead)
         }
     }
+}
+
+
+/**
+ * Converts a file size in bytes to a human-readable string (e.g., 100 KB, 1.5 MB).
+ * @param size The file size in bytes (Long).
+ * @return The formatted human-readable size string.
+ */
+fun File.formatFileSize(): String {
+    val size: Long = this.length()
+    if (size <= 0) return "0 Bytes"
+
+    val units = arrayOf("Bytes", "KB", "MB", "GB", "TB")
+    val digitGroups = (Math.log10(size.toDouble()) / Math.log10(1000.0)).toInt()
+
+    // Using DecimalFormat for one decimal place precision
+    val df = DecimalFormat("#,##0.#")
+
+    // The formula is size / 1000^digitGroups
+    val formattedSize = df.format(size / Math.pow(1000.0, digitGroups.toDouble()))
+
+    return "$formattedSize ${units[digitGroups]}"
 }

@@ -19,6 +19,7 @@ import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import org.json.JSONObject
+import kotlin.random.Random
 
 class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -29,7 +30,7 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         DevinTool.init(
             this, presenterConfig = JSONObject()
-                .put("logPassword", "1234")
+                .put("logPassword", "12346")
         )
 
         val devinTool: DevinTool? = DevinTool.get()
@@ -101,6 +102,17 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         binding.btnGoToHttpSample.setOnClickListener {
             startActivity(Intent(this, OkHttpSampleActivity::class.java))
+        }
+
+        binding.btnGenerateLogs.setOnClickListener {
+            val tags = List(10) { i ->
+                "a${i}"
+            }
+            tags.forEach {
+                val text = generateRandomStringKB(2)
+                logger.debug(it,text)
+            }
+            Toast.makeText(this,"done", Toast.LENGTH_SHORT).show()
         }
     }
 
