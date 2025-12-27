@@ -7,25 +7,24 @@
 
     <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/iv_ic_menu"
-        android:tint="@color/colorWhite"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
         android:layout_alignTop="@+id/tabLayout"
         android:layout_alignBottom="@+id/tabLayout"
+        android:layout_alignParentEnd="true"
         android:src="@drawable/ic_more_vert_24px" />
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
-        android:layout_toStartOf="@+id/iv_ic_menu"
-        style="@style/Widget.MaterialComponents.TabLayout.PrimarySurface"
+        style="@style/Widget.LoggerApp.TabLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_toStartOf="@+id/iv_ic_menu" />
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
-        android:layout_below="@+id/tabLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_below="@+id/tabLayout" />
 
 </RelativeLayout>

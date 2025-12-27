@@ -11,8 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_marginLeft="?attr/spaceSmall2"
-        android:layout_marginRight="?attr/spaceSmall2"
-        android:textColor="@color/colorOnSurface" />
+        android:layout_marginRight="?attr/spaceSmall2" />
 
     <com.khosravi.devin.present.uikit.CircularTextView
         android:id="@+id/ctv_count"
@@ -28,6 +27,5 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="?attr/spaceSmall2"
         android:layout_marginRight="?attr/spaceSmall2"
-        android:layout_toEndOf="@+id/ctv_count"
-        android:textColor="@color/colorOnSurface" />
+        android:layout_toEndOf="@+id/ctv_count" />
 </RelativeLayout>

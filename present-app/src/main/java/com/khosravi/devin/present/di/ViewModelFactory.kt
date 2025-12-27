@@ -3,6 +3,7 @@ package com.khosravi.devin.present.di
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.khosravi.devin.present.data.AppPref
 import com.khosravi.devin.present.data.UserSettings
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.FilterRepository
@@ -18,11 +19,13 @@ class ViewModelFactory(
     private val filterRepository: FilterRepository,
     private val cacheRepo: CacheRepository,
     private val userSettings: UserSettings,
+    private val appPref: AppPref,
 ) : ViewModelProvider.Factory {
+
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(ReaderViewModel::class.java) -> {
-                ReaderViewModel(application, calendar, filterRepository, cacheRepo, userSettings) as T
+                ReaderViewModel(application, calendar, filterRepository, cacheRepo, userSettings, appPref) as T
             }
 
             modelClass.isAssignableFrom(HttpDetailViewModel::class.java) -> {

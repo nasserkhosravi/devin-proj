@@ -30,7 +30,7 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         DevinTool.init(
             this, presenterConfig = JSONObject()
-                .put("logPassword", "1234")
+                .put("logPassword", "12346")
         )
 
         val devinTool: DevinTool? = DevinTool.get()

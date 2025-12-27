@@ -5,8 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@drawable/rounded_bottom_sheet_background">
+    android:padding="?attr/spaceLarge">
 
     <TextView
         android:id="@+id/titleTextView"
@@ -15,7 +14,7 @@
         android:text="Enter Numeric Password"
         android:textAppearance="?attr/textAppearanceHeadline6"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="?attr/spaceLarge"/>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/passwordInputLayout"
@@ -40,7 +39,7 @@
         android:id="@+id/confirmButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="?attr/spaceLarge"
         android:text="Confirm"/>
 
 </LinearLayout>

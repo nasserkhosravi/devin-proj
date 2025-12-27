@@ -14,6 +14,7 @@
         android:icon="@drawable/baseline_refresh_24"
         android:title="@string/menu_refresh" />
 
+<!--TODO: comment me-->
     <item
         android:id="@+id/action_import_json"
         android:icon="@drawable/baseline_input_24"
@@ -31,5 +32,9 @@
     <item
         android:id="@+id/action_clear_filters"
         android:title="@string/menu_clear_filters" />
+
+    <item
+        android:id="@+id/action_change_theme"
+        android:title="@string/menu_action_toggle_theme" />
 
 </menu>

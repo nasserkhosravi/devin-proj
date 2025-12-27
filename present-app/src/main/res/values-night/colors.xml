@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Expressive Dark Theme Colors -->
+    <color name="background">#1C1B1F</color>
+    <color name="surface">#1C1B1F</color>
+    
+    <!-- Primary colors (Dark) -->
+    <color name="primary">#D0BCFF</color>
+    <color name="on_primary">#381E72</color>
+    <color name="primary_container">#4F378B</color>
+    <color name="on_primary_container">#EADDFF</color>
+    
+    <!-- Secondary colors (Dark) -->
+    <color name="secondary">#CCC2DC</color>
+    <color name="on_secondary">#332D41</color>
+    <color name="secondary_container">#4A4458</color>
+    <color name="on_secondary_container">#E8DEF8</color>
+    
+    <!-- Surface colors (Dark) -->
+    <color name="surface_variant">#49454F</color>
+    <color name="on_surface">#E6E1E5</color>
+    <color name="on_surface_variant">#CAC4D0</color>
+    <color name="outline">#938F99</color>
+    <color name="outline_variant">#49454F</color>
+
+    <!-- Text colors (Dark) -->
+    <color name="text_primary">#E6E1E5</color>
+    <color name="text_secondary">#CAC4D0</color>
+    <color name="text_tertiary">#938F99</color>
+    
+    <!-- Error level (Dark) -->
+    <color name="log_error_container">#8C1D18</color>
+    <color name="log_error_icon_bg">#F2B8B5</color>
+    <color name="log_error_text">#F9DEDC</color>
+    <color name="log_error_icon">#601410</color>
+    
+    <!-- Warning level (Dark) -->
+    <color name="log_warning_container">#7A5900</color>
+    <color name="log_warning_icon_bg">#FFDDB3</color>
+    <color name="log_warning_text">#FFDDB3</color>
+    <color name="log_warning_icon">#3D2D00</color>
+    
+    <!-- Info level (Dark) -->
+    <color name="log_info_container">#004A77</color>
+    <color name="log_info_icon_bg">#C2E7FF</color>
+    <color name="log_info_text">#C2E7FF</color>
+    <color name="log_info_icon">#003355</color>
+    
+    <!-- Debug level (Dark) -->
+    <color name="log_debug_container">#3B383E</color>
+    <color name="log_debug_icon_bg">#938F99</color>
+    <color name="log_debug_text">#E6E1E5</color>
+    <color name="log_debug_icon">#1C1B1F</color>
+    
+    <!-- Chip colors (Dark) -->
+    <color name="chip_selected">#D0BCFF</color>
+    <color name="chip_unselected">#4A4458</color>
+    <color name="chip_text_selected">#381E72</color>
+    <color name="chip_text_unselected">#E8DEF8</color>
+
+
+    <color name="divider">@color/surface_variant</color>
+    <color name="status_error">#971F19</color>
+
+    <!-- Component colors (Dark) -->
+    <!-- JSON syntax highlighting colors -->
+    <color name="colorHttpJsonKey">#FF89C8</color>
+    <color name="colorHttpJsonValue">#9DAEFF</color>
+    <color name="colorHttpJsonDigit_null_value">#FF8A65</color>
+    <color name="colorHttpJsonElements">#E0E0E0</color>
+    <color name="colorHttpJsonBoolean">#65D3E3</color>
+</resources>

@@ -141,8 +141,8 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             app:constraint_referenced_ids="sslValue,ssl"
-            tools:layout_editor_absoluteX="16dp"
-            tools:layout_editor_absoluteY="16dp" />
+            tools:layout_editor_absoluteX="?attr/spaceLarge"
+            tools:layout_editor_absoluteY="?attr/spaceLarge" />
 
         <TextView
             android:id="@+id/tlsVersion"
@@ -170,8 +170,8 @@
             android:layout_height="0dp"
             android:visibility="gone"
             app:constraint_referenced_ids="tlsVersionValue,tlsVersion"
-            tools:layout_editor_absoluteX="16dp"
-            tools:layout_editor_absoluteY="16dp"
+            tools:layout_editor_absoluteX="?attr/spaceLarge"
+            tools:layout_editor_absoluteY="?attr/spaceLarge"
             tools:visibility="visible" />
 
         <TextView
@@ -204,8 +204,8 @@
             android:layout_height="0dp"
             android:visibility="gone"
             app:constraint_referenced_ids="cipherSuite,cipherSuiteValue"
-            tools:layout_editor_absoluteX="16dp"
-            tools:layout_editor_absoluteY="16dp"
+            tools:layout_editor_absoluteX="?attr/spaceLarge"
+            tools:layout_editor_absoluteY="?attr/spaceLarge"
             tools:visibility="visible" />
 
         <TextView

@@ -25,7 +25,6 @@
 
     <View
         android:layout_marginTop="?attr/spaceSmall"
-        android:background="@color/colorSurfaceDisparate"
         android:layout_width="wrap_content"
         android:layout_height="?attr/borderSizeSmall2"/>
 </LinearLayout>

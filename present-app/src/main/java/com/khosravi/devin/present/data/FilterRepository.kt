@@ -3,7 +3,6 @@ package com.khosravi.devin.present.data
 import android.annotation.SuppressLint
 import android.content.Context
 import com.khosravi.devin.present.itsNotEmpty
-import com.khosravi.devin.present.filter.ChipColor
 import com.khosravi.devin.present.filter.CustomFilterCriteria
 import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
@@ -52,8 +51,6 @@ class FilterRepository @Inject constructor(appContext: Context) {
         val uiJson = ui.let {
             JSONObject()
                 .put(KEY_UI_TITLE, it.title.value)
-                .put(KEY_UI_BACK_COLOR, it.chipColor.backColor)
-                .put(KEY_UI_TEXT_COLOR, it.chipColor.textColor)
         }
         return JSONObject()
             .put(KEY_ID, id)
@@ -82,10 +79,6 @@ class FilterRepository @Inject constructor(appContext: Context) {
         val isPinned = pinnedList.contains(id)
         val present = FilterUiData(
             id, uiJson.getString(KEY_UI_TITLE).itsNotEmpty(),
-            ChipColor(
-                uiJson.getInt(KEY_UI_BACK_COLOR),
-                uiJson.getInt(KEY_UI_TEXT_COLOR)
-            ),
             isPinned = isPinned
         )
         return CustomFilterItem(present, criteria)
@@ -142,8 +135,6 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
         private const val KEY_UI = "_UI"
         private const val KEY_UI_TITLE = "_TITLE"
-        private const val KEY_UI_BACK_COLOR = "_BACK_COLOR"
-        private const val KEY_UI_TEXT_COLOR = "_TEXT_COLOR"
 
         private const val PREF_NAME = "filter"
         private const val PREF_NAME_PINNED = "pinned_filter_ids"

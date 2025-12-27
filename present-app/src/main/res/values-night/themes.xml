@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 Expressive Dark Theme -->
+    <style name="Theme.App" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="materialAlertDialogTheme">@style/DialogTheme</item>
+        <item name="alertDialogTheme">@style/DialogTheme</item>
+
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        <item name="colorSecondaryContainer">@color/secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/on_secondary_container</item>
+        
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+        
+        <!-- Outline -->
+        <item name="colorOutline">@color/outline</item>
+        <item name="colorOutlineVariant">@color/outline_variant</item>
+        
+        <!-- Background -->
+        <item name="android:colorBackground">@color/background</item>
+        
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Material 3 shape system - more rounded for expressive -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.LoggerApp.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.LoggerApp.MediumComponent</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.LoggerApp.LargeComponent</item>
+        
+        <!-- Chip style -->
+        <item name="chipStyle">@style/Widget.LoggerApp.Chip</item>
+
+        <!-- spaces-->
+        <item name="spaceSmall2">4dp</item>
+        <item name="spaceSmall">8dp</item>
+        <item name="spaceLarge">16dp</item>
+        <item name="borderSizeSmall">1dp</item>
+        <item name="borderSizeSmall2">2dp</item>
+    </style>
+
+</resources>

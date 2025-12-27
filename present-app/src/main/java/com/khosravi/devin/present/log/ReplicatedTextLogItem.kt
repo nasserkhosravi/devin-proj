@@ -6,12 +6,12 @@ import android.view.ViewGroup
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemReplicatedTextLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
-import com.khosravi.devin.present.getLogColor
 import com.khosravi.devin.present.tool.adapter.AbstractExpandableBindingItem
 import com.mikepenz.fastadapter.ClickListener
 import com.mikepenz.fastadapter.IAdapter
 import com.mikepenz.fastadapter.IClickable
 
+//TODO: this item has not use.
 class ReplicatedTextLogItem(
     private val calender: CalendarProxy,
     val data: ReplicatedTextLogItemData,
@@ -33,7 +33,6 @@ class ReplicatedTextLogItem(
             tvDate.text = dateText
             ctvCount.text = data.list.size.toString()
             tvText.text = data.text
-            tvText.setTextColor(data.list.first().getLogColor(context))
         }
     }
 

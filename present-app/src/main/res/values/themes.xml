@@ -1,12 +1,51 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.Devin" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-         <item name="colorPrimary">@color/colorPrimary</item>
-    </style>
 
-    <style name="Theme.Devin" parent="Base.Theme.Devin">
-        <item name="chipStyle">@style/Theme.Base.Devin.Chip</item>
+
+    <!-- Material 3 Expressive Theme -->
+    <style name="Theme.App" parent="Theme.Material3.Light.NoActionBar">
+        <item name="materialAlertDialogTheme">@style/DialogTheme</item>
+        <item name="alertDialogTheme">@style/DialogTheme</item>
+
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/on_primary_container</item>
+        <item name="colorControlNormal">@color/on_primary_container</item>
+
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+        <item name="colorSecondaryContainer">@color/secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/on_secondary_container</item>
+
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+
+        <!-- Outline -->
+        <item name="colorOutline">@color/outline</item>
+        <item name="colorOutlineVariant">@color/outline_variant</item>
+
+        <!-- Background -->
+        <item name="android:colorBackground">@color/background</item>
+
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Material 3 shape system - more rounded for expressive -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.LoggerApp.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.LoggerApp.MediumComponent</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.LoggerApp.LargeComponent</item>
+
+        <!-- Chip style -->
+        <item name="chipStyle">@style/Widget.LoggerApp.Chip</item>
+
+        <!-- Dimens -->
         <item name="spaceSmall2">4dp</item>
         <item name="spaceSmall">8dp</item>
         <item name="spaceLarge">16dp</item>
@@ -14,14 +53,42 @@
         <item name="borderSizeSmall2">2dp</item>
     </style>
 
-    <style name="DialogTheme" parent="ThemeOverlay.MaterialComponents.Dialog" />
+    <style name="DialogTheme" parent="ThemeOverlay.Material3.Dialog">
+        <item name="android:windowIsFloating">true</item>
+    </style>
 
-    <style name="Theme.Base.Devin.Chip" parent="Base.Widget.MaterialComponents.Chip">
+    <style name="BottomSheetDialogTheme" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="android:windowIsFloating">true</item>
+    </style>
+
+    <!-- Material 3 Expressive Shape Appearances -->
+    <style name="ShapeAppearance.LoggerApp.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.LoggerApp.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">26dp</item>
+    </style>
+
+    <style name="ShapeAppearance.LoggerApp.LargeComponent" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <!-- Chip style with Material 3 Expressive design -->
+    <style name="Widget.LoggerApp.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipBackgroundColor">@color/chip_colors</item>
         <item name="android:textColor">@color/chip_text_color</item>
-        <item name="chipStrokeWidth">?attr/borderSizeSmall</item>
-        <item name="chipIconTint">@color/chip_icon_tint</item>
-        <item name="chipBackgroundColor">@color/chip_background_color</item>
-        <item name="chipStrokeColor">@color/chip_stroke_color</item>
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="chipCornerRadius">24dp</item>
+        <item name="chipMinHeight">30dp</item>
+        <item name="android:elevation">2dp</item>
+    </style>
+
+    <style name="Widget.LoggerApp.TabLayout" parent="Widget.Material3.TabLayout">
+        <item name="tabIndicatorColor">?attr/colorControlNormal</item>
     </style>
 
     <style name="AppTheme.TextAppearance.Label" parent="android:TextAppearance.Small">
@@ -33,18 +100,8 @@
         <item name="android:textIsSelectable">true</item>
     </style>
 
-    <style name="AppTheme.TextAppearance.Title" parent="TextAppearance.MaterialComponents.Headline6">
-        <item name="android:textSize">16sp</item>
-        <item name="android:maxLines">2</item>
-        <item name="android:ellipsize">end</item>
-    </style>
-
     <style name="AppTheme.TextAppearance.Body" parent="TextAppearance.MaterialComponents.Body1">
         <item name="android:textSize">16sp</item>
-    </style>
-
-    <style name="AppTheme.TextAppearance.Body2" parent="TextAppearance.MaterialComponents.Body1">
-        <item name="android:textSize">14sp</item>
     </style>
 
 

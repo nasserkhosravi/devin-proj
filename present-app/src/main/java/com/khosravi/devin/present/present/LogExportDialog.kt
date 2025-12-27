@@ -20,7 +20,7 @@ import com.khosravi.devin.present.gone
 import com.khosravi.devin.present.invisible
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toUriByFileProvider
-import com.khosravi.devin.present.tool.BaseDialog
+import com.khosravi.devin.present.arch.BaseDialog
 import com.khosravi.devin.present.visible
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,7 +51,6 @@ class LogExportDialog : BaseDialog(), CoroutineScope by MainScope() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_TITLE, R.style.DialogTheme);
         getAppComponent().inject(this)
 
         saveIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {

@@ -10,7 +10,6 @@ interface FilterItem {
 data class FilterUiData(
     val id: String,
     val title: NotEmptyString,
-    val chipColor: ChipColor,
     val isPinned: Boolean
 )
 

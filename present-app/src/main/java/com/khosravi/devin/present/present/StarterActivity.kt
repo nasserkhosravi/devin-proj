@@ -7,6 +7,8 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.divider.MaterialDividerItemDecoration
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.client.ClientItem
@@ -15,6 +17,7 @@ import com.khosravi.devin.present.databinding.ActivityStarterBinding
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.domain.ClientLoginInteractor
+import com.khosravi.devin.present.arch.BaseActivity
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +28,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
+class StarterActivity : BaseActivity() {
 
     @Inject
     lateinit var vmFactory: ViewModelFactory
@@ -129,7 +132,11 @@ class StarterActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             is ClientLoadedState.Multi -> {
                 itemAdapter.set(loadState.clients.map { ClientItem(it) })
                 binding.tvMessage.text = loadState.toStateMessage()
-                binding.rvClients.adapter = adapter
+                binding.rvClients.run {
+                    val decorator = MaterialDividerItemDecoration(context, RecyclerView.VERTICAL)
+                    addItemDecoration(decorator)
+                    adapter = this@StarterActivity.adapter
+                }
             }
 
             is ClientLoadedState.Zero -> {

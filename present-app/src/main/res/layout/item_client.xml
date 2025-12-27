@@ -1,14 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/view"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="10dp"
-    android:layout_marginBottom="10dp"
-    android:padding="8dp"
-    android:layout_marginHorizontal="?attr/spaceLarge"
-    android:textSize="@dimen/textSizeH3"
-    android:background="@color/colorItemBack"
-    android:textColor="@color/colorOnSurface" />
+    android:background="?attr/selectableItemBackground">
+
+    <TextView
+        android:id="@+id/tv_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="?attr/spaceLarge"
+        android:layout_marginTop="?attr/spaceSmall"
+        android:layout_marginBottom="?attr/spaceSmall"
+        android:padding="?attr/spaceSmall"
+        android:textColor="@color/text_primary"
+        android:textSize="@dimen/textSizeH3" />
+
+    <View
+        android:visibility="gone"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/borderSizeSmall"
+        android:layout_below="@+id/tv_text"
+        android:layout_marginTop="?attr/spaceSmall"
+        android:background="@color/divider" />
+
+</RelativeLayout>
+
 
 

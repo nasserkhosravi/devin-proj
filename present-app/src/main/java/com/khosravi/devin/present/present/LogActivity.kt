@@ -12,12 +12,14 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.data.AppPref
 import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
@@ -30,6 +32,7 @@ import com.khosravi.devin.present.filter.TagFilterItem
 import com.khosravi.devin.present.filter.isIndexFilterItem
 import com.khosravi.devin.present.gone
 import com.khosravi.devin.present.importFileIntent
+import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
@@ -59,7 +62,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
-class LogActivity : AppCompatActivity() {
+class LogActivity : BaseActivity() {
 
     private val filterItemAdapter = SingleSelectionItemAdapter<FilterItemViewHolder>()
     private val filterAdapter = FastAdapter.with(filterItemAdapter)
@@ -242,7 +245,7 @@ class LogActivity : AppCompatActivity() {
         lifecycleScope.launch {
             viewModel.nextPageFlow.collect {
                 endlessRecyclerOnScrollListener?.setLoaded(it.pageInfo.isFinished)
-                mainItemAdapter.add(it.logs.toItemViewHolder(calendar))
+                mainItemAdapter.add(it.logs.toItemViewHolder(calendar, isIndexFilterSelected()))
             }
 
         }
@@ -271,11 +274,12 @@ class LogActivity : AppCompatActivity() {
         }
         result.logList?.let {
             val itemCount = mainItemAdapter.adapterItemCount
+            val isForIndexTag = isIndexFilterSelected()
             if (getSearchItem() != null) {
                 mainItemAdapter.removeRange(1, itemCount - 1)
-                mainItemAdapter.add(it.toItemViewHolder(calendar))
+                mainItemAdapter.add(it.toItemViewHolder(calendar, isForIndexTag))
             } else {
-                mainItemAdapter.set(it.toItemViewHolder(calendar))
+                mainItemAdapter.set(it.toItemViewHolder(calendar, isForIndexTag))
             }
         }
         getIndexOfFilter(result.updateInfo.filterIdSelection)?.let {
@@ -422,6 +426,8 @@ class LogActivity : AppCompatActivity() {
 
     }
 
+    private fun isIndexFilterSelected() = optCurrentFilterItem()?.isIndexFilterItem()
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         return true
@@ -456,6 +462,11 @@ class LogActivity : AppCompatActivity() {
 
             R.id.action_create_filter -> {
                 createFilter()
+                true
+            }
+
+            R.id.action_change_theme -> {
+                viewModel.toggleTheme()
                 true
             }
 

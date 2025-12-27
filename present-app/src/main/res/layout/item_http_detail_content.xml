@@ -31,7 +31,7 @@
         android:id="@+id/cvg_search_result"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
+        android:background="@color/green_dark_2"
         android:gravity="start"
         app:layout_constraintTop_toBottomOf="@id/sv_text"
         android:orientation="horizontal"

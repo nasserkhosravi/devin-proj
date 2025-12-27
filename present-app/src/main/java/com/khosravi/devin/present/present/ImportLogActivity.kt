@@ -18,6 +18,7 @@ import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.getParcelableExtraSupport
+import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.ReplicatedTextLogItem
 import com.khosravi.devin.present.log.TextLogItem
@@ -35,7 +36,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class ImportLogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
+class ImportLogActivity : BaseActivity(){
 
     private var _binding: ActivityImportLogBinding? = null
     private val binding: ActivityImportLogBinding
@@ -91,7 +92,7 @@ class ImportLogActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         launch {
             viewModel.convertImportedLogsToPresentableLogItems(content)
-                .map { it.toItemViewHolder(calendar) }
+                .map { it.toItemViewHolder(calendar,false) }
                 .flowOn(Dispatchers.Main)
                 .collect { itemAdapter.set(it) }
         }

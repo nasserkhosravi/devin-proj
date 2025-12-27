@@ -10,7 +10,7 @@ import com.khosravi.devin.present.applyBundle
 import com.khosravi.devin.present.databinding.DialogLogDetailBinding
 import com.khosravi.devin.present.getSerializableSupport
 import com.khosravi.devin.present.log.TextLogItemData
-import com.khosravi.devin.present.tool.BaseDialog
+import com.khosravi.devin.present.arch.BaseDialog
 
 class LogDetailDialog : BaseDialog() {
 
