@@ -14,11 +14,11 @@
         android:icon="@drawable/baseline_refresh_24"
         android:title="@string/menu_refresh" />
 
-<!--TODO: comment me-->
-    <item
-        android:id="@+id/action_import_json"
-        android:icon="@drawable/baseline_input_24"
-        android:title="@string/menu_import_json" />
+<!--TODO: support me-->
+<!--    <item-->
+<!--        android:id="@+id/action_import_json"-->
+<!--        android:icon="@drawable/baseline_input_24"-->
+<!--        android:title="@string/menu_import_json" />-->
 
     <item
         android:id="@+id/action_export"
