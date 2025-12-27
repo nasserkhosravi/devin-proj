@@ -450,10 +450,10 @@ class LogActivity : BaseActivity() {
                 true
             }
 
-            R.id.action_import_json -> {
-                importJsonFile()
-                true
-            }
+//            R.id.action_import_json -> {
+//                importJsonFile()
+//                true
+//            }
 
             R.id.action_export -> {
                 showExportDialog()
