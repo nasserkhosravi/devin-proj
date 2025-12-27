@@ -22,11 +22,12 @@ class FilterItemViewHolder(
         binding.apply {
             val ui = data.ui
             chip.text = ui.title.value
-            chip.setTextColor(ui.chipColor.textColor)
-            chip.chipBackgroundColor = ColorStateList.valueOf(ui.chipColor.backColor)
             if (ui.isPinned) {
+                chip.isChipIconVisible = true
                 chip.setChipIconResource(R.drawable.ic_keep_24px)
+                chip.setChipIconTintResource(R.color.chip_text_color)
             } else {
+                chip.isChipIconVisible = false
                 chip.chipIcon = null
             }
         }
@@ -34,12 +35,18 @@ class FilterItemViewHolder(
 
     override fun onBindSelected(binding: ItemFilterBinding) {
         super.onBindSelected(binding)
-        binding.chip.isSelected = true
+        binding.run {
+            chip.isSelected = true
+            chip.isChecked = true
+        }
     }
 
     override fun onBindNotSelected(binding: ItemFilterBinding) {
         super.onBindNotSelected(binding)
-        binding.chip.isSelected = false
+        binding.run {
+            chip.isSelected = false
+            chip.isChecked = false
+        }
     }
 
 }

@@ -75,12 +75,12 @@ open class ImageLogItem(
 
     private fun ItemImageLogBinding.buildImageInfo(isLoading:Boolean, resource: Bitmap? = null, fileLength: Long? = null) = spantastic {
         if (isLoading) {
-            text("Loading") {
+            text(getString(R.string.image_tag_loading)) {
                 bold()
             }
             return@spantastic
         }
-        text("Status: ") {
+        text(getString(R.string.image_tag_status_prefix)) {
             bold()
         }
 
@@ -90,28 +90,28 @@ open class ImageLogItem(
             foreground(textColor)
         }
 
-        text("Name: ") {
+        text(getString(R.string.image_tag_name_prefix)) {
             bold()
         }
         text(data.data.name.plus("\n"))
 
-        text("Date: ") {
+        text(getString(R.string.image_tag_date_prefix)) {
             bold()
         }
         text(calendar.initIfNeed(data.datePresent).getFormatted().plus("\n"))
 
-        text("Time: ") {
+        text(getString(R.string.image_tag_time_prefix)) {
             bold()
         }
         text(calendar.initIfNeed(data.timePresent).getFormatted().plus("\n"))
 
         if (resource!=null && fileLength!=null){
-            text("Image size: ") {
+            text(getString(R.string.image_tag_image_size_prefix)) {
                 bold()
             }
             text("${resource.width}x${resource.height} \n")
 
-            text("File size: ") {
+            text(getString(R.string.image_tag_file_size_prefix)) {
                 bold()
             }
             text(humanReadableByteCountSI(fileLength))
@@ -121,11 +121,11 @@ open class ImageLogItem(
     private fun ItemImageLogBinding.getTextAndItsColor(): Pair<String, Int> {
         return when (data.data.status) {
             DevinImageFlagsApi.Status.SUCCEED -> {
-                "Succeed" to getColor(R.color.colorStatusSuccess)
+                getString(R.string.image_status_success) to getColor(R.color.status_success)
             }
 
             DevinImageFlagsApi.Status.FAILED -> {
-                "Failed" to getColor(R.color.colorStatusError)
+                getString(R.string.image_status_failed) to getColor(R.color.status_error)
             }
 
             else -> {

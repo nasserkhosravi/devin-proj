@@ -3,10 +3,12 @@ package com.khosravi.devin.present.present
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.JsonObject
 import com.khosravi.devin.present.client.ClientData
+import com.khosravi.devin.present.data.AppPref
 import com.khosravi.devin.present.data.CacheRepository
 import com.khosravi.devin.present.data.ClientContentProvider
 import com.khosravi.devin.present.data.ClientLoadedState
@@ -55,8 +57,10 @@ class ReaderViewModel constructor(
     private val calendar: CalendarProxy,
     private val filterRepository: FilterRepository,
     private val cacheRepo: CacheRepository,
-    private val userSettings: UserSettings
+    private val userSettings: UserSettings,
+    private val appPref: AppPref,
 ) : AndroidViewModel(application) {
+
     private var pageInfo = PageInfo()
     private val _uiStateFlow = MutableStateFlow(ResultUiState(null, null, ResultUiState.UpdateInfo(), pageInfo = pageInfo))
     private var lastDayHeaderDate: Int? = null
@@ -441,6 +445,16 @@ class ReaderViewModel constructor(
             }
             emit(Unit)
         }.flowOn(Dispatchers.IO)
+    }
+
+    fun toggleTheme() {
+        val newNightMode = if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) {
+            AppCompatDelegate.MODE_NIGHT_NO
+        } else {
+            AppCompatDelegate.MODE_NIGHT_YES
+        }
+        appPref.theme = newNightMode
+        AppCompatDelegate.setDefaultNightMode(newNightMode)
     }
 
     data class ResultUiState(

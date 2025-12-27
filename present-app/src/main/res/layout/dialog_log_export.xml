@@ -3,7 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/dialog_rounded_bg"
     android:padding="?attr/spaceSmall">
 
     <LinearLayout
@@ -86,15 +85,17 @@
 
         </FrameLayout>
 
-        <androidx.appcompat.widget.AppCompatButton
+        <com.google.android.material.button.MaterialButton
+            style="@style/Widget.Material3.Button"
             android:id="@+id/btn_save_logs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/btn_save_logs"
             android:textAllCaps="false" />
 
-        <androidx.appcompat.widget.AppCompatButton
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_share_logs"
+            style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/btn_share_logs"
@@ -104,7 +105,6 @@
     <ProgressBar
         android:id="@+id/progress_bar"
         style="?android:attr/progressBarStyleLarge"
-        android:indeterminateTint="@color/colorProgressBar"
         android:layout_gravity="center"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

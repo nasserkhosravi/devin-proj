@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
 
     <com.google.android.material.chip.Chip
         android:id="@+id/chip_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        app:chipBackgroundColor="@color/colorOnSurface"
-        android:textColor="@color/colorOnSurfaceVariant"
-        android:layout_margin="?attr/spaceSmall2"
-        android:textSize="@dimen/textSizeLogHeaderDate"
-        app:chipMinHeight="20dp"
+        android:layout_margin="?attr/spaceSmall"
+        android:textColor="?attr/colorOnTertiary"
+        android:textSize="@dimen/textSizeH5"
+        app:chipBackgroundColor="?attr/colorTertiary"
         app:chipIconTint="@null"
         app:closeIconVisible="false"
         app:ensureMinTouchTargetSize="false" />
-</FrameLayout>
+
+</LinearLayout>

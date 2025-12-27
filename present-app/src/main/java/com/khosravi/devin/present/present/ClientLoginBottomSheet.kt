@@ -11,9 +11,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.arch.BaseBottomDialogFragment
 import com.khosravi.devin.present.databinding.FragmentClientLoginBinding
 
-class ClientLoginBottomSheet : BottomSheetDialogFragment() {
+class ClientLoginBottomSheet : BaseBottomDialogFragment() {
 
     var passwordInputListener: PasswordInputListener? = null
 
@@ -25,8 +26,7 @@ class ClientLoginBottomSheet : BottomSheetDialogFragment() {
     private lateinit var correctPassword: String
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_client_login, container, false)
     }
@@ -62,8 +62,7 @@ class ClientLoginBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun validatePassword(
-        passwordEditText: TextInputEditText,
-        passwordInputLayout: TextInputLayout
+        passwordEditText: TextInputEditText, passwordInputLayout: TextInputLayout
     ) {
         val password = passwordEditText.text?.toString()
         passwordInputLayout.error = null
