@@ -1,13 +1,15 @@
 # Changelog
 
+## 4.3.1 
+- Change password field to textPassword.
+- Fix crash on clearing logs in search.
+
 ## 4.3.0
 - Redesign application, light and dark theme. 
 - Implement contextual menu for quick action on filter tags.
 - Implement pining feature for tag and custom filter in LogActivity.
 - Implement quick share feature for tag filter in LogActivity.
 - Implement removing a custom filter from contextual menu in LogActivity.
-- Change password field to textPassword.
-- Fix crash on clearing logs in search.
 
 ## 4.2.0
 - Implement client login (log password) feature. 
