@@ -86,8 +86,9 @@ class SingleSelectionItemAdapter<Item : GenericItem> : ItemAdapter<Item>() {
     }
 
     fun optSelectedItem(): Item? {
-        if (selectedIndex != -1) {
-            return itemList[selectedIndex]
+        val lSelectedIndex = selectedIndex
+        if (lSelectedIndex != -1) {
+            return itemList.items.getOrNull(lSelectedIndex)
         }
         return null
     }
