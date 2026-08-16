@@ -1,6 +1,6 @@
 [versions]
 #project
-project-minSdk = "24"
+project-minSdk = "26"
 project-compileSdk = "34"
 project-targetSdk = "34"
 
