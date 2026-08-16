@@ -40,6 +40,11 @@ object DevinUriHelper {
 
     fun getLogListUri(): Uri = mUriOfAllLog
 
+    fun getLatestLogUri(): Uri = mUriOfAllLog.buildUpon()
+        .appendQueryParameter(KEY_IS_RAW_QUERY, true.toString())
+        .appendQueryParameter(KEY_ITEM_COUNT, "1")
+        .build()
+
     fun getLogUri(id: Long): Uri = Uri.parse(URI_ALL_LOG.plus("?${LogTable.COLUMN_ID}=$id"))
 
     internal fun Uri.getMsl1(): OpStringParam? {

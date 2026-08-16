@@ -1,11 +1,16 @@
 package com.khosravi.devin.present.present
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.divider.MaterialDividerItemDecoration
@@ -30,6 +35,12 @@ import javax.inject.Inject
 
 class StarterActivity : BaseActivity() {
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        launchGettingClientList()
+    }
+
     @Inject
     lateinit var vmFactory: ViewModelFactory
 
@@ -46,6 +57,7 @@ class StarterActivity : BaseActivity() {
         get() = _binding!!
     private val itemAdapter = ItemAdapter<ClientItem>()
     private val adapter = FastAdapter.with(itemAdapter)
+    private var targetClientId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
@@ -53,14 +65,34 @@ class StarterActivity : BaseActivity() {
         _binding = ActivityStarterBinding.inflate(LayoutInflater.from(this), null, false)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+        targetClientId = intent.getStringExtra(EXTRA_TARGET_CLIENT_ID)
 
         adapter.onClickListener = { _, _, item: ClientItem, _ ->
             onSelectClient(item.data)
             true
         }
 
-        launchGettingClientList()
+        if (!requestNotificationPermissionIfNeeded()) {
+            launchGettingClientList()
+        }
 
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        targetClientId = intent.getStringExtra(EXTRA_TARGET_CLIENT_ID)
+        launchGettingClientList()
+    }
+
+    private fun requestNotificationPermissionIfNeeded(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return true
+        }
+        return false
     }
 
     private fun launchGettingClientList() {
@@ -116,15 +148,21 @@ class StarterActivity : BaseActivity() {
     }
 
     private fun onClientListFetchResult(loadState: ClientLoadedState) {
+        val notificationTarget = takeNotificationTarget(loadState)
+
         when (loadState) {
             is ClientLoadedState.Single -> {
                 val clientData = loadState.client
                 itemAdapter.set(listOf(ClientItem(clientData)))
 
                 binding.tvMessage.text = loadState.toStateMessage()
-                viewModel.setSelectedClientId(clientData)
-                clientLoginInteractor.onClientSelect(this, clientData) {
-                    isRouteSuccessful(it)
+                if (notificationTarget != null) {
+                    onSelectClient(notificationTarget)
+                } else {
+                    viewModel.setSelectedClientId(clientData)
+                    clientLoginInteractor.onClientSelect(this, clientData) {
+                        isRouteSuccessful(it)
+                    }
                 }
                 binding.rvClients.adapter = adapter
             }
@@ -137,11 +175,22 @@ class StarterActivity : BaseActivity() {
                     addItemDecoration(decorator)
                     adapter = this@StarterActivity.adapter
                 }
+                notificationTarget?.let(::onSelectClient)
             }
 
             is ClientLoadedState.Zero -> {
                 binding.tvMessage.text = loadState.toStateMessage()
             }
+        }
+    }
+
+    private fun takeNotificationTarget(loadState: ClientLoadedState): ClientData? {
+        val requestedClientId = targetClientId ?: return null
+        targetClientId = null
+        return when (loadState) {
+            is ClientLoadedState.Single -> loadState.client.takeIf { it.id == requestedClientId }
+            is ClientLoadedState.Multi -> loadState.clients.firstOrNull { it.id == requestedClientId }
+            is ClientLoadedState.Zero -> null
         }
     }
 
@@ -155,6 +204,10 @@ class StarterActivity : BaseActivity() {
 
     private fun openNextActivity(activity: AppCompatActivity) {
         activity.startActivity(Intent(activity, LogActivity::class.java))
+    }
+
+    companion object {
+        const val EXTRA_TARGET_CLIENT_ID = "targetClientId"
     }
 
 }

@@ -29,6 +29,21 @@ object ContentProviderLogsDao {
 
     private const val TAG = "PresenterLogQuery"
 
+    fun getLatestLog(context: Context): LogData? {
+        val sortOrder = "${LogTable.COLUMN_DATE} DESC, ${LogTable.COLUMN_ID} DESC"
+        val cursor = context.contentResolver.query(
+            DevinUriHelper.getLatestLogUri(),
+            null,
+            null,
+            null,
+            sortOrder,
+        ) ?: return null
+
+        return cursor.use {
+            if (it.moveToFirst()) it.asLogModel() else null
+        }
+    }
+
     fun queryLogList(
         context: Context,
         clientId: String,

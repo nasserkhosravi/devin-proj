@@ -2,6 +2,7 @@
     <string name="session_started">Session started</string>
     <string name="session_version">v%1$s</string>
     <string name="app_name">Devin</string>
+    <string name="log_notification_channel_name">Latest log</string>
     <string name="menu_refresh">Refresh</string>
 
     <string name="menu_share_json">Share all logs in json</string>
