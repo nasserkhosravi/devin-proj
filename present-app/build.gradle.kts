@@ -6,10 +6,10 @@ plugins {
 
 android {
     namespace = "com.khosravi.devin.present"
-    compileSdk = 34
+    compileSdk = libs.versions.project.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 26
+        minSdk = libs.versions.project.minSdk.get().toInt()
         versionCode = 4
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,22 +44,21 @@ dependencies {
     implementation(project(mapOf("path" to ":devin-write-okhttp")))
     implementation(project(mapOf("path" to ":lib-har")))
 
-    implementation("androidx.core:core-ktx:1.9.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.13.0")
-    implementation("androidx.fragment:fragment-ktx:1.4.0")
+    implementation(libs.coreKtx)
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.fragmentKtx)
 
-    implementation("androidx.room:room-runtime:2.5.1")
+    implementation(libs.room.runtime)
 
-    implementation("com.google.dagger:dagger-android:2.24")
-    kapt("com.google.dagger:dagger-compiler:2.24")
+    implementation(libs.dagger.android)
+    kapt(libs.dagger.compiler)
 
-    val fastAdapterVersion = "5.7.0"
-    implementation("com.mikepenz:fastadapter:$fastAdapterVersion")
-    implementation("com.mikepenz:fastadapter-extensions-binding:$fastAdapterVersion")
-    implementation("com.mikepenz:fastadapter-extensions-expandable:$fastAdapterVersion")
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation ("com.github.wellingtoncabral:android-spantastic:1.0.0")
-    implementation ("com.google.code.gson:gson:2.11.0")
+    implementation(libs.fastadapter)
+    implementation(libs.fastadapter.binding)
+    implementation(libs.fastadapter.expandable)
+    implementation(libs.glide)
+    implementation(libs.android.spantastic)
+    implementation(libs.gson)
 
 }
