@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.ContentObserver
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -28,6 +27,7 @@ import com.khosravi.devin.present.present.StarterActivity
 import com.khosravi.devin.read.DevinUriHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -43,8 +43,9 @@ class LatestLogNotificationObserver(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val clientChangeSignals = Channel<Unit>(Channel.CONFLATED)
     private val observedLogChanges = Channel<DevinUriHelper.LogChange>(Channel.CONFLATED)
-    private val eligibleLogChanges = Channel<DevinUriHelper.LogChange>(Channel.CONFLATED)
+    private val eligibleLogChanges = Channel<GroupedChange>(Channel.UNLIMITED)
     private val requestedConfigGeneration = AtomicInteger(INITIAL_CONFIG_GENERATION)
+    private val pendingPublishJobs = mutableMapOf<String, Job>()
     @Volatile
     private var loadedConfigGeneration = 0
     @Volatile
@@ -75,19 +76,20 @@ class LatestLogNotificationObserver(
                 while (loadedConfigGeneration < requestedConfigGeneration.get()) {
                     delay(CONFIG_RELOAD_WAIT_MILLIS)
                 }
-                if (clientConfigs[change.clientId]?.includes(change.tag) == true) {
-                    eligibleLogChanges.trySend(change)
+                val group = clientConfigs[change.clientId]?.groupFor(change.tag)
+                if (group != null) {
+                    eligibleLogChanges.trySend(GroupedChange(change, group.name))
                 }
             }
         }
         scope.launch {
-            for (firstChange in eligibleLogChanges) {
-                var latestChange = firstChange
-                delay(REFRESH_INTERVAL_MILLIS)
-                while (true) {
-                    latestChange = eligibleLogChanges.tryReceive().getOrNull() ?: break
+            for (grouped in eligibleLogChanges) {
+                val key = groupKey(grouped.logChange.clientId, grouped.groupName)
+                pendingPublishJobs[key]?.cancel()
+                pendingPublishJobs[key] = scope.launch {
+                    delay(REFRESH_INTERVAL_MILLIS)
+                    publishLatestLog(grouped.logChange, grouped.groupName)
                 }
-                publishLatestLog(latestChange)
             }
         }
     }
@@ -113,9 +115,10 @@ class LatestLogNotificationObserver(
         val change = uri?.let(DevinUriHelper::getLogChange) ?: return
         if (loadedConfigGeneration < requestedConfigGeneration.get()) {
             observedLogChanges.trySend(change)
-        } else if (clientConfigs[change.clientId]?.includes(change.tag) == true) {
-            eligibleLogChanges.trySend(change)
+            return
         }
+        val group = clientConfigs[change.clientId]?.groupFor(change.tag) ?: return
+        eligibleLogChanges.trySend(GroupedChange(change, group.name))
     }
 
     private fun requestClientConfigReload() {
@@ -134,22 +137,26 @@ class LatestLogNotificationObserver(
     }
 
     @SuppressLint("MissingPermission")
-    private fun publishLatestLog(change: DevinUriHelper.LogChange) {
+    private fun publishLatestLog(change: DevinUriHelper.LogChange, groupName: String) {
         if (!canPostNotifications()) return
-        if (clientConfigs[change.clientId]?.includes(change.tag) != true) return
+        val group = clientConfigs[change.clientId]?.groupFor(change.tag) ?: return
+        if (group.name != groupName) return
         val latestLog = ContentProviderLogsDao.getLog(appContext, change.id)
             ?.takeIf { it.packageId == change.clientId && it.tag == change.tag }
             ?: return
         try {
-            notificationManager.notify(NOTIFICATION_ID, buildNotification(latestLog))
+            notificationManager.notify(
+                notificationId(change.clientId, groupName),
+                buildNotification(latestLog, groupName),
+            )
         } catch (exception: SecurityException) {
             Log.w(TAG, "Notification permission was revoked before the latest log could be published", exception)
         }
     }
 
-    private fun buildNotification(log: LogData) = NotificationCompat.Builder(appContext, CHANNEL_ID)
+    private fun buildNotification(log: LogData, groupName: String) = NotificationCompat.Builder(appContext, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification_logo)
-        .setContentTitle(log.tag)
+        .setContentTitle(groupName)
         .setContentText(log.value.toNotificationMessage())
         .setContentIntent(createContentIntent(log.packageId, log.tag))
         .setAutoCancel(true)
@@ -196,10 +203,18 @@ class LatestLogNotificationObserver(
         return substring(0, endIndex) + ELLIPSIS
     }
 
+    private fun groupKey(clientId: String, groupName: String) = "$clientId|$groupName"
+
+    private fun notificationId(clientId: String, groupName: String) = groupKey(clientId, groupName).hashCode()
+
+    private data class GroupedChange(
+        val logChange: DevinUriHelper.LogChange,
+        val groupName: String,
+    )
+
     companion object {
         private const val TAG = "LatestLogNotification"
         private const val CHANNEL_ID = "devin_log_events"
-        private const val NOTIFICATION_ID = 1001
         private const val CONTENT_INTENT_REQUEST_CODE = 1001
         private const val MAX_MESSAGE_CHARACTERS = 160
         private const val REFRESH_INTERVAL_MILLIS = 1_000L
