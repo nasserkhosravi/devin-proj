@@ -37,6 +37,11 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -61,5 +66,8 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.android.spantastic)
     implementation(libs.gson)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.json)
 
 }
