@@ -40,12 +40,32 @@ object DevinUriHelper {
 
     fun getLogListUri(): Uri = mUriOfAllLog
 
-    fun getLatestLogUri(): Uri = mUriOfAllLog.buildUpon()
-        .appendQueryParameter(KEY_IS_RAW_QUERY, true.toString())
-        .appendQueryParameter(KEY_ITEM_COUNT, "1")
+    fun getLogUri(id: Long): Uri = Uri.parse(URI_ALL_LOG.plus("?${LogTable.COLUMN_ID}=$id"))
+
+    fun getLogChangeUri(id: Long, clientId: String, tag: String): Uri = mUriOfAllLog.buildUpon()
+        .appendQueryParameter(LogTable.COLUMN_ID, id.toString())
+        .appendQueryParameter(LogTable.COLUMN_CLIENT_ID, clientId)
+        .appendQueryParameter(LogTable.COLUMN_TAG, tag)
         .build()
 
-    fun getLogUri(id: Long): Uri = Uri.parse(URI_ALL_LOG.plus("?${LogTable.COLUMN_ID}=$id"))
+    fun getLogChange(uri: Uri): LogChange? {
+        if (uri.scheme != mUriOfAllLog.scheme ||
+            uri.authority != mUriOfAllLog.authority ||
+            uri.path != mUriOfAllLog.path
+        ) {
+            return null
+        }
+        val id = uri.getQueryParameter(LogTable.COLUMN_ID)?.toLongOrNull() ?: return null
+        val clientId = uri.getQueryParameter(LogTable.COLUMN_CLIENT_ID) ?: return null
+        val tag = uri.getQueryParameter(LogTable.COLUMN_TAG) ?: return null
+        return LogChange(id, clientId, tag)
+    }
+
+    data class LogChange(
+        val id: Long,
+        val clientId: String,
+        val tag: String,
+    )
 
     internal fun Uri.getMsl1(): OpStringParam? {
         val name = getQueryParameter(KEY_LOG_MSL1_NAME)

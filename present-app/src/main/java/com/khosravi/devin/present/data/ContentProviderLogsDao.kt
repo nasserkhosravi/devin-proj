@@ -29,14 +29,13 @@ object ContentProviderLogsDao {
 
     private const val TAG = "PresenterLogQuery"
 
-    fun getLatestLog(context: Context): LogData? {
-        val sortOrder = "${LogTable.COLUMN_DATE} DESC, ${LogTable.COLUMN_ID} DESC"
+    fun getLog(context: Context, logId: Long): LogData? {
         val cursor = context.contentResolver.query(
-            DevinUriHelper.getLatestLogUri(),
+            DevinUriHelper.getLogUri(logId),
             null,
             null,
             null,
-            sortOrder,
+            null,
         ) ?: return null
 
         return cursor.use {

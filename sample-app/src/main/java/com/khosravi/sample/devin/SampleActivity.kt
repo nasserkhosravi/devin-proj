@@ -18,6 +18,7 @@ import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
+import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.random.Random
 
@@ -31,6 +32,12 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         DevinTool.init(
             this, presenterConfig = JSONObject()
                 .put("logPassword", "12346")
+                .put(
+                    "logNotifications",
+                    JSONObject()
+                        .put("enabled", true)
+                        .put("tags", JSONArray().put("a9"))
+                )
         )
 
         val devinTool: DevinTool? = DevinTool.get()

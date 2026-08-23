@@ -19,6 +19,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.client.LogNotificationConfig
+import com.khosravi.devin.present.client.getLogNotificationConfig
+import com.khosravi.devin.present.data.ClientContentProvider
 import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.present.StarterActivity
@@ -29,6 +32,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicInteger
 
 class LatestLogNotificationObserver(
     context: Context,
@@ -37,25 +41,64 @@ class LatestLogNotificationObserver(
     private val appContext = context.applicationContext
     private val notificationManager = NotificationManagerCompat.from(appContext)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val changeSignals = Channel<Unit>(Channel.CONFLATED)
-    private val largeIcon by lazy {
-        BitmapFactory.decodeResource(appContext.resources, R.drawable.ic_logo)
+    private val clientChangeSignals = Channel<Unit>(Channel.CONFLATED)
+    private val observedLogChanges = Channel<DevinUriHelper.LogChange>(Channel.CONFLATED)
+    private val eligibleLogChanges = Channel<DevinUriHelper.LogChange>(Channel.CONFLATED)
+    private val requestedConfigGeneration = AtomicInteger(INITIAL_CONFIG_GENERATION)
+    @Volatile
+    private var loadedConfigGeneration = 0
+    @Volatile
+    private var clientConfigs: Map<String, LogNotificationConfig> = emptyMap()
+    private val clientObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            requestClientConfigReload()
+        }
+
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            requestClientConfigReload()
+        }
     }
 
     init {
         createNotificationChannel()
         scope.launch {
-            for (ignored in changeSignals) {
-                delay(REFRESH_INTERVAL_MILLIS)
-                while (changeSignals.tryReceive().isSuccess) {
-                    // Discard intermediate changes; the database query below reads the newest log.
+            for (ignored in clientChangeSignals) {
+                while (loadedConfigGeneration < requestedConfigGeneration.get()) {
+                    val generation = requestedConfigGeneration.get()
+                    reloadClientConfigs()
+                    loadedConfigGeneration = generation
                 }
-                publishLatestLog()
+            }
+        }
+        scope.launch {
+            for (change in observedLogChanges) {
+                while (loadedConfigGeneration < requestedConfigGeneration.get()) {
+                    delay(CONFIG_RELOAD_WAIT_MILLIS)
+                }
+                if (clientConfigs[change.clientId]?.includes(change.tag) == true) {
+                    eligibleLogChanges.trySend(change)
+                }
+            }
+        }
+        scope.launch {
+            for (firstChange in eligibleLogChanges) {
+                var latestChange = firstChange
+                delay(REFRESH_INTERVAL_MILLIS)
+                while (true) {
+                    latestChange = eligibleLogChanges.tryReceive().getOrNull() ?: break
+                }
+                publishLatestLog(latestChange)
             }
         }
     }
 
     fun register() {
+        appContext.contentResolver.registerContentObserver(
+            DevinUriHelper.getClientListUri(),
+            false,
+            clientObserver,
+        )
+        clientChangeSignals.trySend(Unit)
         appContext.contentResolver.registerContentObserver(
             DevinUriHelper.getLogListUri(),
             true,
@@ -64,17 +107,39 @@ class LatestLogNotificationObserver(
     }
 
     override fun onChange(selfChange: Boolean) {
-        changeSignals.trySend(Unit)
     }
 
     override fun onChange(selfChange: Boolean, uri: Uri?) {
-        changeSignals.trySend(Unit)
+        val change = uri?.let(DevinUriHelper::getLogChange) ?: return
+        if (loadedConfigGeneration < requestedConfigGeneration.get()) {
+            observedLogChanges.trySend(change)
+        } else if (clientConfigs[change.clientId]?.includes(change.tag) == true) {
+            eligibleLogChanges.trySend(change)
+        }
+    }
+
+    private fun requestClientConfigReload() {
+        requestedConfigGeneration.incrementAndGet()
+        clientChangeSignals.trySend(Unit)
+    }
+
+    private fun reloadClientConfigs() {
+        clientConfigs = try {
+            ClientContentProvider.getClientList(appContext)
+                .associate { it.id to it.getLogNotificationConfig() }
+        } catch (exception: Exception) {
+            Log.w(TAG, "Failed to reload log-notification configuration", exception)
+            emptyMap()
+        }
     }
 
     @SuppressLint("MissingPermission")
-    private fun publishLatestLog() {
+    private fun publishLatestLog(change: DevinUriHelper.LogChange) {
         if (!canPostNotifications()) return
-        val latestLog = ContentProviderLogsDao.getLatestLog(appContext) ?: return
+        if (clientConfigs[change.clientId]?.includes(change.tag) != true) return
+        val latestLog = ContentProviderLogsDao.getLog(appContext, change.id)
+            ?.takeIf { it.packageId == change.clientId && it.tag == change.tag }
+            ?: return
         try {
             notificationManager.notify(NOTIFICATION_ID, buildNotification(latestLog))
         } catch (exception: SecurityException) {
@@ -86,13 +151,14 @@ class LatestLogNotificationObserver(
         .setSmallIcon(R.drawable.ic_notification_logo)
         .setContentTitle(log.tag)
         .setContentText(log.value.toNotificationMessage())
-        .setContentIntent(createContentIntent(log.packageId))
+        .setContentIntent(createContentIntent(log.packageId, log.tag))
         .setAutoCancel(true)
         .build()
 
-    private fun createContentIntent(clientId: String): PendingIntent {
+    private fun createContentIntent(clientId: String, tag: String): PendingIntent {
         val intent = Intent(appContext, StarterActivity::class.java).apply {
             putExtra(StarterActivity.EXTRA_TARGET_CLIENT_ID, clientId)
+            putExtra(StarterActivity.EXTRA_TARGET_TAG, tag)
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         return PendingIntent.getActivity(
@@ -137,6 +203,8 @@ class LatestLogNotificationObserver(
         private const val CONTENT_INTENT_REQUEST_CODE = 1001
         private const val MAX_MESSAGE_CHARACTERS = 160
         private const val REFRESH_INTERVAL_MILLIS = 1_000L
+        private const val CONFIG_RELOAD_WAIT_MILLIS = 10L
+        private const val INITIAL_CONFIG_GENERATION = 1
         private const val ELLIPSIS = "…"
     }
 }

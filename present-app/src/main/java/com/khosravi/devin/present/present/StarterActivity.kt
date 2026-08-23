@@ -1,16 +1,11 @@
 package com.khosravi.devin.present.present
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.divider.MaterialDividerItemDecoration
@@ -23,6 +18,7 @@ import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.domain.ClientLoginInteractor
 import com.khosravi.devin.present.arch.BaseActivity
+import com.khosravi.devin.present.notification.LogNotificationLaunchCoordinator
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import kotlinx.coroutines.CoroutineScope
@@ -35,10 +31,8 @@ import javax.inject.Inject
 
 class StarterActivity : BaseActivity() {
 
-    private val notificationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) {
-        launchGettingClientList()
+    private val notificationLaunchCoordinator = LogNotificationLaunchCoordinator(this) {
+        onClientListFetchResult(it)
     }
 
     @Inject
@@ -57,7 +51,6 @@ class StarterActivity : BaseActivity() {
         get() = _binding!!
     private val itemAdapter = ItemAdapter<ClientItem>()
     private val adapter = FastAdapter.with(itemAdapter)
-    private var targetClientId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
@@ -65,34 +58,22 @@ class StarterActivity : BaseActivity() {
         _binding = ActivityStarterBinding.inflate(LayoutInflater.from(this), null, false)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-        targetClientId = intent.getStringExtra(EXTRA_TARGET_CLIENT_ID)
+        notificationLaunchCoordinator.readTarget(intent)
 
         adapter.onClickListener = { _, _, item: ClientItem, _ ->
             onSelectClient(item.data)
             true
         }
 
-        if (!requestNotificationPermissionIfNeeded()) {
-            launchGettingClientList()
-        }
+        launchGettingClientList()
 
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        targetClientId = intent.getStringExtra(EXTRA_TARGET_CLIENT_ID)
+        notificationLaunchCoordinator.readTarget(intent)
         launchGettingClientList()
-    }
-
-    private fun requestNotificationPermissionIfNeeded(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            return true
-        }
-        return false
     }
 
     private fun launchGettingClientList() {
@@ -102,7 +83,11 @@ class StarterActivity : BaseActivity() {
             delay(100)
             viewModel.getClientList()
                 .flowOn(Dispatchers.Main)
-                .collect(::onClientListFetchResult)
+                .collect {
+                    if (!notificationLaunchCoordinator.requestPermissionIfNeeded(it)) {
+                        onClientListFetchResult(it)
+                    }
+                }
         }
     }
 
@@ -110,6 +95,19 @@ class StarterActivity : BaseActivity() {
         viewModel.setSelectedClientId(clientData)
         clientLoginInteractor.onClientSelect(this, clientData) {
             isRouteSuccessful(it)
+        }
+    }
+
+    private fun onSelectNotificationTarget(target: LogNotificationLaunchCoordinator.Target) {
+        viewModel.setSelectedClientId(target.client)
+        clientLoginInteractor.onClientSelect(this, target.client) { canRoute ->
+            if (canRoute) {
+                startActivity(Intent(this, LogActivity::class.java).apply {
+                    target.tag?.let { putExtra(LogActivity.EXTRA_TARGET_TAG, it) }
+                })
+            } else {
+                clientLoginInteractor.showManyTryPasswordToast(this)
+            }
         }
     }
 
@@ -148,7 +146,7 @@ class StarterActivity : BaseActivity() {
     }
 
     private fun onClientListFetchResult(loadState: ClientLoadedState) {
-        val notificationTarget = takeNotificationTarget(loadState)
+        val notificationTarget = notificationLaunchCoordinator.takeTarget(loadState)
 
         when (loadState) {
             is ClientLoadedState.Single -> {
@@ -157,7 +155,7 @@ class StarterActivity : BaseActivity() {
 
                 binding.tvMessage.text = loadState.toStateMessage()
                 if (notificationTarget != null) {
-                    onSelectClient(notificationTarget)
+                    onSelectNotificationTarget(notificationTarget)
                 } else {
                     viewModel.setSelectedClientId(clientData)
                     clientLoginInteractor.onClientSelect(this, clientData) {
@@ -175,22 +173,12 @@ class StarterActivity : BaseActivity() {
                     addItemDecoration(decorator)
                     adapter = this@StarterActivity.adapter
                 }
-                notificationTarget?.let(::onSelectClient)
+                notificationTarget?.let(::onSelectNotificationTarget)
             }
 
             is ClientLoadedState.Zero -> {
                 binding.tvMessage.text = loadState.toStateMessage()
             }
-        }
-    }
-
-    private fun takeNotificationTarget(loadState: ClientLoadedState): ClientData? {
-        val requestedClientId = targetClientId ?: return null
-        targetClientId = null
-        return when (loadState) {
-            is ClientLoadedState.Single -> loadState.client.takeIf { it.id == requestedClientId }
-            is ClientLoadedState.Multi -> loadState.clients.firstOrNull { it.id == requestedClientId }
-            is ClientLoadedState.Zero -> null
         }
     }
 
@@ -207,7 +195,8 @@ class StarterActivity : BaseActivity() {
     }
 
     companion object {
-        const val EXTRA_TARGET_CLIENT_ID = "targetClientId"
+        const val EXTRA_TARGET_CLIENT_ID = LogNotificationLaunchCoordinator.EXTRA_TARGET_CLIENT_ID
+        const val EXTRA_TARGET_TAG = LogNotificationLaunchCoordinator.EXTRA_TARGET_TAG
     }
 
 }

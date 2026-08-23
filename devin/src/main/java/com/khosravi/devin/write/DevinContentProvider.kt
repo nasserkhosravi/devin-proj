@@ -141,7 +141,10 @@ class DevinContentProvider : ContentProvider() {
                 Log.d(TAG, "put meta index: $resultId")
             }
             writeContentFileIfItsPossible(values, context, logTable.clientId, logTable.id)
-            context.contentResolver.notifyChange(uri, null)
+            context.contentResolver.notifyChange(
+                DevinUriHelper.getLogChangeUri(id, logTable.clientId, logTable.tag),
+                null,
+            )
             return ContentUris.withAppendedId(uri, id).apply {
                 Log.d(TAG, "Insert log: $uri")
             }
@@ -151,6 +154,7 @@ class DevinContentProvider : ContentProvider() {
             val tableData = values?.readAsNewClientTable() ?: return null
             val id = instance.clientDao()
                 .put(tableData)
+            context.contentResolver.notifyChange(uri, null)
             return ContentUris.withAppendedId(uri, id)
         }
 
@@ -210,7 +214,10 @@ class DevinContentProvider : ContentProvider() {
             DevinDB.getInstance(context).logDao()
                 .update(logTable)
             writeContentFileIfItsPossible(values, context, logTable.clientId, logTable.id)
-            context.contentResolver.notifyChange(uri, null)
+            context.contentResolver.notifyChange(
+                DevinUriHelper.getLogChangeUri(id, logTable.clientId, logTable.tag),
+                null,
+            )
             return FLAG_OPERATION_SUCCESS
         }
         return FLAG_OPERATION_FAILED
@@ -327,4 +334,3 @@ class DevinContentProvider : ContentProvider() {
         }
     }
 }
-
