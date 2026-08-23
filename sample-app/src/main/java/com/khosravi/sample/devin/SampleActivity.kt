@@ -36,7 +36,20 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                     "logNotifications",
                     JSONObject()
                         .put("enabled", true)
-                        .put("tags", JSONArray().put("a9"))
+                        .put(
+                            "groups",
+                            JSONArray()
+                                .put(
+                                    JSONObject()
+                                        .put("name", "Sample")
+                                        .put("tags", JSONArray().put("a9"))
+                                )
+                                .put(
+                                    JSONObject()
+                                        .put("name", "Errors")
+                                        .put("tags", JSONArray().put("crash"))
+                                )
+                        )
                 )
         )
 
