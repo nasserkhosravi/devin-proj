@@ -19,7 +19,6 @@ import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
-import kotlin.random.Random
 
 class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -33,7 +32,7 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             presenterConfig = DevinTool.PresenterConfigBuilder()
                 .logPassword("12346")
                 .notificationGroup("Sample", "a9")
-                .notificationGroup("Errors", DevinLogFlagsApi.TAG_UNCAUGHT_EXCEPTION)
+                .notificationGroup("Errors", DevinLogFlagsApi.getUncaughtExceptionTag())
                 .build()
         )
 
