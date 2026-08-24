@@ -14,6 +14,7 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.google.android.material.snackbar.Snackbar
 import com.khosravi.devin.api.DevinLogger
+import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 import kotlinx.coroutines.CoroutineScope
@@ -47,7 +48,7 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                                 .put(
                                     JSONObject()
                                         .put("name", "Errors")
-                                        .put("tags", JSONArray().put("crash"))
+                                        .put("tags", JSONArray().put(DevinLogFlagsApi.TAG_UNCAUGHT_EXCEPTION))
                                 )
                         )
                 )

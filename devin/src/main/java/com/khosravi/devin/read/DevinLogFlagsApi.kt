@@ -3,6 +3,7 @@ package com.khosravi.devin.read
 object DevinLogFlagsApi {
 
     const val TAG_SESSION_START = "SessionStart"
+    const val TAG_UNCAUGHT_EXCEPTION = "uncaught_exception"
 
     //finished successfully
     const val FINISHED = 1
