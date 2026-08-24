@@ -11,9 +11,16 @@ data class LogNotificationConfig(
     val isEnabled: Boolean,
     val groups: List<NotificationGroup>,
 ) {
+    /**
+     * First group (in [groups] order) whose `tags` literally contains [tag]. If none match,
+     * falls back to the first group whose `tags` contains the wildcard `"*"`, regardless of
+     * that group's position in [groups] - a wildcard group always acts as a catch-all, never
+     * as a priority match.
+     */
     fun groupFor(tag: String): NotificationGroup? {
         if (!isEnabled) return null
-        return groups.firstOrNull { tag in it.tags }
+        groups.firstOrNull { tag in it.tags }?.let { return it }
+        return groups.firstOrNull { WILDCARD_TAG in it.tags }
     }
 
     companion object {
@@ -73,3 +80,4 @@ private const val KEY_ENABLED = "enabled"
 private const val KEY_GROUPS = "groups"
 private const val KEY_NAME = "name"
 private const val KEY_TAGS = "tags"
+private const val WILDCARD_TAG = "*"
