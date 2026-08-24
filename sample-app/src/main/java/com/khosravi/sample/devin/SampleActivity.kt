@@ -19,8 +19,6 @@ import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
-import org.json.JSONArray
-import org.json.JSONObject
 import kotlin.random.Random
 
 class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
@@ -31,27 +29,12 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         setContentView(binding.root)
 
         DevinTool.init(
-            this, presenterConfig = JSONObject()
-                .put("logPassword", "12346")
-                .put(
-                    "logNotifications",
-                    JSONObject()
-                        .put("enabled", true)
-                        .put(
-                            "groups",
-                            JSONArray()
-                                .put(
-                                    JSONObject()
-                                        .put("name", "Sample")
-                                        .put("tags", JSONArray().put("a9"))
-                                )
-                                .put(
-                                    JSONObject()
-                                        .put("name", "Errors")
-                                        .put("tags", JSONArray().put(DevinLogFlagsApi.TAG_UNCAUGHT_EXCEPTION))
-                                )
-                        )
-                )
+            this,
+            presenterConfig = DevinTool.PresenterConfigBuilder()
+                .logPassword("12346")
+                .notificationGroup("Sample", "a9")
+                .notificationGroup("Errors", DevinLogFlagsApi.TAG_UNCAUGHT_EXCEPTION)
+                .build()
         )
 
         val devinTool: DevinTool? = DevinTool.get()
