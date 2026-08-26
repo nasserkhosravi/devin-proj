@@ -159,11 +159,16 @@ class DevinTool private constructor(
         private fun Context.isDebuggable() = ((applicationContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0)
 
         private fun disableComponent(context: Context, packageName: String, componentClassName: String) {
-            val componentName = ComponentName(packageName, componentClassName)
-            context.applicationContext.packageManager.setComponentEnabledSetting(
-                componentName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP
-            )
+            try {
+                val componentName = ComponentName(packageName, componentClassName)
+                context.applicationContext.packageManager.setComponentEnabledSetting(
+                    componentName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            } catch (e: kotlin.Exception) {
+                Log.e(TAG, "Error in disabling $componentClassName")
+            }
+
         }
     }
 }
