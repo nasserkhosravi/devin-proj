@@ -10,6 +10,7 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.project.minSdk.get().toInt()
+        targetSdk = libs.versions.project.targetSdk.get().toInt()
         versionCode = 4
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,6 +37,11 @@ android {
         viewBinding = true
         buildConfig = true
     }
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -60,5 +66,8 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.android.spantastic)
     implementation(libs.gson)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.json)
 
 }

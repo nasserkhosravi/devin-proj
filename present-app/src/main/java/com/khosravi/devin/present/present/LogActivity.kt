@@ -85,6 +85,7 @@ class LogActivity : BaseActivity() {
     }
 
     private var shareFilterJob: Job? = null
+    private var targetTag: String? = null
 
     private lateinit var importIntentLauncher: ActivityResultLauncher<Intent>
     private var endlessRecyclerOnScrollListener: EndlessScrollListener? = null
@@ -96,6 +97,7 @@ class LogActivity : BaseActivity() {
         _binding = ActivityLogBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+        targetTag = intent.getStringExtra(EXTRA_TARGET_TAG)
 
         importIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             onImportFileIntentResult(it)
@@ -266,7 +268,8 @@ class LogActivity : BaseActivity() {
     private fun onUiStateFlowResult(
         result: ReaderViewModel.ResultUiState,
     ) {
-        result.filterList?.let {
+        val presentedFilters = result.filterList?.withNotificationTarget()
+        presentedFilters?.let {
             fixLayoutManagerIfNeed(it)
             if (!result.updateInfo.skipFilterList) {
                 filterItemAdapter.set(it.map { item -> FilterItemViewHolder(item) })
@@ -305,7 +308,22 @@ class LogActivity : BaseActivity() {
                 else -> {}
             }
         }
+        presentedFilters?.selectNotificationTargetIfNeeded()
         endlessRecyclerOnScrollListener?.setLoaded(result.pageInfo.isFinished)
+    }
+
+    private fun List<FilterItem>.withNotificationTarget(): List<FilterItem> {
+        val tag = targetTag ?: return this
+        if (any { it is TagFilterItem && it.tagValue == tag }) return this
+        return this + TagFilterItem(tag, false)
+    }
+
+    private fun List<FilterItem>.selectNotificationTargetIfNeeded() {
+        val tag = targetTag ?: return
+        targetTag = null
+        filterIsInstance<TagFilterItem>()
+            .firstOrNull { it.tagValue == tag }
+            ?.let(::selectNewFilter)
     }
 
     private fun fixLayoutManagerIfNeed(items: List<FilterItem>) {
@@ -517,6 +535,7 @@ class LogActivity : BaseActivity() {
     }
 
     companion object {
+        const val EXTRA_TARGET_TAG = "targetTag"
         private const val CALLBACK_ID_REFRESH = "refresh"
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"
         private const val TAG = "LogActivity"

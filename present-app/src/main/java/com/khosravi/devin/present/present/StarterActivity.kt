@@ -18,6 +18,7 @@ import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.domain.ClientLoginInteractor
 import com.khosravi.devin.present.arch.BaseActivity
+import com.khosravi.devin.present.notification.LogNotificationLaunchCoordinator
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +30,10 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class StarterActivity : BaseActivity() {
+
+    private val notificationLaunchCoordinator = LogNotificationLaunchCoordinator(this) {
+        onClientListFetchResult(it)
+    }
 
     @Inject
     lateinit var vmFactory: ViewModelFactory
@@ -53,6 +58,7 @@ class StarterActivity : BaseActivity() {
         _binding = ActivityStarterBinding.inflate(LayoutInflater.from(this), null, false)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+        notificationLaunchCoordinator.readTarget(intent)
 
         adapter.onClickListener = { _, _, item: ClientItem, _ ->
             onSelectClient(item.data)
@@ -63,6 +69,13 @@ class StarterActivity : BaseActivity() {
 
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        notificationLaunchCoordinator.readTarget(intent)
+        launchGettingClientList()
+    }
+
     private fun launchGettingClientList() {
         launch {
             binding.tvMessage.text = getString(R.string.loading)
@@ -70,7 +83,11 @@ class StarterActivity : BaseActivity() {
             delay(100)
             viewModel.getClientList()
                 .flowOn(Dispatchers.Main)
-                .collect(::onClientListFetchResult)
+                .collect {
+                    if (!notificationLaunchCoordinator.requestPermissionIfNeeded(it)) {
+                        onClientListFetchResult(it)
+                    }
+                }
         }
     }
 
@@ -78,6 +95,19 @@ class StarterActivity : BaseActivity() {
         viewModel.setSelectedClientId(clientData)
         clientLoginInteractor.onClientSelect(this, clientData) {
             isRouteSuccessful(it)
+        }
+    }
+
+    private fun onSelectNotificationTarget(target: LogNotificationLaunchCoordinator.Target) {
+        viewModel.setSelectedClientId(target.client)
+        clientLoginInteractor.onClientSelect(this, target.client) { canRoute ->
+            if (canRoute) {
+                startActivity(Intent(this, LogActivity::class.java).apply {
+                    target.tag?.let { putExtra(LogActivity.EXTRA_TARGET_TAG, it) }
+                })
+            } else {
+                clientLoginInteractor.showManyTryPasswordToast(this)
+            }
         }
     }
 
@@ -116,15 +146,21 @@ class StarterActivity : BaseActivity() {
     }
 
     private fun onClientListFetchResult(loadState: ClientLoadedState) {
+        val notificationTarget = notificationLaunchCoordinator.takeTarget(loadState)
+
         when (loadState) {
             is ClientLoadedState.Single -> {
                 val clientData = loadState.client
                 itemAdapter.set(listOf(ClientItem(clientData)))
 
                 binding.tvMessage.text = loadState.toStateMessage()
-                viewModel.setSelectedClientId(clientData)
-                clientLoginInteractor.onClientSelect(this, clientData) {
-                    isRouteSuccessful(it)
+                if (notificationTarget != null) {
+                    onSelectNotificationTarget(notificationTarget)
+                } else {
+                    viewModel.setSelectedClientId(clientData)
+                    clientLoginInteractor.onClientSelect(this, clientData) {
+                        isRouteSuccessful(it)
+                    }
                 }
                 binding.rvClients.adapter = adapter
             }
@@ -137,6 +173,7 @@ class StarterActivity : BaseActivity() {
                     addItemDecoration(decorator)
                     adapter = this@StarterActivity.adapter
                 }
+                notificationTarget?.let(::onSelectNotificationTarget)
             }
 
             is ClientLoadedState.Zero -> {
@@ -155,6 +192,11 @@ class StarterActivity : BaseActivity() {
 
     private fun openNextActivity(activity: AppCompatActivity) {
         activity.startActivity(Intent(activity, LogActivity::class.java))
+    }
+
+    companion object {
+        const val EXTRA_TARGET_CLIENT_ID = LogNotificationLaunchCoordinator.EXTRA_TARGET_CLIENT_ID
+        const val EXTRA_TARGET_TAG = LogNotificationLaunchCoordinator.EXTRA_TARGET_TAG
     }
 
 }
