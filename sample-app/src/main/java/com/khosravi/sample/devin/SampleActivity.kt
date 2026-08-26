@@ -31,7 +31,7 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             this,
             presenterConfig = DevinTool.PresenterConfigBuilder()
                 .logPassword("12346")
-                .putNotificationWhitelistGroup("Errors", DevinLogFlagsApi.getUncaughtExceptionTag())
+                .putNotificationWhitelistGroup("Errors", DevinLogFlagsApi.getUncaughtExceptionTag(), color = "#CC0000")
                 .setNotificationUncategorizedGroup("Others")
                 .build()
         )

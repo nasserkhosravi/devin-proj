@@ -35,13 +35,14 @@ class DevinTool private constructor(
 
     /**
      * Builds the [JSONObject] passed as `presenterConfig` to [DevinTool.init], without hand-nesting
-     * [JSONObject]/[JSONArray] calls. Keep this class identical between the `devin` and `devin-no-op`
-     * modules - it only builds JSON, it has no write/no-op behavior to diverge on.
+     * [JSONObject]/[JSONArray] calls. Keep this class's public API (method names/signatures)
+     * identical to the `devin-no-op` module's version so call sites compile unchanged across
+     * build variants - the no-op module's bodies are empty, like every other method there.
      */
     class PresenterConfigBuilder {
         private var logPassword: String? = null
-        private val whitelistGroups = mutableListOf<Pair<String, List<String>>>()
-        private var uncategorizedGroupName: String? = null
+        private val whitelistGroups = mutableListOf<GroupSpec>()
+        private var uncategorizedGroup: GroupSpec? = null
 
         fun logPassword(password: String) = apply {
             this.logPassword = password
@@ -58,9 +59,13 @@ class DevinTool private constructor(
          * groups only ever notifies under the first one. A tag not listed in any whitelist
          * group, and not covered by [setNotificationUncategorizedGroup], produces no
          * notification - that's the default for every tag you don't mention here.
+         *
+         * [color], if given, is a `"#RRGGBB"`/`"#AARRGGBB"` hex string tinting that group's
+         * notification (e.g. `color = "#FF0000"` for red) - an invalid hex string is ignored
+         * (no tint), not an error.
          */
-        fun putNotificationWhitelistGroup(name: String, vararg tags: String) = apply {
-            whitelistGroups.add(name to tags.toList())
+        fun putNotificationWhitelistGroup(name: String, vararg tags: String, color: String? = null) = apply {
+            whitelistGroups.add(GroupSpec(name, tags.toList(), color))
         }
 
         /**
@@ -74,9 +79,11 @@ class DevinTool private constructor(
          * order relative to [putNotificationWhitelistGroup] - it never "steals" a tag a
          * whitelist group would have claimed. Don't call this if you don't want a catch-all;
          * tags outside every whitelist group will then simply produce no notification.
+         *
+         * [color] works the same as on [putNotificationWhitelistGroup].
          */
-        fun setNotificationUncategorizedGroup(name: String) = apply {
-            uncategorizedGroupName = name
+        fun setNotificationUncategorizedGroup(name: String, color: String? = null) = apply {
+            uncategorizedGroup = GroupSpec(name, listOf(WILDCARD_TAG), color)
         }
 
         fun build(): JSONObject {
@@ -87,20 +94,27 @@ class DevinTool private constructor(
         }
 
         private fun addNotificationGroups(json: JSONObject) {
-            if (whitelistGroups.isNotEmpty() || uncategorizedGroupName != null) {
+            if (whitelistGroups.isNotEmpty() || uncategorizedGroup != null) {
                 val groups = JSONArray()
-                whitelistGroups.forEach { (name, tags) ->
-                    groups.put(JSONObject().put(KEY_NAME, name).put(KEY_TAGS, JSONArray(tags)))
-                }
-                uncategorizedGroupName?.let { name ->
-                    groups.put(JSONObject().put(KEY_NAME, name).put(KEY_TAGS, JSONArray(listOf(WILDCARD_TAG))))
-                }
+                whitelistGroups.forEach { groups.put(it.toJson()) }
+                uncategorizedGroup?.let { groups.put(it.toJson()) }
                 json.put(
                     KEY_LOG_NOTIFICATIONS,
                     JSONObject().put(KEY_ENABLED, true).put(KEY_GROUPS, groups)
                 )
             }
         }
+
+        private fun GroupSpec.toJson(): JSONObject = JSONObject()
+            .put(KEY_NAME, name)
+            .put(KEY_TAGS, JSONArray(tags))
+            .apply { color?.let { put(KEY_COLOR, it) } }
+
+        private data class GroupSpec(
+            val name: String,
+            val tags: List<String>,
+            val color: String?,
+        )
 
         private companion object {
             const val KEY_LOG_PASSWORD = "logPassword"
@@ -109,6 +123,7 @@ class DevinTool private constructor(
             const val KEY_GROUPS = "groups"
             const val KEY_NAME = "name"
             const val KEY_TAGS = "tags"
+            const val KEY_COLOR = "color"
             const val WILDCARD_TAG = "*"
         }
     }

@@ -19,6 +19,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.client.LogNotificationConfig
+import com.khosravi.devin.present.client.NotificationGroup
 import com.khosravi.devin.present.client.getLogNotificationConfig
 import com.khosravi.devin.present.data.ClientContentProvider
 import com.khosravi.devin.present.data.ContentProviderLogsDao
@@ -147,19 +148,20 @@ class LatestLogNotificationObserver(
         try {
             notificationManager.notify(
                 notificationId(change.clientId, groupName),
-                buildNotification(latestLog, groupName),
+                buildNotification(latestLog, group),
             )
         } catch (exception: SecurityException) {
             Log.w(TAG, "Notification permission was revoked before the latest log could be published", exception)
         }
     }
 
-    private fun buildNotification(log: LogData, groupName: String) = NotificationCompat.Builder(appContext, CHANNEL_ID)
+    private fun buildNotification(log: LogData, group: NotificationGroup) = NotificationCompat.Builder(appContext, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification_logo)
-        .setContentTitle(groupName)
+        .setContentTitle(group.name)
         .setContentText(log.value.toNotificationMessage())
         .setContentIntent(createContentIntent(log.packageId, log.tag))
         .setAutoCancel(true)
+        .apply { group.color?.let(::setColor) }
         .build()
 
     private fun createContentIntent(clientId: String, tag: String): PendingIntent {

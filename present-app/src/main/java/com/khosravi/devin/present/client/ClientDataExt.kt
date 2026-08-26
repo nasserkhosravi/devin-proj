@@ -1,10 +1,12 @@
 package com.khosravi.devin.present.client
 
+import android.graphics.Color
 import android.util.Log
 
 data class NotificationGroup(
     val name: String,
     val tags: Set<String>,
+    val color: Int? = null,
 )
 
 data class LogNotificationConfig(
@@ -67,7 +69,15 @@ fun ClientData.getLogNotificationConfig(): LogNotificationConfig {
             Log.w(TAG, "Skipping logNotifications.groups[$index] ('$name'): no valid string tags")
             return@repeat
         }
-        groups.add(NotificationGroup(name, tags))
+        val color = jsonGroup.optString(KEY_COLOR).takeIf { it.isNotEmpty() }?.let {
+            try {
+                Color.parseColor(it)
+            } catch (exception: IllegalArgumentException) {
+                Log.w(TAG, "Ignoring invalid logNotifications.groups[$index].color ('$it') for group '$name'", exception)
+                null
+            }
+        }
+        groups.add(NotificationGroup(name, tags, color))
     }
 
     if (groups.isEmpty()) return LogNotificationConfig.DISABLED
@@ -80,4 +90,5 @@ private const val KEY_ENABLED = "enabled"
 private const val KEY_GROUPS = "groups"
 private const val KEY_NAME = "name"
 private const val KEY_TAGS = "tags"
+private const val KEY_COLOR = "color"
 private const val WILDCARD_TAG = "*"
