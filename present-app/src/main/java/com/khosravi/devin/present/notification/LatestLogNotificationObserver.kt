@@ -35,6 +35,27 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
+/**
+ * Watches incoming logs across all registered clients and posts a notification per
+ * `(clientId, notification group)` pair, so e.g. a client's "Errors" group and "Network" group
+ * surface as independent, replace-on-latest notifications instead of clobbering each other.
+ *
+ * Each client opts in via its `presenterConfig`'s `logNotifications`, parsed by
+ * [getLogNotificationConfig] into named [NotificationGroup]s (see [LogNotificationConfig.groupFor]
+ * for the matching/wildcard rules). A log whose tag matches no group is silently skipped.
+ *
+ * Two [ContentObserver]s feed the pipeline: [clientObserver] watches the client list (config
+ * changes) and `this` watches the log list (new/updated logs), both registered by [register].
+ * Config reloads are tracked with a generation counter ([requestedConfigGeneration] vs
+ * [loadedConfigGeneration]) so a log observed mid-reload waits for the fresh config instead of
+ * matching against a stale one. Eligible changes are debounced independently per
+ * `(clientId, group)` key via [pendingPublishJobs] - a cancel-and-relaunch [Job] map - so a burst
+ * of logs in one group can't delay or drop a notification for a different group.
+ *
+ * Each `(clientId, group)` pair also gets its own [android.app.NotificationChannel] (see
+ * [ensureNotificationChannel]), letting the user mute or configure sound/vibration per group
+ * from system settings - something a single shared channel can't offer.
+ */
 class LatestLogNotificationObserver(
     context: Context,
 ) : ContentObserver(Handler(Looper.getMainLooper())) {
