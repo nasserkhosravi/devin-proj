@@ -62,7 +62,6 @@ class LatestLogNotificationObserver(
     }
 
     init {
-        createNotificationChannel()
         scope.launch {
             for (ignored in clientChangeSignals) {
                 while (loadedConfigGeneration < requestedConfigGeneration.get()) {
@@ -145,17 +144,18 @@ class LatestLogNotificationObserver(
         val latestLog = ContentProviderLogsDao.getLog(appContext, change.id)
             ?.takeIf { it.packageId == change.clientId && it.tag == change.tag }
             ?: return
+        val channelId = ensureNotificationChannel(change.clientId, groupName)
         try {
             notificationManager.notify(
                 notificationId(change.clientId, groupName),
-                buildNotification(latestLog, group),
+                buildNotification(latestLog, group, channelId),
             )
         } catch (exception: SecurityException) {
             Log.w(TAG, "Notification permission was revoked before the latest log could be published", exception)
         }
     }
 
-    private fun buildNotification(log: LogData, group: NotificationGroup) = NotificationCompat.Builder(appContext, CHANNEL_ID)
+    private fun buildNotification(log: LogData, group: NotificationGroup, channelId: String) = NotificationCompat.Builder(appContext, channelId)
         .setSmallIcon(R.drawable.ic_notification_logo)
         .setContentTitle(group.name)
         .setContentText(log.value.toNotificationMessage())
@@ -187,15 +187,25 @@ class LatestLogNotificationObserver(
         return notificationManager.areNotificationsEnabled()
     }
 
-    private fun createNotificationChannel() {
+    /**
+     * Each (clientId, group) pair gets its own channel, keyed the same as its notification, so
+     * the user can independently mute/configure sound and vibration per group in system
+     * settings - a single shared channel can't offer that. [NotificationManager.createNotificationChannel]
+     * is a no-op if the channel already exists with the same settings, so calling this on every
+     * publish is safe; it does NOT let us change an existing channel's user-facing settings
+     * later - only the id changing would create a new one.
+     */
+    private fun ensureNotificationChannel(clientId: String, groupName: String): String {
+        val channelId = groupKey(clientId, groupName)
         val manager = appContext.getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
             NotificationChannel(
-                CHANNEL_ID,
-                appContext.getString(R.string.log_notification_channel_name),
+                channelId,
+                appContext.getString(R.string.log_notification_channel_name_format, groupName, clientId),
                 NotificationManager.IMPORTANCE_LOW,
             )
         )
+        return channelId
     }
 
     private fun String.toNotificationMessage(): String {
@@ -216,7 +226,6 @@ class LatestLogNotificationObserver(
 
     companion object {
         private const val TAG = "LatestLogNotification"
-        private const val CHANNEL_ID = "devin_log_events"
         private const val CONTENT_INTENT_REQUEST_CODE = 1001
         private const val MAX_MESSAGE_CHARACTERS = 160
         private const val REFRESH_INTERVAL_MILLIS = 1_000L
