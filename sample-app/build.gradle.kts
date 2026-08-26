@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.khosravi.sample.devin"
-    compileSdk = 34
+    compileSdk = libs.versions.project.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.khosravi.sample.devin"
-        minSdk = 26
-        targetSdk = 34
+        minSdk = libs.versions.project.minSdk.get().toInt()
+        targetSdk = libs.versions.project.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -37,15 +37,14 @@ android {
 
 dependencies {
 
-    implementation("androidx.core:core-ktx:1.9.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.9.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    implementation("io.coil-kt:coil:2.7.0")
-//    implementation("io.github.nasserkhosravi.devin:write:4.2.0")
+    implementation(libs.coreKtx)
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.constraintlayout)
+    implementation(libs.glide)
+    implementation(libs.coil)
 
-    implementation("androidx.fragment:fragment-ktx:1.4.0")
+    implementation(libs.fragmentKtx)
     debugImplementation(project(mapOf("path" to ":devin")))
     releaseImplementation(project(mapOf("path" to ":devin-no-op")))
 

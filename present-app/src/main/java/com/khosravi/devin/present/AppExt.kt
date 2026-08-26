@@ -25,6 +25,8 @@ import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.ReplicatedTextLogItem
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
+import com.khosravi.devin.present.log.SessionStartLogItem
+import com.khosravi.devin.present.log.SessionStartLogItemData
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.log.TextLogSubItem
@@ -69,6 +71,7 @@ fun List<LogItemData>.toItemViewHolder(calendar: CalendarProxy, ignoreShowingTag
             is TextLogItemData -> TextLogItem(calendar, item, ignoreShowingTag)
             is HttpLogItemData -> HttpLogItemView(calendar, item)
             is ImageLogItemData -> ImageLogItem(calendar, item)
+            is SessionStartLogItemData -> SessionStartLogItem(calendar, item)
             is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, item).apply {
                 subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
             }

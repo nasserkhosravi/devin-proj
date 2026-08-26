@@ -75,4 +75,9 @@
     <color name="status_error">@color/persian_red</color>
     <color name="status_success">@color/green_dark_2</color>
 
+    <color name="session_start_background">#5142B5</color>
+    <color name="session_start_text">#FFFFFF</color>
+    <color name="session_start_secondary_text">#DED8FF</color>
+    <color name="session_start_dot">#ACA2E8</color>
+
 </resources>

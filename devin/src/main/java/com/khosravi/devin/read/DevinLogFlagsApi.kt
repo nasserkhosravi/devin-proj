@@ -2,6 +2,8 @@ package com.khosravi.devin.read
 
 object DevinLogFlagsApi {
 
+    const val TAG_SESSION_START = "SessionStart"
+
     //finished successfully
     const val FINISHED = 1
     //finished incorrectly

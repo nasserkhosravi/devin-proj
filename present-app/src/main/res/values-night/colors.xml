@@ -62,6 +62,11 @@
     <color name="divider">@color/surface_variant</color>
     <color name="status_error">#971F19</color>
 
+    <color name="session_start_background">#5142B5</color>
+    <color name="session_start_text">#FFFFFF</color>
+    <color name="session_start_secondary_text">#DED8FF</color>
+    <color name="session_start_dot">#ACA2E8</color>
+
     <!-- Component colors (Dark) -->
     <!-- JSON syntax highlighting colors -->
     <color name="colorHttpJsonKey">#FF89C8</color>
