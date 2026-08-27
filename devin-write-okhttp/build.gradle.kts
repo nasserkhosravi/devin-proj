@@ -9,10 +9,10 @@ plugins {
 
 android {
     namespace = "com.khosravi.devin.write.okhttp"
-    compileSdk = 34
+    compileSdk = libs.versions.project.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.project.minSdk.get().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -36,9 +36,9 @@ android {
 dependencies {
 
     implementation(project(mapOf("path" to ":devin")))
-    implementation ("com.google.code.gson:gson:2.11.0")
+    implementation(libs.gson)
 
-    api("com.squareup.okhttp3:okhttp:4.9.3")
+    api(libs.okhttp)
 
 }
 

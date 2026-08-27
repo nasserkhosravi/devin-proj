@@ -29,6 +29,20 @@ object ContentProviderLogsDao {
 
     private const val TAG = "PresenterLogQuery"
 
+    fun getLog(context: Context, logId: Long): LogData? {
+        val cursor = context.contentResolver.query(
+            DevinUriHelper.getLogUri(logId),
+            null,
+            null,
+            null,
+            null,
+        ) ?: return null
+
+        return cursor.use {
+            if (it.moveToFirst()) it.asLogModel() else null
+        }
+    }
+
     fun queryLogList(
         context: Context,
         clientId: String,

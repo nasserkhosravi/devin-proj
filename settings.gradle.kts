@@ -1,12 +1,12 @@
-import java.net.URI
-
 pluginManagement {
+    includeBuild("buildConfigs")
     repositories {
-        google()
-        mavenCentral()
         gradlePluginPortal()
+        mavenCentral()
+        google()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -14,14 +14,12 @@ dependencyResolutionManagement {
         mavenCentral()
         maven {
             name = "Central Portal Snapshots"
-            url = URI("https://central.sonatype.com/repository/maven-snapshots/")
-
-            // Only search this repository for the specific dependency
+            url = java.net.URI("https://central.sonatype.com/repository/maven-snapshots/")
             content {
                 includeModule("io.github.nasserkhosravi.devin", "write")
             }
         }
-        maven { url = URI("https://jitpack.io") }
+        maven { url = java.net.URI("https://jitpack.io") }
     }
 }
 
@@ -33,6 +31,5 @@ include(":devin-no-op")
 //include(":devin-api")
 include(":devin-write-okhttp")
 include(":devin-write-okhttp-no-op")
-
 include(":lib-calendar")
 include(":lib-har")

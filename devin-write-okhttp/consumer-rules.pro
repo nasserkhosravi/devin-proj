@@ -1,0 +1,1 @@
+-keep class com.khosravi.devin.write.okhttp.har.** { *; }

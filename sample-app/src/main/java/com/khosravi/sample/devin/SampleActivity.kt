@@ -14,12 +14,11 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import com.google.android.material.snackbar.Snackbar
 import com.khosravi.devin.api.DevinLogger
+import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.write.DevinTool
 import com.khosravi.sample.devin.databinding.ActivitySampleBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
-import org.json.JSONObject
-import kotlin.random.Random
 
 class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
@@ -29,8 +28,12 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         setContentView(binding.root)
 
         DevinTool.init(
-            this, presenterConfig = JSONObject()
-                .put("logPassword", "12346")
+            this,
+            presenterConfig = DevinTool.PresenterConfigBuilder()
+                .logPassword("12346")
+                .putNotificationWhitelistGroup("Errors", DevinLogFlagsApi.getUncaughtExceptionTag(), color = "#CC0000")
+                .setNotificationUncategorizedGroup("Others")
+                .build()
         )
 
         val devinTool: DevinTool? = DevinTool.get()

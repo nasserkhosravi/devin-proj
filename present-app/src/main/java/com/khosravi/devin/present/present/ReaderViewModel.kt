@@ -31,6 +31,7 @@ import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HttpLogItemData
 import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
+import com.khosravi.devin.present.log.SessionStartLogItemData
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.optInt
 import com.khosravi.devin.read.DevinImageFlagsApi
@@ -106,6 +107,14 @@ class ReaderViewModel constructor(
     }
 
     private fun logItemDataFactory(it: LogData): LogItemData? {
+        if (it.tag == DevinLogFlagsApi.TAG_SESSION_START) {
+            return SessionStartLogItemData(
+                appVersionName = getSessionAppVersionName(it),
+                datePresent = DatePresent(it.date),
+                timePresent = TimePresent(it.date),
+            )
+        }
+
         return when (it.typeId) {
             DevinHttpFlagsApi.TYPE_ID -> {
                 ContentProviderLogsDao.mapToHttpModel(it)?.let { HttpLogItemData(it) }
@@ -118,6 +127,15 @@ class ReaderViewModel constructor(
 
             else -> TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta)
         }
+    }
+
+    private fun getSessionAppVersionName(log: LogData): String? {
+        val payload = runCatching {
+            log.meta?.get(KEY_LOG_PAYLOAD)?.takeUnless { it.isJsonNull }?.asString
+        }.getOrNull()
+        val versionName = payload?.let { SESSION_PAYLOAD_VERSION_REGEX.find(it)?.groupValues?.get(1)?.trim() }
+            ?: SESSION_MESSAGE_VERSION_REGEX.find(log.value)?.groupValues?.get(1)?.trim()
+        return versionName?.takeUnless { it.equals("null", ignoreCase = true) }
     }
 
     private fun getLogIdFromMetaJsonOrDefault(meta: JsonObject?): Int {
@@ -480,5 +498,8 @@ class ReaderViewModel constructor(
 
     companion object {
         private const val TAG = "ReaderViewModel"
+        private const val KEY_LOG_PAYLOAD = "payload"
+        private val SESSION_PAYLOAD_VERSION_REGEX = Regex("(?m)^\\s*App Version:\\s*(.+?)\\s*\\(")
+        private val SESSION_MESSAGE_VERSION_REGEX = Regex("Session Started:\\s*(.+?)\\s*\\(")
     }
 }

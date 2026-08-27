@@ -83,7 +83,7 @@ internal class LoggerImpl(
             val (appVersionName, appVersionCode) = getAppVersionNameAndCode(packageInfo)
             val fPayload = payload ?: getSessionStartPayload(context, packageInfo)
             val fMessage = message ?: "----Session Started: ${appVersionName}($appVersionCode) ---- "
-            info(tag = "SessionStart", fMessage, payload = fPayload)
+            info(tag = DevinLogFlagsApi.TAG_SESSION_START, fMessage, payload = fPayload)
         } catch (e: Exception) {
             Log.e("Devin", "Can't log session start")
         }

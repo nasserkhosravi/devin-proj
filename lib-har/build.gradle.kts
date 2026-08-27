@@ -14,10 +14,10 @@ val localProps = Properties().apply {
 
 android {
     namespace = "com.khosravi.lib.har"
-    compileSdk = 34
+    compileSdk = libs.versions.project.compileSdk.get().toInt()
 
     defaultConfig {
-        minSdk = 21
+        minSdk = libs.versions.project.minSdk.get().toInt()
     }
 
     compileOptions {
