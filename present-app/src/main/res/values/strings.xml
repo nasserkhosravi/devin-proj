@@ -51,6 +51,7 @@
     <string name="no">No</string>
     <string name="yes">Yes</string>
     <string name="msg_body_empty">(body is empty)</string>
+    <string name="menu_http_copy_body">Copy body</string>
     <string name="msg_header_empty">(header is empty)</string>
     <string name="menu_http_copy_response_content">Copy response content</string>
     <string name="menu_http_copy_request_content">Copy request content</string>

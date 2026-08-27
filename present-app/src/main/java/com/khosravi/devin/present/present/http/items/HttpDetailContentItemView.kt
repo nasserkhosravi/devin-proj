@@ -117,9 +117,9 @@ class HttpDetailContentItemView(
                     HttpFormatUtils.formatHeaders(context, data.responseHeaders)
                 }
 
-                val bodyLines = if (isRequestMode) {
-                    toBodyItems(data.requestBody, data.requestBodyMimeType, context)
-                } else toBodyItems(data.responseBody, data.responseBodyMimeType, context)
+                val bodyContent = if (isRequestMode) data.requestBody else data.responseBody
+                val bodyMimeType = if (isRequestMode) data.requestBodyMimeType else data.responseBodyMimeType
+                val bodyLines = toBodyItems(bodyContent, bodyMimeType, context)
 
                 itemAdapter.add(HttpHeaderItemView(headers))
                 if (bodyLines.isEmpty()) {
@@ -127,6 +127,9 @@ class HttpDetailContentItemView(
                     itemAdapter.add(emptyBodyItem(context))
                 } else {
                     svText.visibility = View.VISIBLE
+                    itemAdapter.add(HttpCopyBodyItemView {
+                        HttpFormatUtils.spanBody(jsonConfigColor, bodyContent!!, bodyMimeType, context).toString()
+                    })
                     itemAdapter.add(bodyLines)
                 }
             }
