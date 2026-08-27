@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.4.0
+- Implement session separator feature.
+- Implement notification-log feature: notify per client+group with debounce, configurable per-group notification color and channel, wildcard tag support, and whitelist for allowed tags.
+- Add copy-body and copy-as-cURL actions to HTTP request/response detail tabs.
+- Add horizontal padding to HTTP log detail menu icon.
+- Migrate to gradle version catalog.
+
 ## 4.3.1 
 - Change password field to textPassword.
 - Fix crash on clearing logs in search.
