@@ -1,12 +1,15 @@
 package com.khosravi.devin.write.api
 
 import android.net.Uri
+import com.khosravi.devin.read.DevinLogFlagsApi.TAG_UNCAUGHT_EXCEPTION
 
 interface DevinLogCore {
 
     companion object {
         const val FLAG_OPERATION_FAILED = -1
         const val FLAG_OPERATION_SUCCESS = 1
+
+        fun getUncaughtExceptionTag() = TAG_UNCAUGHT_EXCEPTION
     }
 
     fun insertLog(

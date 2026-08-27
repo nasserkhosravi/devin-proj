@@ -7,6 +7,8 @@ interface DevinLogCore {
     companion object {
         const val FLAG_OPERATION_FAILED = -1
         const val FLAG_OPERATION_SUCCESS = 1
+
+        fun getUncaughtExceptionTag() = "uncaught_exception"
     }
 
     fun insertLog(
