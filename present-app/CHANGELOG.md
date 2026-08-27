@@ -6,6 +6,7 @@
 - Add copy-body and copy-as-cURL actions to HTTP request/response detail tabs.
 - Add horizontal padding to HTTP log detail menu icon.
 - Migrate to gradle version catalog.
+- Highlight okhttp tag filter chip with a distinct color and "http" label.
 
 ## 4.3.1
 - Change password field to textPassword.
