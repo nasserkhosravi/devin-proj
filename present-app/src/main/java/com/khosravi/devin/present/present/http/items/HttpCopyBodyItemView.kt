@@ -10,6 +10,7 @@ import com.khosravi.devin.present.tool.adapter.FastBindingItem
 
 class HttpCopyBodyItemView(
     private val formattedBodyProvider: () -> String,
+    private val onCopyCurlClicked: () -> Unit,
 ) : FastBindingItem<ItemHttpCopyBodyRowBinding>() {
 
     override val type: Int
@@ -26,6 +27,9 @@ class HttpCopyBodyItemView(
             if (context.setClipboardSafe(formattedBodyProvider())) {
                 Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT).show()
             }
+        }
+        binding.rowCopyCurl.setOnClickListener {
+            onCopyCurlClicked()
         }
     }
 }

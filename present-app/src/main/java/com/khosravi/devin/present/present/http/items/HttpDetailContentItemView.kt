@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SearchView
+import android.widget.Toast
 import androidx.core.text.bold
 import androidx.core.text.getSpans
 import androidx.core.view.isVisible
@@ -16,18 +17,27 @@ import androidx.lifecycle.withResumed
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.data.http.HttpLogDetailData
 import com.khosravi.devin.present.databinding.ItemHttpDetailContentBinding
+import com.khosravi.devin.present.formatter.HttpCurlBuilder
 import com.khosravi.devin.present.present.http.HttpFormatUtils
 import com.khosravi.devin.present.present.http.JsonConfigColor
 import com.khosravi.devin.present.present.http.JsonSpanTextUtil
 import com.khosravi.devin.present.present.http.highlightWithDefinedColors
 import com.khosravi.devin.present.present.http.highlightWithDefinedColorsSubstring
 import com.khosravi.devin.present.present.http.indicesOf
+import com.khosravi.devin.present.setClipboardSafe
 import com.khosravi.devin.present.tool.adapter.FastBindingItem
 import com.khosravi.devin.present.tool.adapter.isEmpty
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.GenericItemAdapter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import okio.Source
+import okio.buffer
 import kotlin.math.abs
 
 class HttpDetailContentItemView(
@@ -127,9 +137,12 @@ class HttpDetailContentItemView(
                     itemAdapter.add(emptyBodyItem(context))
                 } else {
                     svText.visibility = View.VISIBLE
-                    itemAdapter.add(HttpCopyBodyItemView {
-                        HttpFormatUtils.spanBody(jsonConfigColor, bodyContent!!, bodyMimeType, context).toString()
-                    })
+                    itemAdapter.add(HttpCopyBodyItemView(
+                        formattedBodyProvider = {
+                            HttpFormatUtils.spanBody(jsonConfigColor, bodyContent!!, bodyMimeType, context).toString()
+                        },
+                        onCopyCurlClicked = { copyCurlToClipboard(context) },
+                    ))
                     itemAdapter.add(bodyLines)
                 }
             }
@@ -172,6 +185,26 @@ class HttpDetailContentItemView(
         }
     }
 
+
+    private fun buildCURL(): Flow<String> {
+        fun Source.toUtf8Content() =
+            this.buffer()
+                .use(okio.BufferedSource::readUtf8)
+
+        return flowOf(data).flowOn(Dispatchers.Default).map {
+            HttpCurlBuilder.toBuffer(it.harRequest).toUtf8Content()
+        }
+    }
+
+    private fun copyCurlToClipboard(context: Context) {
+        lifecycleScope.launch {
+            buildCURL().flowOn(Dispatchers.Main).collect { content ->
+                if (context.setClipboardSafe(content)) {
+                    Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     private fun emptyBodyItem(context: Context) =
         HttpBodyItemView(SpannableStringBuilder.valueOf(context.getString(R.string.msg_body_empty)))
