@@ -1,6 +1,9 @@
 # Changelog
 **Write module:**
 
+## 4.3.0
+- Add PresenterConfigBuilder to ease creating standard devin presenter supported config.
+
 ## 4.2.0
 - Change sessionStart to customize message and payload.
 - Add verbose log function.
