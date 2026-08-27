@@ -1,12 +1,15 @@
 package com.khosravi.devin.read
 
+/**
+ * TODO: These flags written for presenter but they are public in writer,
+ * we should have a clean separation about what should be public API for read and write side users.
+ * See @DevinLogCore , see no-op module
+ */
 object DevinLogFlagsApi {
 
     internal const val TAG_UNCAUGHT_EXCEPTION = "uncaught_exception"
 
     const val TAG_SESSION_START = "SessionStart"
-
-    fun getUncaughtExceptionTag() = TAG_UNCAUGHT_EXCEPTION
 
     //finished successfully
     const val FINISHED = 1
