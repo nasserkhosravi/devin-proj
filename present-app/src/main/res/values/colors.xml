@@ -71,6 +71,12 @@
     <color name="chip_text_selected">#FFFFFF</color>
     <color name="chip_text_unselected">#21005D</color>
 
+    <!-- OkHttp tag filter chip (attention-grabbing) -->
+    <color name="tag_okhttp_container_selected">#00ACC1</color>
+    <color name="tag_okhttp_container_unselected">#B2EBF2</color>
+    <color name="tag_okhttp_text_selected">#FFFFFF</color>
+    <color name="tag_okhttp_text_unselected">#006064</color>
+
     <color name="divider">@color/surface_variant</color>
     <color name="status_error">@color/persian_red</color>
     <color name="status_success">@color/green_dark_2</color>

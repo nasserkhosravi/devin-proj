@@ -7,19 +7,19 @@
 - Add horizontal padding to HTTP log detail menu icon.
 - Migrate to gradle version catalog.
 
-## 4.3.1 
+## 4.3.1
 - Change password field to textPassword.
 - Fix crash on clearing logs in search.
 
 ## 4.3.0
-- Redesign application, light and dark theme. 
+- Redesign application, light and dark theme.
 - Implement contextual menu for quick action on filter tags.
 - Implement pining feature for tag and custom filter in LogActivity.
 - Implement quick share feature for tag filter in LogActivity.
 - Implement removing a custom filter from contextual menu in LogActivity.
 
 ## 4.2.0
-- Implement client login (log password) feature. 
+- Implement client login (log password) feature.
 
 ## 4.1.0
 - Improve exporting by create a dedicated dialog.
@@ -53,5 +53,5 @@
 - Support different log level, payload and throwable when log in presentation.
 - Fix some bug.
 
-## 1.0.1 
+## 1.0.1
 - Initialize presenter application. 
