@@ -137,7 +137,7 @@ class HttpDetailContentItemView(
                     itemAdapter.add(emptyBodyItem(context))
                 } else {
                     svText.visibility = View.VISIBLE
-                    itemAdapter.add(HttpCopyBodyItemView(
+                    itemAdapter.add(HttpCopyActionsItemView(
                         formattedBodyProvider = {
                             HttpFormatUtils.spanBody(jsonConfigColor, bodyContent!!, bodyMimeType, context).toString()
                         },
