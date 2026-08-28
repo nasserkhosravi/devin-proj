@@ -1,8 +1,8 @@
 [versions]
 #project
-project-minSdk = "26"
-project-compileSdk = "34"
-project-targetSdk = "34"
+project-minSdk = "24"
+project-compileSdk = "35"
+project-targetSdk = "35"
 
 #build
 agpVersion = "8.10.0"
