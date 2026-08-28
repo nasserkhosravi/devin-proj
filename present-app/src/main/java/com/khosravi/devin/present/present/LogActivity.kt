@@ -42,7 +42,6 @@ import com.khosravi.devin.present.toItemViewHolder
 import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.present.uikit.component.EndlessScrollListener
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
-import com.khosravi.devin.present.tool.adapter.lastIndex
 import com.khosravi.devin.present.visible
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
@@ -75,6 +74,7 @@ class LogActivity : BaseActivity() {
         get() = _binding!!
 
     private val logDetailDialogHost by lazy { LogDetailDialogHost(this, binding.root) }
+    private val filterDialogHost by lazy { FilterDialogHost(this, binding.root) }
 
     @Inject
     lateinit var vmFactory: ViewModelFactory
@@ -507,13 +507,7 @@ class LogActivity : BaseActivity() {
     }
 
     private fun createFilter() {
-        FilterDialog.newInstance(filterItemAdapter.lastIndex()).apply {
-            onConfirm = {
-                viewModel.addFilter(it, CALLBACK_ID_ADD_FILTER)
-                dismiss()
-            }
-            show(supportFragmentManager, FilterDialog.TAG)
-        }
+        filterDialogHost.show { viewModel.addFilter(it, CALLBACK_ID_ADD_FILTER) }
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {
