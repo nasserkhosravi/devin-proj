@@ -1,6 +1,9 @@
 # Changelog
 **Write module:**
 
+## 4.3.1
+- Bump compileSdk/targetSdk to 35, lower minSdk to 24.
+
 ## 4.3.0
 - Add PresenterConfigBuilder to ease creating standard devin presenter supported config.
 
