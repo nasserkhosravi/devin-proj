@@ -1,48 +1,37 @@
 package com.khosravi.devin.present.present
 
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import com.khosravi.devin.present.KEY_DATA
-import com.khosravi.devin.present.R
-import com.khosravi.devin.present.applyBundle
-import com.khosravi.devin.present.databinding.DialogLogDetailBinding
-import com.khosravi.devin.present.getSerializableSupport
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.window.Dialog
 import com.khosravi.devin.present.log.TextLogItemData
-import com.khosravi.devin.present.arch.BaseDialog
+import com.khosravi.devin.present.uikit.theme.spacing
 
-class LogDetailDialog : BaseDialog() {
-
-    private var _binding: DialogLogDetailBinding? = null
-    private val binding: DialogLogDetailBinding
-        get() = _binding!!
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_TITLE, R.style.DialogTheme)
-    }
-
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        super.onCreateView(inflater, container, savedInstanceState)
-        _binding = DialogLogDetailBinding.inflate(inflater, container, false)
-        return binding.root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val data = requireArguments().getSerializableSupport(KEY_DATA, TextLogItemData::class.java)!!
-        binding.tvTag.text = data.tag
-        binding.tvMessage.text = data.text
-        binding.tvMeta.text = data.meta?.toString()
-    }
-
-
-    companion object {
-
-        const val TAG = "LogDetailDialog"
-
-        fun newInstance(data: TextLogItemData) = LogDetailDialog()
-            .applyBundle(KEY_DATA to data)
+@Composable
+fun LogDetailDialog(data: TextLogItemData, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = MaterialTheme.shapes.medium) {
+            Column(
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(MaterialTheme.spacing.medium)
+            ) {
+                Text(data.tag, style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.height(MaterialTheme.spacing.small))
+                Text(data.text, style = MaterialTheme.typography.bodyMedium)
+                data.meta?.let {
+                    Spacer(Modifier.height(MaterialTheme.spacing.small))
+                    Text(it.toString(), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
     }
 }

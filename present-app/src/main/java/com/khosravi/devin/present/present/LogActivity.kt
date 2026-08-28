@@ -74,6 +74,8 @@ class LogActivity : BaseActivity() {
     private val binding: ActivityLogBinding
         get() = _binding!!
 
+    private val logDetailDialogHost by lazy { LogDetailDialogHost(this, binding.root) }
+
     @Inject
     lateinit var vmFactory: ViewModelFactory
 
@@ -515,7 +517,7 @@ class LogActivity : BaseActivity() {
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {
-        LogDetailDialog.newInstance(item.data).show(supportFragmentManager, LogDetailDialog.TAG)
+        logDetailDialogHost.show(item.data)
     }
 
     private fun optCurrentFilterItem(): FilterItem? = filterItemAdapter.optSelectedItem()?.data

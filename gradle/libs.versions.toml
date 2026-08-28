@@ -25,6 +25,8 @@ coil = "2.7.0"
 androidSpantastic = "1.0.0"
 junit = "4.13.2"
 json = "20231013"
+composeBom = "2023.09.02"
+composeCompiler = "1.5.2"
 
 [libraries]
 coreKtx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -48,6 +50,11 @@ coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 android-spantastic = { module = "com.github.wellingtoncabral:android-spantastic", version.ref = "androidSpantastic" }
 junit = { module = "junit:junit", version.ref = "junit" }
 json = { module = "org.json:json", version.ref = "json" }
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
 
 [plugins]
 androidApplication = { id = "com.android.tools.build:gradle", version.ref = "agpVersion" }
