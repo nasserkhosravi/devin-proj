@@ -1,100 +1,100 @@
 package com.khosravi.devin.present.present
 
-import android.app.Dialog
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
-import androidx.core.os.bundleOf
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
-import com.khosravi.devin.present.R
-import com.khosravi.devin.present.arch.BaseBottomDialogFragment
-import com.khosravi.devin.present.databinding.FragmentClientLoginBinding
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import com.khosravi.devin.present.uikit.theme.spacing
+import kotlinx.coroutines.launch
 
-class ClientLoginBottomSheet : BaseBottomDialogFragment() {
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ClientLoginSheet(
+    correctPassword: String,
+    onCorrectPassword: (String) -> Unit,
+    onWrongPassword: () -> Boolean,
+    onDismissed: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var errorText by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
 
-    var passwordInputListener: PasswordInputListener? = null
-
-    private var _binding: FragmentClientLoginBinding? = null
-
-    private val binding: FragmentClientLoginBinding
-        get() = _binding!!
-
-    private lateinit var correctPassword: String
-
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_client_login, container, false)
+    fun close() {
+        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismissed() }
     }
 
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        _binding = FragmentClientLoginBinding.bind(view)
-
-        val inputPassword = arguments?.getString(KEY_PASSWORD)
-        require(!inputPassword.isNullOrEmpty())
-        correctPassword = inputPassword
-
-        // Find the views from the inflated layout
-        val passwordEditText = binding.passwordEditText
-        val passwordInputLayout = binding.passwordInputLayout
-        val confirmButton = binding.confirmButton
-
-        // Set up the click listener for the confirm button
-        confirmButton.setOnClickListener {
-            // Get the entered password from the EditText
-            validatePassword(passwordEditText, passwordInputLayout)
-        }
-        passwordEditText.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                validatePassword(passwordEditText, passwordInputLayout)
-                true
+    fun submit() {
+        if (isSubmitting) return
+        isSubmitting = true
+        if (password == correctPassword) {
+            onCorrectPassword(password)
+            close()
+        } else {
+            val forceClose = onWrongPassword()
+            if (forceClose) {
+                close()
             } else {
-                false
+                errorText = "Incorrect password. Please try again."
+                isSubmitting = false
             }
         }
-
     }
 
-    private fun validatePassword(
-        passwordEditText: TextInputEditText, passwordInputLayout: TextInputLayout
-    ) {
-        val password = passwordEditText.text?.toString()
-        passwordInputLayout.error = null
-        passwordInputLayout.isErrorEnabled = false
-
-        if (password == correctPassword) {
-            passwordInputListener?.onCorrectPassword(password)
-            dismiss()
-        } else {
-            passwordInputLayout.error = "Incorrect password. Please try again."
-            passwordInputLayout.isErrorEnabled = true
-            passwordInputListener?.onInCorrectPassword(dialog)
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
-
-
-    interface PasswordInputListener {
-        fun onCorrectPassword(password: String)
-        fun onInCorrectPassword(dialog: Dialog?)
-    }
-
-    companion object {
-        const val TAG = "ClientLoginBottomSheet"
-        private const val KEY_PASSWORD = "password"
-
-        fun newInstance(correctPassword: String) = ClientLoginBottomSheet().apply {
-            arguments = bundleOf(KEY_PASSWORD to correctPassword)
+    ModalBottomSheet(onDismissRequest = { close() }, sheetState = sheetState) {
+        Column(modifier = Modifier.padding(MaterialTheme.spacing.large)) {
+            Text("Enter Numeric Password", style = MaterialTheme.typography.headlineSmall)
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it; errorText = null },
+                label = { Text("Password") },
+                singleLine = true,
+                enabled = !isSubmitting,
+                isError = errorText != null,
+                supportingText = errorText?.let { { Text(it) } },
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
+                trailingIcon = {
+                    TextButton(onClick = { showPassword = !showPassword }) {
+                        Text(if (showPassword) "HIDE" else "SHOW")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = MaterialTheme.spacing.large)
+            )
+            Button(
+                onClick = { submit() },
+                enabled = !isSubmitting,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = MaterialTheme.spacing.large)
+            ) {
+                Text("Confirm")
+            }
         }
     }
 }
