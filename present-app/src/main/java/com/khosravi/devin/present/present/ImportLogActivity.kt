@@ -42,6 +42,8 @@ class ImportLogActivity : BaseActivity(){
     private val binding: ActivityImportLogBinding
         get() = _binding!!
 
+    private val logDetailDialogHost by lazy { LogDetailDialogHost(this, binding.root) }
+
     private val itemAdapter = GenericItemAdapter()
     private val adapter = FastAdapter.with(itemAdapter)
     private var searchTextWatcher: TextWatcher? = null
@@ -129,8 +131,7 @@ class ImportLogActivity : BaseActivity(){
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {
-        LogDetailDialog.newInstance(item.data)
-            .show(supportFragmentManager, LogDetailDialog.TAG)
+        logDetailDialogHost.show(item.data)
     }
 
 

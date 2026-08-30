@@ -2,28 +2,22 @@ package com.khosravi.devin.present.present
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.divider.MaterialDividerItemDecoration
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.client.ClientData
-import com.khosravi.devin.present.client.ClientItem
 import com.khosravi.devin.present.data.ClientLoadedState
-import com.khosravi.devin.present.databinding.ActivityStarterBinding
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.domain.ClientLoginInteractor
-import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.notification.LogNotificationLaunchCoordinator
-import com.mikepenz.fastadapter.FastAdapter
-import com.mikepenz.fastadapter.adapters.ItemAdapter
-import kotlinx.coroutines.CoroutineScope
+import com.khosravi.devin.present.uikit.theme.DevinTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
@@ -45,28 +39,26 @@ class StarterActivity : BaseActivity() {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
 
-    private var _binding: ActivityStarterBinding? = null
-
-    private val binding: ActivityStarterBinding
-        get() = _binding!!
-    private val itemAdapter = ItemAdapter<ClientItem>()
-    private val adapter = FastAdapter.with(itemAdapter)
+    private var message by mutableStateOf("")
+    private var clients by mutableStateOf(emptyList<ClientData>())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
-        _binding = ActivityStarterBinding.inflate(LayoutInflater.from(this), null, false)
-        setContentView(binding.root)
-        setSupportActionBar(binding.toolbar)
         notificationLaunchCoordinator.readTarget(intent)
 
-        adapter.onClickListener = { _, _, item: ClientItem, _ ->
-            onSelectClient(item.data)
-            true
+        setContent {
+            DevinTheme {
+                StarterScreen(
+                    message = message,
+                    clients = clients,
+                    onClientClick = ::onSelectClient,
+                    onRefresh = ::refreshClients
+                )
+            }
         }
 
         launchGettingClientList()
-
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -78,7 +70,7 @@ class StarterActivity : BaseActivity() {
 
     private fun launchGettingClientList() {
         launch {
-            binding.tvMessage.text = getString(R.string.loading)
+            message = getString(R.string.loading)
             //delay to let user see loading text a
             delay(100)
             viewModel.getClientList()
@@ -111,31 +103,9 @@ class StarterActivity : BaseActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        _binding = null
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.starter_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_refresh -> {
-                refreshClients()
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
     private fun refreshClients() {
         launchGettingClientList()
     }
-
 
     private fun ClientLoadedState.toStateMessage(): String {
         return when (this) {
@@ -151,9 +121,8 @@ class StarterActivity : BaseActivity() {
         when (loadState) {
             is ClientLoadedState.Single -> {
                 val clientData = loadState.client
-                itemAdapter.set(listOf(ClientItem(clientData)))
-
-                binding.tvMessage.text = loadState.toStateMessage()
+                clients = listOf(clientData)
+                message = loadState.toStateMessage()
                 if (notificationTarget != null) {
                     onSelectNotificationTarget(notificationTarget)
                 } else {
@@ -162,22 +131,17 @@ class StarterActivity : BaseActivity() {
                         isRouteSuccessful(it)
                     }
                 }
-                binding.rvClients.adapter = adapter
             }
 
             is ClientLoadedState.Multi -> {
-                itemAdapter.set(loadState.clients.map { ClientItem(it) })
-                binding.tvMessage.text = loadState.toStateMessage()
-                binding.rvClients.run {
-                    val decorator = MaterialDividerItemDecoration(context, RecyclerView.VERTICAL)
-                    addItemDecoration(decorator)
-                    adapter = this@StarterActivity.adapter
-                }
+                clients = loadState.clients
+                message = loadState.toStateMessage()
                 notificationTarget?.let(::onSelectNotificationTarget)
             }
 
             is ClientLoadedState.Zero -> {
-                binding.tvMessage.text = loadState.toStateMessage()
+                clients = emptyList()
+                message = loadState.toStateMessage()
             }
         }
     }
