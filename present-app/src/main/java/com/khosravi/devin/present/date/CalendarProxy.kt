@@ -62,3 +62,9 @@ class CalendarProxy(implType: CalendarType) {
     }
 
 }
+
+fun CalendarProxy.getFormattedWithMillis(time: TimePresent): String {
+    val formatted = initIfNeed(time).getFormatted()
+    val millis = (time.timestamp % 1000).toString().padStart(3, '0')
+    return "$formatted.$millis"
+}

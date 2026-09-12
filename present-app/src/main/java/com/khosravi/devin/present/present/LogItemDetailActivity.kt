@@ -11,6 +11,7 @@ import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.databinding.ActivityLogItemDetailBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.TimePresent
+import com.khosravi.devin.present.date.getFormattedWithMillis
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.getLongExtraOrFail
 import com.khosravi.devin.present.gone
@@ -62,11 +63,7 @@ class LogItemDetailActivity : BaseActivity() {
         }
     }
 
-    private fun getFormattedTimeWithMillis(): String {
-        val formatted = calendar.initIfNeed(timePresent).getFormatted()
-        val millis = (timePresent.timestamp % 1000).toString().padStart(3, '0')
-        return "$formatted.$millis"
-    }
+    private fun getFormattedTimeWithMillis(): String = calendar.getFormattedWithMillis(timePresent)
 
     private fun onToolbarMenuItemClick(item: MenuItem): Boolean {
         return when (item.itemId) {
