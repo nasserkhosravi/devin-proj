@@ -41,6 +41,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="?attr/spaceLarge"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
         android:gravity="center"
         android:textSize="@dimen/textSizeH5"
         tools:text="v4.4.0 by nasser.khosravi" />
