@@ -28,6 +28,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 class StarterActivity : BaseActivity() {
 
@@ -80,7 +81,7 @@ class StarterActivity : BaseActivity() {
         launch {
             binding.tvMessage.text = getString(R.string.loading)
             //delay to let user see loading text a
-            delay(100)
+            delay(100.milliseconds)
             viewModel.getClientList()
                 .flowOn(Dispatchers.Main)
                 .collect {
