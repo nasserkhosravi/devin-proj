@@ -33,6 +33,9 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="?attr/spaceSmall2"
         android:layout_marginTop="?attr/spaceSmall2"
+        android:ellipsize="end"
+        android:maxLines="2"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/tv_status"
         app:layout_constraintTop_toBottomOf="@+id/divider_1" />
 
