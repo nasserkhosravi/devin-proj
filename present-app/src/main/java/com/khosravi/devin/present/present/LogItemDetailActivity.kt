@@ -6,13 +6,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.widget.Toast
-import com.khosravi.devin.present.KEY_DATA
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.databinding.ActivityLogItemDetailBinding
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.di.getAppComponent
-import com.khosravi.devin.present.getSerializableSupport
+import com.khosravi.devin.present.getLongExtraOrFail
 import com.khosravi.devin.present.gone
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.setClipboardSafe
@@ -28,7 +28,10 @@ class LogItemDetailActivity : BaseActivity() {
     @Inject
     lateinit var calendar: CalendarProxy
 
-    private lateinit var data: TextLogItemData
+    private lateinit var tag: String
+    private lateinit var message: String
+    private lateinit var timePresent: TimePresent
+    private var meta: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
@@ -36,15 +39,18 @@ class LogItemDetailActivity : BaseActivity() {
         _binding = ActivityLogItemDetailBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
 
-        data = intent.extras?.getSerializableSupport(KEY_DATA, TextLogItemData::class.java)!!
+        tag = intent.getStringExtra(EXTRA_TAG).orEmpty()
+        message = intent.getStringExtra(EXTRA_MESSAGE).orEmpty()
+        timePresent = TimePresent(intent.getLongExtraOrFail(EXTRA_TIMESTAMP))
+        meta = intent.getStringExtra(EXTRA_META)
 
         binding.toolbar.setOnMenuItemClickListener(::onToolbarMenuItemClick)
 
         binding.run {
-            tvTag.text = data.tag
+            tvTag.text = tag
             tvTime.text = getFormattedTimeWithMillis()
-            tvMessage.text = data.text
-            val metaText = data.meta?.toString()
+            tvMessage.text = message
+            val metaText = meta
             if (metaText != null) {
                 tvMeta.text = metaText
                 tvMeta.visible()
@@ -57,8 +63,8 @@ class LogItemDetailActivity : BaseActivity() {
     }
 
     private fun getFormattedTimeWithMillis(): String {
-        val formatted = calendar.initIfNeed(data.timePresent).getFormatted()
-        val millis = (data.timePresent.timestamp % 1000).toString().padStart(3, '0')
+        val formatted = calendar.initIfNeed(timePresent).getFormatted()
+        val millis = (timePresent.timestamp % 1000).toString().padStart(3, '0')
         return "$formatted.$millis"
     }
 
@@ -75,10 +81,10 @@ class LogItemDetailActivity : BaseActivity() {
 
     private fun copyLogDetail() {
         val content = buildString {
-            appendLine("Tag: ${data.tag}")
+            appendLine("Tag: $tag")
             appendLine("Time: ${getFormattedTimeWithMillis()}")
-            appendLine("Message: ${data.text}")
-            data.meta?.let { appendLine("Meta: $it") }
+            appendLine("Message: $message")
+            meta?.let { appendLine("Meta: $it") }
         }
         if (setClipboardSafe(content)) {
             Toast.makeText(this, getString(R.string.copied), Toast.LENGTH_SHORT).show()
@@ -91,9 +97,17 @@ class LogItemDetailActivity : BaseActivity() {
     }
 
     companion object {
+        private const val EXTRA_TAG = "tag"
+        private const val EXTRA_MESSAGE = "message"
+        private const val EXTRA_TIMESTAMP = "timestamp"
+        private const val EXTRA_META = "meta"
+
         fun startActivity(context: Context, data: TextLogItemData) {
             val intent = Intent(context, LogItemDetailActivity::class.java).apply {
-                putExtra(KEY_DATA, data)
+                putExtra(EXTRA_TAG, data.tag)
+                putExtra(EXTRA_MESSAGE, data.text)
+                putExtra(EXTRA_TIMESTAMP, data.timePresent.timestamp)
+                putExtra(EXTRA_META, data.meta?.toString())
             }
             context.startActivity(intent)
         }
