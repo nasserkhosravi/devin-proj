@@ -56,7 +56,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="?attr/spaceSmall"
-                android:text="@string/request_time"
+                android:text="@string/field_time"
                 app:layout_constraintEnd_toStartOf="@id/detailGuideline"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_tag" />

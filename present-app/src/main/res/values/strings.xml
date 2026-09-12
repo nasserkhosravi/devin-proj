@@ -92,6 +92,7 @@
     <string name="log_item_verbose">Info</string>
     <string name="log_detail_title">Log detail</string>
     <string name="field_tag">Tag</string>
+    <string name="field_time">Time</string>
     <string name="field_message">Message</string>
     <string name="field_meta">Meta</string>
     <string name="menu_log_detail_copy">Copy log detail</string>
