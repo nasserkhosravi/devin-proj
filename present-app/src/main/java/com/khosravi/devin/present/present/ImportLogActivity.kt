@@ -129,8 +129,7 @@ class ImportLogActivity : BaseActivity(){
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {
-        LogDetailDialog.newInstance(item.data)
-            .show(supportFragmentManager, LogDetailDialog.TAG)
+        LogItemDetailActivity.startActivity(this, item.data)
     }
 
 
