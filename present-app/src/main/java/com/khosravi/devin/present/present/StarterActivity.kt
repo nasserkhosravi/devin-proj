@@ -1,6 +1,7 @@
 package com.khosravi.devin.present.present
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -9,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.divider.MaterialDividerItemDecoration
+import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.client.ClientItem
@@ -58,6 +60,10 @@ class StarterActivity : BaseActivity() {
         _binding = ActivityStarterBinding.inflate(LayoutInflater.from(this), null, false)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
+        binding.tvFooter.text = getString(R.string.starter_footer, BuildConfig.VERSION_NAME, CONTRIBUTOR_NAME)
+        binding.tvFooter.setOnClickListener {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES_URL)))
+        }
         notificationLaunchCoordinator.readTarget(intent)
 
         adapter.onClickListener = { _, _, item: ClientItem, _ ->
@@ -197,6 +203,8 @@ class StarterActivity : BaseActivity() {
     companion object {
         const val EXTRA_TARGET_CLIENT_ID = LogNotificationLaunchCoordinator.EXTRA_TARGET_CLIENT_ID
         const val EXTRA_TARGET_TAG = LogNotificationLaunchCoordinator.EXTRA_TARGET_TAG
+        private const val CONTRIBUTOR_NAME = "nasser.khosravi"
+        private const val RELEASES_URL = "https://github.com/nasserkhosravi/devin-proj/releases"
     }
 
 }
