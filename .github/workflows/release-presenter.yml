@@ -1,5 +1,6 @@
 # Publishes a present-app release: tag `presenter_X.Y.Z` + GitHub Release with the signed APK and
-# the `## X.Y.Z` section of present-app/CHANGELOG.md as notes. present-app's in-app update check
+# the `## X.Y.Z` section of present-app/CHANGELOG.md as notes. Presenter releases are always marked
+# "Latest" (the only release users download); library releases (release-library.yml) never are. present-app's in-app update check
 # only sees releases tagged like this that have an .apk attached.
 #
 # Run it from the Actions tab ("Run workflow") after bumping `versionName` in
@@ -106,4 +107,5 @@ jobs:
           gh release create "$TAG" "$APK" \
             --target "$GITHUB_SHA" \
             --title "$TAG" \
-            --notes-file "$RUNNER_TEMP/release-notes.md"
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --latest
