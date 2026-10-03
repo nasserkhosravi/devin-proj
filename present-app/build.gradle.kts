@@ -16,11 +16,25 @@ android {
     }
     val versionName = "\"4.5.0\""
 
+    // Only set on CI (see .github/workflows/release-presenter.yml); local release builds stay as before.
+    val releaseKeystorePath: String? = System.getenv("PRESENTER_KEYSTORE_PATH")
+    signingConfigs {
+        if (releaseKeystorePath != null) {
+            create("release") {
+                storeFile = file(releaseKeystorePath)
+                storePassword = System.getenv("PRESENTER_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("PRESENTER_KEY_ALIAS")
+                keyPassword = System.getenv("PRESENTER_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("String", "VERSION_NAME", versionName)
         }
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             buildConfigField("String", "VERSION_NAME", versionName)
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
