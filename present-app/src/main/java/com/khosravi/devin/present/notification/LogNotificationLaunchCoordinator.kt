@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.client.getLogNotificationConfig
 import com.khosravi.devin.present.data.ClientLoadedState
@@ -17,7 +18,8 @@ class LogNotificationLaunchCoordinator(
 ) {
     private val permissionLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) {
+    ) { isGranted ->
+        Analytics.notificationPermissionResult(isGranted)
         permissionHandled = true
         pendingPermissionLoadState?.let(onPermissionHandled)
         pendingPermissionLoadState = null

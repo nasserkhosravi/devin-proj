@@ -19,6 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
+import com.khosravi.devin.present.analytics.Analytics.FilterType
 import com.khosravi.devin.present.data.AppPref
 import com.khosravi.devin.present.databinding.ActivityLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
@@ -111,6 +113,7 @@ class LogActivity : BaseActivity() {
         binding.rvFilter.adapter = filterAdapter
         binding.rvMain.adapter = mainAdapter
         filterAdapter.onClickListener = { _: View?, _: IAdapter<FilterItemViewHolder>, item: FilterItemViewHolder, index: Int ->
+            Analytics.filterSelected(FilterType.of(item.data))
             selectNewFilter(item.data)
             true
         }
@@ -211,6 +214,7 @@ class LogActivity : BaseActivity() {
         lifecycleScope.launch {
             val isSelected = filterItemAdapter.selectedIndex == position
             viewModel.removeFilter(data, position).collect {
+                Analytics.customFilterRemoved()
                 filterItemAdapter.remove(position)
                 if (isSelected) {
                     resetToDefaultFilter()
@@ -231,6 +235,7 @@ class LogActivity : BaseActivity() {
         shareFilterJob = viewModel.shareFilterItem(data).flowOn(Dispatchers.Main)
             .onEach { exportFile ->
                 stopLoading()
+                Analytics.filterLogsShared()
 
                 this.toUriByFileProvider(exportFile).let {
                     val intent = sendOrShareFileIntent(it, MIME_APP_JSON)
@@ -265,6 +270,7 @@ class LogActivity : BaseActivity() {
                 .distinctUntilChanged()
                 .collect { searchText ->
                     optCurrentFilterItem()?.let {
+                        if (!searchText.isNullOrEmpty()) Analytics.logsSearched(FilterType.of(it))
                         viewModel.search(it, searchText)
                     }
                 }
@@ -352,6 +358,7 @@ class LogActivity : BaseActivity() {
     }
 
     private fun onHttpLogItemClicked(item: HttpLogItemView) {
+        Analytics.logDetailOpened(Analytics.LogType.HTTP, Analytics.LogSource.LIVE)
         HttpLogDetailActivity.startActivity(this, item.data.logId)
     }
 
@@ -419,14 +426,17 @@ class LogActivity : BaseActivity() {
 
 
     private fun clearAllLogs() {
+        Analytics.logsCleared()
         viewModel.clearLogs()
     }
 
     private fun clearCustomFilters() {
+        Analytics.customFiltersCleared()
         viewModel.clearCustomFilters()
     }
 
     private fun showExportDialog() {
+        Analytics.exportDialogOpened()
         LogExportDialog.newInstance().apply {
             show(supportFragmentManager, LogExportDialog.TAG)
         }
@@ -441,6 +451,7 @@ class LogActivity : BaseActivity() {
             } else {
                 viewModel.markAsPinned(filterItem)
             }.flowOn(Dispatchers.Main).collect {
+                Analytics.filterPinToggled(FilterType.of(it), isPinned = it.ui.isPinned)
                 filterItemAdapter[position] = FilterItemViewHolder(it)
                 if (lastPinnedPosition >= -1) {
                     filterItemAdapter.move(position, lastPinnedPosition)
@@ -511,6 +522,7 @@ class LogActivity : BaseActivity() {
 
             R.id.action_change_theme -> {
                 viewModel.toggleTheme()
+                Analytics.themeToggled(isDark = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES)
                 true
             }
 
@@ -519,6 +531,7 @@ class LogActivity : BaseActivity() {
     }
 
     private fun refreshLogsAndFilters() {
+        Analytics.logsRefreshed()
         binding.rvFilter.isEnabled = false
         optCurrentFilterItem()?.let {
             viewModel.refreshLogsAndFilters(it, callbackId = CALLBACK_ID_REFRESH)
@@ -533,6 +546,10 @@ class LogActivity : BaseActivity() {
     private fun createFilter() {
         FilterDialog.newInstance(filterItemAdapter.lastIndex()).apply {
             onConfirm = {
+                Analytics.customFilterCreated(
+                    hasTag = !it.criteria.tag.isNullOrEmpty(),
+                    hasSearchText = !it.criteria.searchText.isNullOrEmpty()
+                )
                 viewModel.addFilter(it, CALLBACK_ID_ADD_FILTER)
                 dismiss()
             }
@@ -541,6 +558,7 @@ class LogActivity : BaseActivity() {
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {
+        Analytics.logDetailOpened(Analytics.LogType.TEXT, Analytics.LogSource.LIVE)
         LogItemDetailActivity.startActivity(this, item.data)
     }
 

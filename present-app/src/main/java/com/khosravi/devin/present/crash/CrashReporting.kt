@@ -2,6 +2,7 @@ package com.khosravi.devin.present.crash
 
 import android.app.Application
 import com.khosravi.devin.present.BuildConfig
+import com.khosravi.devin.present.analytics.Analytics
 import io.appmetrica.analytics.AppMetrica
 import io.appmetrica.analytics.AppMetricaConfig
 
@@ -19,5 +20,6 @@ object CrashReporting {
             .withLocationTracking(false)
             .build()
         AppMetrica.activate(application, config)
+        Analytics.isEnabled = true
     }
 }

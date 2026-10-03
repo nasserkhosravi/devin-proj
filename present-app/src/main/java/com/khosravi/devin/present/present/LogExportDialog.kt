@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity.RESULT_OK
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
+import com.khosravi.devin.present.analytics.Analytics.ExportDestination
 import com.khosravi.devin.present.databinding.DialogLogExportBinding
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
@@ -103,6 +105,7 @@ class LogExportDialog : BaseDialog(), CoroutineScope by MainScope() {
                     .flowOn(Dispatchers.Main)
                     .onEach { exportFile ->
                         stopExportProcess()
+                        Analytics.logsExported(isDefaultOption(), ExportDestination.SHARE, isSuccessful = true)
                         context?.toUriByFileProvider(exportFile)?.let {
                             val intent = sendOrShareFileIntent(it, MIME_APP_JSON)
                             startActivity(Intent.createChooser(intent, getString(R.string.title_of_share)))
@@ -131,6 +134,7 @@ class LogExportDialog : BaseDialog(), CoroutineScope by MainScope() {
                     .flowOn(Dispatchers.Main)
                     .onEach {
                         stopExportProcess()
+                        Analytics.logsExported(isDefaultOption(), ExportDestination.SAVE, isSuccessful = it)
                         val msg = if (it) getString(R.string.msg_save_done)
                         else getString(R.string.error_msg_something_went_wrong)
                         Toast.makeText(this@LogExportDialog.context, msg, Toast.LENGTH_LONG).show()
@@ -149,6 +153,8 @@ class LogExportDialog : BaseDialog(), CoroutineScope by MainScope() {
         binding.progressBar.visible()
     }
 
+
+    private fun isDefaultOption() = _binding?.rdDefault?.isChecked ?: true
 
     private fun getWhitelistText() = binding.edFilterTag.text?.toString()
 
