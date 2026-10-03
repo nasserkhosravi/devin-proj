@@ -1,17 +1,17 @@
 package com.khosravi.devin.write
 
 import android.content.Context
-import com.khosravi.devin.api.DevinImageLogger
-import com.khosravi.devin.api.DevinLogger
 import com.khosravi.devin.write.api.DevinLogCore
-import org.json.JSONArray
 import org.json.JSONObject
 
-class DevinTool private constructor(
-    val logger: DevinLogger?,
-    val imageLogger: DevinImageLogger?,
-    private val logCore: DevinLogCore? = null,
-) {
+class DevinTool private constructor() {
+
+    /**
+     * No-op counterpart of the `devin` module's `isProviderInstalled()`. Always returns `null`
+     * here because this variant never talks to a provider - kept only so call sites compile
+     * unchanged across build variants.
+     */
+    fun isProviderInstalled(): Boolean? = null
 
     /**
      * Give available [DevinLogCore] instance.
