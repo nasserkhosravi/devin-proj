@@ -17,7 +17,6 @@ class DevinTool private constructor(
     val logger: DevinLogger?,
     val imageLogger: DevinImageLogger?,
     private val logCore: DevinLogCore? = null,
-    private val isInstalledDevinContentProvider: Boolean?,
 ) {
 
     private fun putClient(appContext: Context, packageName: String, presenterConfig: JSONObject?) {
@@ -26,23 +25,6 @@ class DevinTool private constructor(
             DevinContentProvider.contentValuePutClient(packageName, presenterConfig)
         )
     }
-
-    /**
-     * Whether a Devin presenter application (one hosting the Devin `ContentProvider`, e.g. the
-     * present-app) was reachable when [init] ran. Call this after [init] to learn if logs are
-     * actually being consumed somewhere:
-     * - `true`: a presenter is installed - this app registered itself as a client and written
-     *   logs can be read by it.
-     * - `false`: no presenter found - registering the client failed, so written logs go nowhere.
-     *   [logger] and [imageLogger] still accept calls; they're just not persisted anywhere a
-     *   presenter can see.
-     * - `null`: the state is unknown because Devin was initialized with `isEnable = false`, in
-     *   which case no attempt was made to reach a provider.
-     *
-     * The result is a snapshot taken once during [init]; installing a presenter app afterwards
-     * is not detected until the process restarts and [init] runs again.
-     */
-    fun isProviderInstalled(): Boolean? = isInstalledDevinContentProvider
 
     /**
      * Give available [DevinLogCore] instance.
@@ -157,8 +139,8 @@ class DevinTool private constructor(
             val packageName = appContext.packageName
             val devinTool = if (isEnable) {
                 val logCore = LogCore(appContext, true)
-                DevinTool(LoggerImpl(logCore), DevinImageLoggerImpl(logCore), logCore, true)
-            } else DevinTool(null, null, null, null)
+                DevinTool(LoggerImpl(logCore), DevinImageLoggerImpl(logCore), logCore)
+            } else DevinTool(null, null, null)
 
             if (!isEnable) {
                 disableComponent(appContext, packageName, DevinContentProvider::class.java.name)
@@ -168,7 +150,7 @@ class DevinTool private constructor(
                 } catch (e: Exception) {
                     Log.e(TAG, "No Devin receiver found. Please ensure a devin presenter application is installed.")
                     e.printStackTrace()
-                    return DevinTool(null, null, null, false)
+                    return DevinTool(null, null, null)
                 }
             }
             return devinTool
