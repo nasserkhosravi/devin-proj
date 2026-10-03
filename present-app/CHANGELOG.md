@@ -6,6 +6,7 @@
 - Allow HTTP log item path to wrap to two lines.
 - Show app version and contributor name in StarterActivity footer; tapping it opens the GitHub releases page.
 - Fix copy icon being invisible in dark theme.
+- Report crashes via AppMetrica (release builds only; requires `appmetrica.apiKey` in `local.properties` or `APPMETRICA_API_KEY` env var).
 
 ## 4.4.0
 - Implement session separator feature.

@@ -1,6 +1,7 @@
 package com.khosravi.devin.present
 
 import android.app.Application
+import com.khosravi.devin.present.crash.CrashReporting
 import com.khosravi.devin.present.di.AppComponent
 import com.khosravi.devin.present.di.DaggerAppComponent
 import com.khosravi.devin.present.notification.LatestLogNotificationObserver
@@ -13,6 +14,7 @@ class PresentApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashReporting.init(this)
         appComponent = DaggerAppComponent.builder()
             .context(this)
             .application(this)

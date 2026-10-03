@@ -1,7 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
+}
+
+val appMetricaApiKey: String = run {
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+    localProperties.getProperty("appmetrica.apiKey")
+        ?: System.getenv("APPMETRICA_API_KEY")
+        ?: ""
 }
 
 android {
@@ -19,9 +32,11 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "VERSION_NAME", versionName)
+            buildConfigField("String", "APPMETRICA_API_KEY", "\"\"")
         }
         release {
             buildConfigField("String", "VERSION_NAME", versionName)
+            buildConfigField("String", "APPMETRICA_API_KEY", "\"$appMetricaApiKey\"")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -66,6 +81,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.android.spantastic)
     implementation(libs.gson)
+    implementation(libs.appmetrica.analytics)
 
     testImplementation(libs.junit)
     testImplementation(libs.json)
