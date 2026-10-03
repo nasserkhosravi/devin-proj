@@ -25,6 +25,7 @@ coil = "2.7.0"
 androidSpantastic = "1.0.0"
 junit = "4.13.2"
 json = "20231013"
+appmetrica = "8.5.1"
 
 [libraries]
 coreKtx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -48,6 +49,7 @@ coil = { module = "io.coil-kt:coil", version.ref = "coil" }
 android-spantastic = { module = "com.github.wellingtoncabral:android-spantastic", version.ref = "androidSpantastic" }
 junit = { module = "junit:junit", version.ref = "junit" }
 json = { module = "org.json:json", version.ref = "json" }
+appmetrica-analytics = { module = "io.appmetrica.analytics:analytics", version.ref = "appmetrica" }
 
 [plugins]
 androidApplication = { id = "com.android.tools.build:gradle", version.ref = "agpVersion" }
