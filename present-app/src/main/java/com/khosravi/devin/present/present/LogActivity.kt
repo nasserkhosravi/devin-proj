@@ -43,6 +43,7 @@ import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.present.uikit.component.EndlessScrollListener
 import com.khosravi.devin.present.tool.adapter.SingleSelectionItemAdapter
 import com.khosravi.devin.present.tool.adapter.lastIndex
+import com.khosravi.devin.present.update.UpdateChecker
 import com.khosravi.devin.present.visible
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.GenericItem
@@ -79,6 +80,11 @@ class LogActivity : BaseActivity() {
 
     @Inject
     lateinit var calendar: CalendarProxy
+
+    @Inject
+    lateinit var updateChecker: UpdateChecker
+
+    private var updateJob: Job? = null
 
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
@@ -446,6 +452,26 @@ class LogActivity : BaseActivity() {
 
     private fun isIndexFilterSelected() = optCurrentFilterItem()?.isIndexFilterItem()
 
+    override fun onResume() {
+        super.onResume()
+        updateJob = launch {
+            updateChecker.availableUpdate.collect { update ->
+                if (update?.isForceUpdate == true) {
+                    // StarterActivity owns the update dialogs and the force-update gate; drop back to it.
+                    startActivity(Intent(this@LogActivity, StarterActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                    finish()
+                }
+            }
+        }
+        updateChecker.checkInBackgroundIfDue()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        updateJob?.cancel()
+        updateJob = null
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         return true
@@ -515,7 +541,7 @@ class LogActivity : BaseActivity() {
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {
-        LogDetailDialog.newInstance(item.data).show(supportFragmentManager, LogDetailDialog.TAG)
+        LogItemDetailActivity.startActivity(this, item.data)
     }
 
     private fun optCurrentFilterItem(): FilterItem? = filterItemAdapter.optSelectedItem()?.data

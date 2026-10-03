@@ -1,7 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt")
+}
+
+val appMetricaApiKey: String = run {
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use { localProperties.load(it) }
+    }
+    localProperties.getProperty("appmetrica.apiKey")
+        ?: System.getenv("APPMETRICA_API_KEY")
+        ?: ""
 }
 
 android {
@@ -14,14 +27,30 @@ android {
         versionCode = 4
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    val versionName = "\"4.4.0\""
+    val versionName = "\"4.5.0\""
+
+    // Only set on CI (see .github/workflows/release-presenter.yml); local release builds stay as before.
+    val releaseKeystorePath: String? = System.getenv("PRESENTER_KEYSTORE_PATH")
+    signingConfigs {
+        if (releaseKeystorePath != null) {
+            create("release") {
+                storeFile = file(releaseKeystorePath)
+                storePassword = System.getenv("PRESENTER_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("PRESENTER_KEY_ALIAS")
+                keyPassword = System.getenv("PRESENTER_KEY_PASSWORD")
+            }
+        }
+    }
 
     buildTypes {
         debug {
             buildConfigField("String", "VERSION_NAME", versionName)
+            buildConfigField("String", "APPMETRICA_API_KEY", "\"\"")
         }
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             buildConfigField("String", "VERSION_NAME", versionName)
+            buildConfigField("String", "APPMETRICA_API_KEY", "\"$appMetricaApiKey\"")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -66,6 +95,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.android.spantastic)
     implementation(libs.gson)
+    implementation(libs.appmetrica.analytics)
 
     testImplementation(libs.junit)
     testImplementation(libs.json)

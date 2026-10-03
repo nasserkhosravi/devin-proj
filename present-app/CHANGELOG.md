@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.5.0
+- Notify when a newer presenter release is published on GitHub (checked at most once a day; a notification plus a one-time dialog on the client selection screen; footer shows the available version). A major version bump (e.g. 4.x → 5.0.0) blocks the app with an "update required" dialog on the client selection screen (back closes the app). The footer version turns red while an update is available.
+- Replace log item detail dialog with a dedicated full page, with a copy button.
+- Show millisecond precision on log list item time.
+- Allow HTTP log item path to wrap to two lines.
+- Show app version and contributor name in StarterActivity footer; tapping it opens the GitHub releases page.
+- Fix copy icon being invisible in dark theme.
+- Report crashes via AppMetrica (release builds only; requires `appmetrica.apiKey` in `local.properties` or `APPMETRICA_API_KEY` env var).
+
 ## 4.4.0
 - Implement session separator feature.
 - Implement notification-log feature: notify per client+group with debounce, configurable per-group notification color and channel, wildcard tag support, and whitelist for allowed tags.

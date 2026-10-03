@@ -1,0 +1,99 @@
+# Publishes a present-app release: tag `presenter_X.Y.Z` + GitHub Release with the signed APK and
+# the `## X.Y.Z` section of present-app/CHANGELOG.md as notes. present-app's in-app update check
+# only sees releases tagged like this that have an .apk attached.
+#
+# Run it from the Actions tab ("Run workflow") after bumping `versionName` in
+# present-app/build.gradle.kts and adding its CHANGELOG section.
+#
+# Required repository secrets (must be the same key as previous releases, or users can't upgrade):
+#   PRESENTER_KEYSTORE_BASE64   base64 of the .jks/.keystore file (`base64 -i release.jks | pbcopy`)
+#   PRESENTER_KEYSTORE_PASSWORD
+#   PRESENTER_KEY_ALIAS
+#   PRESENTER_KEY_PASSWORD
+name: Release presenter
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-presenter
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version and check tag
+        run: |
+          version=$(grep -E 'val versionName = ' present-app/build.gradle.kts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          if [ -z "$version" ]; then
+            echo "::error::Could not read versionName from present-app/build.gradle.kts"
+            exit 1
+          fi
+          tag="presenter_$version"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "::error::Tag $tag already exists. Bump versionName in present-app/build.gradle.kts first."
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+
+      - name: Extract changelog section
+        run: |
+          awk -v header="## $VERSION" '
+            $0 == header { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' present-app/CHANGELOG.md | sed '/./,$!d' > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"; then
+            echo "::error::present-app/CHANGELOG.md has no '## $VERSION' section, or it is empty."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/release-notes.md"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.PRESENTER_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret PRESENTER_KEYSTORE_BASE64 is not set."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/presenter.keystore"
+          echo "PRESENTER_KEYSTORE_PATH=$RUNNER_TEMP/presenter.keystore" >> "$GITHUB_ENV"
+
+      - name: Build release APK
+        env:
+          PRESENTER_KEYSTORE_PASSWORD: ${{ secrets.PRESENTER_KEYSTORE_PASSWORD }}
+          PRESENTER_KEY_ALIAS: ${{ secrets.PRESENTER_KEY_ALIAS }}
+          PRESENTER_KEY_PASSWORD: ${{ secrets.PRESENTER_KEY_PASSWORD }}
+        run: ./gradlew :present-app:assembleRelease
+
+      - name: Verify signature
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          apk="$RUNNER_TEMP/devin-presenter-app-$VERSION-release.apk"
+          cp present-app/build/outputs/apk/release/present-app-release.apk "$apk"
+          "$apksigner" verify --print-certs "$apk"
+          echo "APK=$apk" >> "$GITHUB_ENV"
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" "$APK" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/release-notes.md"

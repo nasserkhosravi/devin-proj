@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        app:menu="@menu/log_item_detail_menu"
+        app:title="@string/log_detail_title" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="?attr/spaceLarge">
+
+            <androidx.constraintlayout.widget.Guideline
+                android:id="@+id/detailGuideline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.28" />
+
+            <TextView
+                style="@style/AppTheme.TextAppearance.Label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/field_tag"
+                app:layout_constraintEnd_toStartOf="@id/detailGuideline"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_tag"
+                style="@style/AppTheme.TextAppearance.Value"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="@id/detailGuideline"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="MyTag" />
+
+            <TextView
+                android:id="@+id/labelTime"
+                style="@style/AppTheme.TextAppearance.Label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="?attr/spaceSmall"
+                android:text="@string/field_time"
+                app:layout_constraintEnd_toStartOf="@id/detailGuideline"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_tag" />
+
+            <TextView
+                android:id="@+id/tv_time"
+                style="@style/AppTheme.TextAppearance.Value"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="?attr/spaceSmall"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="@id/detailGuideline"
+                app:layout_constraintTop_toBottomOf="@id/tv_tag"
+                tools:text="11:52:49.123" />
+
+            <TextView
+                android:id="@+id/labelMessage"
+                style="@style/AppTheme.TextAppearance.Label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="?attr/spaceLarge"
+                android:text="@string/field_message"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/labelTime" />
+
+            <TextView
+                android:id="@+id/tv_message"
+                style="@style/AppTheme.TextAppearance.Value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="?attr/spaceSmall"
+                android:textIsSelectable="true"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/labelMessage"
+                tools:text="A quite long log message that describes what happened in the app." />
+
+            <TextView
+                android:id="@+id/labelMeta"
+                style="@style/AppTheme.TextAppearance.Label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="?attr/spaceLarge"
+                android:text="@string/field_meta"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_message" />
+
+            <TextView
+                android:id="@+id/tv_meta"
+                style="@style/AppTheme.TextAppearance.Value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="?attr/spaceSmall"
+                android:textIsSelectable="true"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/labelMeta"
+                tools:text="{ }" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+
+</LinearLayout>

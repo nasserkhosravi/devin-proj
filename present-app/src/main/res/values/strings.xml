@@ -29,6 +29,7 @@
     <string name="no_client_found">No client data found, run client app or send logs to devin</string>
     <string name="one_client_found">One client found</string>
     <string name="choose_client">Choose client source</string>
+    <string name="starter_footer">v%1$s by %2$s</string>
     <string name="copied">Copied</string>
     <string name="msg_failed_to_copy">Failed to copy, User other available options</string>
     <string name="share_curl_command">Share CURL command</string>
@@ -90,5 +91,19 @@
     <string name="log_item_info">Info</string>
     <string name="log_item_debug">Debug</string>
     <string name="log_item_verbose">Info</string>
+    <string name="log_detail_title">Log detail</string>
+    <string name="field_tag">Tag</string>
+    <string name="field_time">Time</string>
+    <string name="field_message">Message</string>
+    <string name="field_meta">Meta</string>
+    <string name="menu_log_detail_copy">Copy log detail</string>
+    <string name="update_notification_channel_name">App updates</string>
+    <string name="update_available_title">Devin update available</string>
+    <string name="update_available_message">Version %1$s is available (you have %2$s).</string>
+    <string name="update_required_title">Devin update required</string>
+    <string name="update_required_message">Version %1$s is a major update and is required (you have %2$s).</string>
+    <string name="update_action_download">Download</string>
+    <string name="update_action_later">Later</string>
+    <string name="starter_footer_update">v%1$s by %2$s · Update available: v%3$s</string>
 
 </resources>
