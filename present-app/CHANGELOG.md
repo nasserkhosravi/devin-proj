@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.5.0
+- Replace log item detail dialog with a dedicated full page, with a copy button.
+- Show millisecond precision on log list item time.
+- Allow HTTP log item path to wrap to two lines.
+- Show app version and contributor name in StarterActivity footer; tapping it opens the GitHub releases page.
+- Fix copy icon being invisible in dark theme.
+
 ## 4.4.0
 - Implement session separator feature.
 - Implement notification-log feature: notify per client+group with debounce, configurable per-group notification color and channel, wildcard tag support, and whitelist for allowed tags.
