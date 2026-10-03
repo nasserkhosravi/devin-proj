@@ -67,6 +67,7 @@
 
     <color name="divider">@color/surface_variant</color>
     <color name="status_error">#971F19</color>
+    <color name="update_available_text">#F2B8B5</color>
 
     <color name="session_start_background">#5142B5</color>
     <color name="session_start_text">#FFFFFF</color>

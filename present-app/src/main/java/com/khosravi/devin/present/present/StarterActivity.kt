@@ -1,12 +1,14 @@
 package com.khosravi.devin.present.present
 
 import android.content.Intent
-import android.net.Uri
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.divider.MaterialDividerItemDecoration
@@ -21,10 +23,17 @@ import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.domain.ClientLoginInteractor
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.notification.LogNotificationLaunchCoordinator
+import com.khosravi.devin.present.update.GitHubReleaseSource
+import com.khosravi.devin.present.update.ReleaseInfo
+import com.khosravi.devin.present.update.UpdateChecker
+import com.khosravi.devin.present.update.openReleasePage
+import com.khosravi.devin.present.update.updateMessage
+import com.khosravi.devin.present.update.updateTitle
 import com.mikepenz.fastadapter.FastAdapter
 import com.mikepenz.fastadapter.adapters.ItemAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOn
@@ -44,6 +53,17 @@ class StarterActivity : BaseActivity() {
     @Inject
     lateinit var clientLoginInteractor: ClientLoginInteractor
 
+    @Inject
+    lateinit var updateChecker: UpdateChecker
+
+    private var updateJob: Job? = null
+    private var footerDefaultColors: ColorStateList? = null
+    private var forceUpdateDialog: AlertDialog? = null
+    private var optionalUpdateDialog: AlertDialog? = null
+
+    /** Auto-routing to logs held back while [optionalUpdateDialog] is open; runs when it closes. */
+    private var pendingRoute: (() -> Unit)? = null
+
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
@@ -61,10 +81,6 @@ class StarterActivity : BaseActivity() {
         _binding = ActivityStarterBinding.inflate(LayoutInflater.from(this), null, false)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-        binding.tvFooter.text = getString(R.string.starter_footer, BuildConfig.VERSION_NAME, CONTRIBUTOR_NAME)
-        binding.tvFooter.setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES_URL)))
-        }
         notificationLaunchCoordinator.readTarget(intent)
 
         adapter.onClickListener = { _, _, item: ClientItem, _ ->
@@ -74,6 +90,106 @@ class StarterActivity : BaseActivity() {
 
         launchGettingClientList()
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateJob = launch {
+            updateChecker.availableUpdate.collect {
+                bindFooter(it)
+                showForceUpdateDialogIfNeeded(it)
+                showOptionalUpdateDialogIfNeeded(it)
+            }
+        }
+        updateChecker.checkInBackgroundIfDue()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        updateJob?.cancel()
+        updateJob = null
+    }
+
+    private fun bindFooter(update: ReleaseInfo?) {
+        if (footerDefaultColors == null) footerDefaultColors = binding.tvFooter.textColors
+        if (update == null) {
+            footerDefaultColors?.let(binding.tvFooter::setTextColor)
+        } else {
+            binding.tvFooter.setTextColor(ContextCompat.getColor(this, R.color.update_available_text))
+        }
+        binding.tvFooter.text = if (update == null) {
+            getString(R.string.starter_footer, BuildConfig.VERSION_NAME, CONTRIBUTOR_NAME)
+        } else {
+            getString(R.string.starter_footer_update, BuildConfig.VERSION_NAME, CONTRIBUTOR_NAME, update.version.toString())
+        }
+        val url = update?.pageUrl ?: GitHubReleaseSource.RELEASES_PAGE_URL
+        binding.tvFooter.setOnClickListener {
+            openReleasePage(url)
+        }
+    }
+
+    /**
+     * A major-version update blocks the app: the dialog can't be dismissed (back finishes the
+     * activity) and is shown again on every resume, e.g. after returning from the release page.
+     */
+    private fun showForceUpdateDialogIfNeeded(update: ReleaseInfo?) {
+        if (update?.isForceUpdate != true) {
+            forceUpdateDialog?.dismiss()
+            forceUpdateDialog = null
+            return
+        }
+        if (forceUpdateDialog?.isShowing == true) return
+        forceUpdateDialog = AlertDialog.Builder(this)
+            .setTitle(updateTitle(update))
+            .setMessage(updateMessage(update))
+            .setPositiveButton(R.string.update_action_download) { _, _ -> openReleasePage(update.pageUrl) }
+            .setOnCancelListener { finish() }
+            .create()
+            .apply {
+                setCanceledOnTouchOutside(false)
+                show()
+            }
+    }
+
+    /** Shown up to 3 times a day until updated; answering it ("Later", back, "Download") counts one. */
+    private fun showOptionalUpdateDialogIfNeeded(update: ReleaseInfo?) {
+        if (update == null || update.isForceUpdate) return
+        if (optionalUpdateDialog?.isShowing == true) return
+        val pending = updateChecker.pendingPrompt() ?: return
+        optionalUpdateDialog = AlertDialog.Builder(this)
+            .setTitle(updateTitle(pending))
+            .setMessage(updateMessage(pending))
+            .setPositiveButton(R.string.update_action_download) { _, _ ->
+                updateChecker.markPrompted()
+                openReleasePage(pending.pageUrl)
+            }
+            .setNegativeButton(R.string.update_action_later) { _, _ ->
+                updateChecker.markPrompted()
+            }
+            .setOnCancelListener { updateChecker.markPrompted() }
+            .setOnDismissListener {
+                val route = pendingRoute
+                pendingRoute = null
+                route?.invoke()
+            }
+            .show()
+    }
+
+    /** Runs [route] now, or once the optional update dialog is closed if it is showing. */
+    private fun routeAfterUpdatePrompt(route: () -> Unit) {
+        if (optionalUpdateDialog?.isShowing == true) {
+            pendingRoute = route
+        } else {
+            route()
+        }
+    }
+
+    /** True (and shows the force-update dialog) if a force update must block routing to logs. */
+    private fun isBlockedByForceUpdate(): Boolean {
+        val update = updateChecker.availableUpdate.value
+        if (update?.isForceUpdate != true) return false
+        showForceUpdateDialogIfNeeded(update)
+        return true
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -99,6 +215,7 @@ class StarterActivity : BaseActivity() {
     }
 
     private fun onSelectClient(clientData: ClientData) {
+        if (isBlockedByForceUpdate()) return
         viewModel.setSelectedClientId(clientData)
         clientLoginInteractor.onClientSelect(this, clientData) {
             isRouteSuccessful(it)
@@ -106,8 +223,10 @@ class StarterActivity : BaseActivity() {
     }
 
     private fun onSelectNotificationTarget(target: LogNotificationLaunchCoordinator.Target) {
+        if (isBlockedByForceUpdate()) return
         viewModel.setSelectedClientId(target.client)
         clientLoginInteractor.onClientSelect(this, target.client) { canRoute ->
+            if (isBlockedByForceUpdate()) return@onClientSelect
             if (canRoute) {
                 startActivity(Intent(this, LogActivity::class.java).apply {
                     target.tag?.let { putExtra(LogActivity.EXTRA_TARGET_TAG, it) }
@@ -120,6 +239,12 @@ class StarterActivity : BaseActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        forceUpdateDialog?.dismiss()
+        forceUpdateDialog = null
+        // Drop the held-back route so dismissing here doesn't navigate from a destroyed activity.
+        pendingRoute = null
+        optionalUpdateDialog?.dismiss()
+        optionalUpdateDialog = null
         _binding = null
     }
 
@@ -161,12 +286,11 @@ class StarterActivity : BaseActivity() {
                 itemAdapter.set(listOf(ClientItem(clientData)))
 
                 binding.tvMessage.text = loadState.toStateMessage()
-                if (notificationTarget != null) {
-                    onSelectNotificationTarget(notificationTarget)
-                } else {
-                    viewModel.setSelectedClientId(clientData)
-                    clientLoginInteractor.onClientSelect(this, clientData) {
-                        isRouteSuccessful(it)
+                routeAfterUpdatePrompt {
+                    if (notificationTarget != null) {
+                        onSelectNotificationTarget(notificationTarget)
+                    } else {
+                        onSelectClient(clientData)
                     }
                 }
                 binding.rvClients.adapter = adapter
@@ -180,7 +304,7 @@ class StarterActivity : BaseActivity() {
                     addItemDecoration(decorator)
                     adapter = this@StarterActivity.adapter
                 }
-                notificationTarget?.let(::onSelectNotificationTarget)
+                notificationTarget?.let { routeAfterUpdatePrompt { onSelectNotificationTarget(it) } }
             }
 
             is ClientLoadedState.Zero -> {
@@ -190,6 +314,8 @@ class StarterActivity : BaseActivity() {
     }
 
     private fun isRouteSuccessful(canRoute: Boolean) {
+        // The check may finish while the password sheet is open.
+        if (isBlockedByForceUpdate()) return
         if (canRoute) {
             openNextActivity(this)
         } else {
@@ -205,7 +331,6 @@ class StarterActivity : BaseActivity() {
         const val EXTRA_TARGET_CLIENT_ID = LogNotificationLaunchCoordinator.EXTRA_TARGET_CLIENT_ID
         const val EXTRA_TARGET_TAG = LogNotificationLaunchCoordinator.EXTRA_TARGET_TAG
         private const val CONTRIBUTOR_NAME = "nasser.khosravi"
-        private const val RELEASES_URL = "https://github.com/nasserkhosravi/devin-proj/releases"
     }
 
 }

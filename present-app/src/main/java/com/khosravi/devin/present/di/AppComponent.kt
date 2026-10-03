@@ -12,6 +12,7 @@ import com.khosravi.devin.present.present.LogItemDetailActivity
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.ImportLogActivity
 import com.khosravi.devin.present.present.StarterActivity
+import com.khosravi.devin.present.update.UpdateChecker
 import javax.inject.Singleton
 
 
@@ -34,6 +35,8 @@ interface AppComponent {
     fun inject(activity: LogItemDetailActivity)
 
     fun inject(dialog: LogExportDialog)
+
+    fun updateChecker(): UpdateChecker
 
     @Component.Builder
     interface Builder {

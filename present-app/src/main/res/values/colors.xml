@@ -80,6 +80,7 @@
     <color name="divider">@color/surface_variant</color>
     <color name="status_error">@color/persian_red</color>
     <color name="status_success">@color/green_dark_2</color>
+    <color name="update_available_text">#B3261E</color>
 
     <color name="session_start_background">#5142B5</color>
     <color name="session_start_text">#FFFFFF</color>
