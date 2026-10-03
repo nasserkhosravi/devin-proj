@@ -13,6 +13,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.KEY_DATA
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.databinding.ActivityImportLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
@@ -63,6 +64,7 @@ class ImportLogActivity : BaseActivity(){
         setContentView(binding.root)
 
         val content = intent.getParcelableExtraSupport(KEY_DATA, Uri::class.java)?.let { readUriText(it) }
+        Analytics.logsImported(isSuccessful = !content.isNullOrEmpty())
         if (content.isNullOrEmpty()) {
             val errorText =
                 if (content == null) getString(R.string.error_msg_something_went_wrong) else getString(R.string.error_msg_empty_file_text)
@@ -129,6 +131,7 @@ class ImportLogActivity : BaseActivity(){
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {
+        Analytics.logDetailOpened(Analytics.LogType.TEXT, Analytics.LogSource.IMPORTED)
         LogItemDetailActivity.startActivity(this, item.data)
     }
 
