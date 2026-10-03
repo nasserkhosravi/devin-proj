@@ -74,6 +74,16 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/presenter.keystore"
           echo "PRESENTER_KEYSTORE_PATH=$RUNNER_TEMP/presenter.keystore" >> "$GITHUB_ENV"
 
+      # local.properties is git-ignored, but the library modules (devin, devin-no-op, devin-write-okhttp,
+      # devin-write-okhttp-no-op, lib-har) load it and read their Maven Central signing keys at
+      # configuration time. This job never publishes, so placeholders are enough.
+      - name: Create local.properties
+        run: |
+          printf '%s\n' \
+            'signingKeyId=unused-on-ci' \
+            'signingKey=unused-on-ci' \
+            'signingKeyPassword=unused-on-ci' > local.properties
+
       - name: Build release APK
         env:
           PRESENTER_KEYSTORE_PASSWORD: ${{ secrets.PRESENTER_KEYSTORE_PASSWORD }}
