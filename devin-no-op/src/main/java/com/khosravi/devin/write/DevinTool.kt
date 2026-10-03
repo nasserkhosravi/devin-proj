@@ -1,10 +1,16 @@
 package com.khosravi.devin.write
 
 import android.content.Context
+import com.khosravi.devin.api.DevinImageLogger
+import com.khosravi.devin.api.DevinLogger
 import com.khosravi.devin.write.api.DevinLogCore
 import org.json.JSONObject
 
-class DevinTool private constructor() {
+class DevinTool private constructor(
+    val logger: DevinLogger?,
+    val imageLogger: DevinImageLogger?,
+    private val logCore: DevinLogCore? = null,
+) {
 
     /**
      * No-op counterpart of the `devin` module's `isProviderInstalled()`. Always returns `null`
