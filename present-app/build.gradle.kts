@@ -24,10 +24,10 @@ android {
     defaultConfig {
         minSdk = libs.versions.project.minSdk.get().toInt()
         targetSdk = libs.versions.project.targetSdk.get().toInt()
-        versionCode = 4
+        versionCode = 5
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    val versionName = "\"4.5.0\""
+    val versionName = "\"4.6.0\""
 
     // Only set on CI (see .github/workflows/release-presenter.yml); local release builds stay as before.
     val releaseKeystorePath: String? = System.getenv("PRESENTER_KEYSTORE_PATH")
@@ -69,6 +69,8 @@ android {
     testOptions {
         unitTests {
             isReturnDefaultValues = true
+            // Robolectric tests read app resources (strings) and the merged manifest.
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -99,5 +101,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.json)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 
 }

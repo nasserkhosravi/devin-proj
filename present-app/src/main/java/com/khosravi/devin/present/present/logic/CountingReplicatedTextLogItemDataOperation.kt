@@ -5,7 +5,6 @@ import com.khosravi.devin.present.log.ReplicatedTextLogItemData
 import com.khosravi.devin.present.log.TextLogItemData
 import java.lang.IllegalStateException
 
-//TODO: fix ignoring the one log, when logs has only one member.
 class CountingReplicatedTextLogItemDataOperation(private val logs: List<LogItemData>) {
 
     fun get(): List<LogItemData> {
@@ -34,6 +33,7 @@ class CountingReplicatedTextLogItemDataOperation(private val logs: List<LogItemD
                 finalResult.add(it)
             }
         }
+        moveReplicateItemsIfNeed(finalResult, replicatedItems)
         return finalResult
     }
 
