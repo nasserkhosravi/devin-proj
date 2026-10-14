@@ -94,6 +94,20 @@ object Analytics {
     fun logsImported(isSuccessful: Boolean) = report("logs_imported", "success" to isSuccessful)
     // endregion
 
+    // region Settings
+    fun settingsOpened() = report("settings_opened")
+
+    fun retentionToggled(isEnabled: Boolean) = report("retention_toggled", "enabled" to isEnabled)
+
+    fun retentionDaysChanged(days: Int) = report("retention_days_changed", "days" to days)
+
+    fun retentionMaxCountChanged(count: Int) = report("retention_max_count_changed", "count" to count)
+
+    fun pinnedTagAdded() = report("pinned_tag_added")
+
+    fun pinnedTagRemoved() = report("pinned_tag_removed")
+    // endregion
+
     // region Update
     fun updatePromptShown(isForceUpdate: Boolean) = report("update_prompt_shown", "force" to isForceUpdate)
 
