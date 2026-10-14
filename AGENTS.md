@@ -30,10 +30,10 @@ Each component is released on its own. Its name is used in its release branch an
 ## Releasing
 
 1. On the release branch, add a `## X.Y.Z` section at the top of the component's CHANGELOG with one bullet per user-visible change, and set the version (see the table).
-   - `presenter`: also increment `versionCode` by 1. Android uses it to decide whether an APK is an upgrade.
+   - `presenter`: also increment `versionCode` by 1 (it must be exactly the latest `presenter_*` tag's `versionCode` + 1). Android uses it to decide whether an APK is an upgrade. Then run `scripts/check-presenter-release.sh`; it checks the tag is new, the `versionCode` step, and the CHANGELOG section. `release-presenter.yml` runs the same script and refuses to release if it fails.
    - Libraries released as a pair (`devin` + `devin-no-op`, `devin-write-okhttp` + `devin-write-okhttp-no-op`) must have the same `POM_VERSION_NAME`.
 2. Merge the release branch into `main` via a pull request.
-3. Run the component's release workflow from the Actions tab, **on `main`**. It reads the version, refuses an existing tag, takes the release notes from the `## X.Y.Z` CHANGELOG section, publishes, and creates the tag and GitHub Release.
+3. Run the component's release workflow from the Actions tab, **on `main`**. It reads the version, refuses an existing tag (presenter: also checks `versionCode`), takes the release notes from the `## X.Y.Z` CHANGELOG section, publishes, and creates the tag and GitHub Release.
 4. Merge `main` into every other open release branch, so they build on what was just released.
 
 ## Ordering between components
