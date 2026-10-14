@@ -8,6 +8,7 @@ import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.TagFilterItem
+import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 import org.json.JSONObject
 import java.util.Date
 import javax.inject.Inject
@@ -18,6 +19,8 @@ class FilterRepository @Inject constructor(appContext: Context) {
     private val pref = appContext.applicationContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
     private val pinnedFiltersPref =
         appContext.applicationContext.getSharedPreferences(PREF_NAME_PINNED, Context.MODE_PRIVATE)
+    private val pinnedMetaPref =
+        appContext.applicationContext.getSharedPreferences(PREF_NAME_PINNED_META, Context.MODE_PRIVATE)
 
     fun getCustomFilterItemList(clientId: String): List<FilterItem> {
         val pinnedList = getPinnedListIds()
@@ -101,6 +104,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
     }
 
     fun getPinnedListIds(): List<String> {
+        ensureDefaultPinsSeeded()
         try {
             return pinnedFiltersPref.all.map {
                 it.value as String
@@ -117,6 +121,32 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
     fun removeAsPinned(filterItem: FilterItem) {
         pinnedFiltersPref.edit { remove(filterItem.id) }
+    }
+
+    /** Pinned filter ids (tags and custom filters), sorted, for the Settings screen. */
+    fun getPinnedTags(): List<String> {
+        ensureDefaultPinsSeeded()
+        // Keys, not values: unpinTag() removes by key.
+        return pinnedFiltersPref.all.keys.sorted()
+    }
+
+    /** Pins [tag] by name, so it can be pinned before any client has logged it. Blank input is ignored. */
+    fun pinTag(tag: String) {
+        val value = tag.trim()
+        if (value.isEmpty()) return
+        pinnedFiltersPref.edit { putString(value, value) }
+    }
+
+    fun unpinTag(tag: String) {
+        pinnedFiltersPref.edit { remove(tag) }
+    }
+
+    /** Pins [DEFAULT_PINNED_TAGS] once; a tag the user unpins later stays unpinned. */
+    private fun ensureDefaultPinsSeeded() {
+        if (pinnedMetaPref.getBoolean(KEY_SEEDED_DEFAULT_PINS, false)) return
+        // commit before setting the flag, so a crash in between can't re-seed a tag the user unpinned.
+        pinnedFiltersPref.edit(commit = true) { DEFAULT_PINNED_TAGS.forEach { putString(it, it) } }
+        pinnedMetaPref.edit { putBoolean(KEY_SEEDED_DEFAULT_PINS, true) }
     }
 
     fun removeFilter(data: CustomFilterItem) {
@@ -138,6 +168,10 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
         private const val PREF_NAME = "filter"
         private const val PREF_NAME_PINNED = "pinned_filter_ids"
+        // Separate file: getPinnedListIds() reads every value in PREF_NAME_PINNED as a String.
+        private const val PREF_NAME_PINNED_META = "pinned_filter_meta"
+        private const val KEY_SEEDED_DEFAULT_PINS = "seeded_default_pins"
+        private val DEFAULT_PINNED_TAGS = listOf(DevinHttpFlagsApi.LOG_TAG)
     }
 
 }

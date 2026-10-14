@@ -7,9 +7,13 @@ import android.text.format.Formatter
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.EditText
+import android.widget.FrameLayout
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.arch.BaseActivity
+import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.databinding.ActivitySettingsBinding
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.retention.RetentionObserver
@@ -30,6 +34,9 @@ class SettingsActivity : BaseActivity() {
     @Inject
     lateinit var retentionObserver: RetentionObserver
 
+    @Inject
+    lateinit var filterRepository: FilterRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
@@ -48,6 +55,7 @@ class SettingsActivity : BaseActivity() {
 
         bindRetentionValues()
         loadStorageUsage()
+        bindPinnedTags()
     }
 
     override fun onDestroy() {
@@ -113,6 +121,49 @@ class SettingsActivity : BaseActivity() {
         }
     }
 
+    private fun bindPinnedTags() {
+        val group = binding.chipGroupPinnedTags
+        group.removeAllViews()
+        filterRepository.getPinnedTags().forEach { tag ->
+            group.addView(Chip(this).apply {
+                text = tag
+                isCheckable = false
+                isCloseIconVisible = true
+                closeIconContentDescription = getString(R.string.settings_pinned_tags_remove, tag)
+                setOnCloseIconClickListener {
+                    filterRepository.unpinTag(tag)
+                    bindPinnedTags()
+                }
+            })
+        }
+        group.addView(Chip(this).apply {
+            setText(R.string.settings_pinned_tags_add)
+            isCheckable = false
+            setOnClickListener { showAddPinnedTagDialog() }
+        })
+    }
+
+    private fun showAddPinnedTagDialog() {
+        val input = EditText(this).apply {
+            setHint(R.string.settings_pinned_tags_add_hint)
+            isSingleLine = true
+        }
+        val padding = (DIALOG_INPUT_PADDING_DP * resources.displayMetrics.density).toInt()
+        val container = FrameLayout(this).apply {
+            setPadding(padding, 0, padding, 0)
+            addView(input)
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_pinned_tags_add)
+            .setView(container)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                filterRepository.pinTag(input.text.toString())
+                bindPinnedTags()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun formatDays(days: Int): String =
         resources.getQuantityString(R.plurals.settings_retention_days, days, days)
 
@@ -127,6 +178,7 @@ class SettingsActivity : BaseActivity() {
         private const val TAG = "SettingsActivity"
         private const val DISABLED_ALPHA = 0.38f
         private const val STORAGE_UNKNOWN = "—"
+        private const val DIALOG_INPUT_PADDING_DP = 24
 
         fun intent(context: Context) = Intent(context, SettingsActivity::class.java)
     }
