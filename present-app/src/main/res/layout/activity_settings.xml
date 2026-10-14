@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
+        app:navigationContentDescription="@string/abc_action_bar_up_description"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:title="@string/settings_title" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="?attr/spaceLarge"
+                android:paddingTop="?attr/spaceLarge"
+                android:paddingEnd="?attr/spaceLarge"
+                android:paddingBottom="?attr/spaceSmall"
+                android:text="@string/settings_section_storage"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="?attr/colorPrimary" />
+
+            <com.google.android.material.materialswitch.MaterialSwitch
+                android:id="@+id/switchRetention"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="?attr/spaceLarge"
+                android:paddingTop="?attr/spaceSmall"
+                android:paddingEnd="?attr/spaceLarge"
+                android:paddingBottom="?attr/spaceSmall"
+                android:text="@string/settings_retention_enabled"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="?attr/spaceLarge"
+                android:paddingEnd="?attr/spaceLarge"
+                android:paddingBottom="?attr/spaceSmall"
+                android:text="@string/settings_retention_enabled_summary"
+                android:textAppearance="?attr/textAppearanceBodySmall" />
+
+            <LinearLayout
+                android:id="@+id/rowKeepDays"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:orientation="vertical"
+                android:padding="?attr/spaceLarge">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_keep_logs_for"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                <TextView
+                    android:id="@+id/tvKeepDaysValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    tools:text="7 days" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/rowMaxCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:orientation="vertical"
+                android:padding="?attr/spaceLarge">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_max_logs_per_client"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                <TextView
+                    android:id="@+id/tvMaxCountValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    tools:text="10,000" />
+            </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="?attr/spaceLarge">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_storage_used"
+                    android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                <TextView
+                    android:id="@+id/tvStorageValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_storage_calculating"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
