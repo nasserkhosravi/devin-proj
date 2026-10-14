@@ -1,5 +1,11 @@
 # Changelog
 
+## 4.6.0
+- Automatically delete old logs: logs older than N days or beyond the newest N per client (defaults: 7 days, 10,000 logs), configurable from a new Settings screen that also shows storage used.
+- Pin filter tags from Settings, including tags no client has logged yet; `okhttp` is pinned by default.
+- Fix exports/queries ignoring the time filter in some cases.
+- Fix the last group of repeated text logs being dropped from the log list.
+
 ## 4.5.0
 - Notify when a newer presenter release is published on GitHub (checked at most once a day; a notification plus a one-time dialog on the client selection screen; footer shows the available version). A major version bump (e.g. 4.x → 5.0.0) blocks the app with an "update required" dialog on the client selection screen (back closes the app). The footer version turns red while an update is available.
 - Replace log item detail dialog with a dedicated full page, with a copy button.
