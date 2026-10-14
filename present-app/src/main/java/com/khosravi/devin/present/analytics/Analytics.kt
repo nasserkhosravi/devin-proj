@@ -110,10 +110,14 @@ object Analytics {
 
     private fun report(name: String, vararg params: Pair<String, Any>) {
         if (!isEnabled) return
-        if (params.isEmpty()) {
-            AppMetrica.reportEvent(name)
-        } else {
-            AppMetrica.reportEvent(name, params.toMap())
+        try {
+            if (params.isEmpty()) {
+                AppMetrica.reportEvent(name)
+            } else {
+                AppMetrica.reportEvent(name, params.toMap())
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
