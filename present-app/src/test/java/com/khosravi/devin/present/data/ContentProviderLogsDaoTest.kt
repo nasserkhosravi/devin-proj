@@ -129,6 +129,15 @@ class ContentProviderLogsDaoTest {
     }
 
     @Test
+    fun `filters by time`() {
+        putLog("app.a", "t", "a", 10)
+        putLog("app.a", "t", "b", 20)
+        putLog("app.a", "t", "c", 30)
+
+        assertEquals(listOf("b", "a"), query("app.a", model(timeLessThan = 30)).map { it.value })
+    }
+
+    @Test
     fun `cursor query filters by time`() {
         putLog("app.a", "t", "a", 10)
         putLog("app.a", "t", "b", 20)

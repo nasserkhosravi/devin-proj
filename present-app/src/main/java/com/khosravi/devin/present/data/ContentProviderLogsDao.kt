@@ -58,6 +58,7 @@ object ContentProviderLogsDao {
                 tag = model.tag,
                 value = model.value,
                 metaSearch = model.metaParam,
+                timeConstraintLessThan = model.timeLessThan,
                 page = model.page
             )
         }
