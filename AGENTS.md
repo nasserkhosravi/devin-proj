@@ -24,7 +24,7 @@ Each component is released on its own. Its name is used in its release branch an
   - Create it from the latest `main`.
   - It covers exactly one component. Never create a branch that releases two components (e.g. write + presenter).
   - Its own commits only edit that component's CHANGELOG and version. All code reaches it through feature/fix branches merged into it.
-- **Feature / fix branch**: any descriptive name (e.g. `data_retention`). Create it from the release branch it targets, and merge it back into that release branch, never into `main`.
+- **Feature / fix branch**: a descriptive kebab-case name, hyphens not underscores (e.g. `data-retention`). Create it from the release branch it targets, and merge it back into that release branch, never into `main`.
   - Its changes stay inside the target component's modules. If work needs changes in two components (e.g. a `devin` provider change used by `present-app`), split it into one branch per component, each targeting its own release branch.
 
 ## Releasing
