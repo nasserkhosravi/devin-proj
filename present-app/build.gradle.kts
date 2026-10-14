@@ -69,6 +69,8 @@ android {
     testOptions {
         unitTests {
             isReturnDefaultValues = true
+            // Robolectric tests read app resources (strings) and the merged manifest.
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -99,5 +101,7 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.json)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 
 }
