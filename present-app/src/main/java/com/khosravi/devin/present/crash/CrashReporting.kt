@@ -8,6 +8,9 @@ import io.appmetrica.analytics.AppMetricaConfig
 
 object CrashReporting {
 
+    @Volatile
+    private var isActivated = false
+
     fun init(application: Application) {
         val apiKey = BuildConfig.APPMETRICA_API_KEY
         if (apiKey.isBlank()) return
@@ -21,5 +24,12 @@ object CrashReporting {
             .build()
         AppMetrica.activate(application, config)
         Analytics.isEnabled = true
+        isActivated = true
+    }
+
+    /** Reports a caught, non-fatal error. No-op when AppMetrica isn't activated (e.g. debug builds). */
+    fun reportError(message: String, error: Throwable) {
+        if (!isActivated) return
+        AppMetrica.reportError(message, error)
     }
 }

@@ -23,6 +23,7 @@ class PresentApplication : Application() {
         latestLogNotificationObserver = LatestLogNotificationObserver(this).apply {
             register()
         }
+        appComponent.retentionObserver().register()
 
         appComponent.updateChecker().checkInBackgroundIfDue()
     }

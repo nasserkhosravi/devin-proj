@@ -1,6 +1,9 @@
 # Changelog
 **Write module:**
 
+## 4.4.0
+- Add `DevinTool.isProviderInstalled()` to check whether a Devin presenter app was found during `init` (`null` when Devin is disabled; always `null` in no-op).
+
 ## 4.3.1
 - Bump compileSdk/targetSdk to 35, lower minSdk to 24.
 

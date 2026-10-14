@@ -39,6 +39,7 @@ import com.khosravi.devin.present.log.HttpLogItemView
 import com.khosravi.devin.present.log.TextLogItem
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.itemview.SearchItemView
+import com.khosravi.devin.present.present.settings.SettingsActivity
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toItemViewHolder
 import com.khosravi.devin.present.toUriByFileProvider
@@ -523,6 +524,11 @@ class LogActivity : BaseActivity() {
             R.id.action_change_theme -> {
                 viewModel.toggleTheme()
                 Analytics.themeToggled(isDark = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES)
+                true
+            }
+
+            R.id.action_settings -> {
+                startActivity(SettingsActivity.intent(this))
                 true
             }
 

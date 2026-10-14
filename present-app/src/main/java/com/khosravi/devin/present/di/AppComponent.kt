@@ -12,6 +12,8 @@ import com.khosravi.devin.present.present.LogItemDetailActivity
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.ImportLogActivity
 import com.khosravi.devin.present.present.StarterActivity
+import com.khosravi.devin.present.present.settings.SettingsActivity
+import com.khosravi.devin.present.retention.RetentionObserver
 import com.khosravi.devin.present.update.UpdateChecker
 import javax.inject.Singleton
 
@@ -34,9 +36,13 @@ interface AppComponent {
 
     fun inject(activity: LogItemDetailActivity)
 
+    fun inject(activity: SettingsActivity)
+
     fun inject(dialog: LogExportDialog)
 
     fun updateChecker(): UpdateChecker
+
+    fun retentionObserver(): RetentionObserver
 
     @Component.Builder
     interface Builder {
