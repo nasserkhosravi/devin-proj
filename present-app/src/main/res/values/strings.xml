@@ -115,6 +115,11 @@
     <string name="settings_max_logs_per_client">Max logs per app</string>
     <string name="settings_storage_used">Storage used</string>
     <string name="settings_storage_calculating">Calculating…</string>
+    <string name="settings_section_pinned_tags">Pinned filter tags</string>
+    <string name="settings_pinned_tags_summary">Pinned tags show first in the filter bar of every app that logs them</string>
+    <string name="settings_pinned_tags_add">Add tag</string>
+    <string name="settings_pinned_tags_add_hint">Tag, e.g. okhttp</string>
+    <string name="settings_pinned_tags_remove">Unpin %1$s</string>
     <plurals name="settings_retention_days">
         <item quantity="one">%d day</item>
         <item quantity="other">%d days</item>

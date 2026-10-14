@@ -122,6 +122,38 @@
                     android:text="@string/settings_storage_calculating"
                     android:textAppearance="?attr/textAppearanceBodyMedium" />
             </LinearLayout>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="?attr/spaceLarge"
+                android:paddingTop="?attr/spaceLarge"
+                android:paddingEnd="?attr/spaceLarge"
+                android:paddingBottom="?attr/spaceSmall"
+                android:text="@string/settings_section_pinned_tags"
+                android:textAppearance="?attr/textAppearanceTitleSmall"
+                android:textColor="?attr/colorPrimary" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="?attr/spaceLarge"
+                android:paddingEnd="?attr/spaceLarge"
+                android:paddingBottom="?attr/spaceSmall"
+                android:text="@string/settings_pinned_tags_summary"
+                android:textAppearance="?attr/textAppearanceBodySmall" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupPinnedTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="?attr/spaceLarge"
+                android:paddingEnd="?attr/spaceLarge"
+                android:paddingBottom="?attr/spaceLarge" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>
