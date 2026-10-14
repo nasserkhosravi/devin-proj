@@ -3,6 +3,7 @@ package com.khosravi.devin.present.data
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
+import com.khosravi.devin.present.retention.RetentionPolicy
 import java.util.Date
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.hours
@@ -14,6 +15,26 @@ class AppPref @Inject constructor(appContext: Context) {
     var theme: Int
         get() = pref.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         set(value) = pref.edit { putInt(KEY_THEME, value) }
+
+    var retentionEnabled: Boolean
+        get() = pref.getBoolean(KEY_RETENTION_ENABLED, RetentionPolicy.DEFAULT.isEnabled)
+        set(value) = pref.edit { putBoolean(KEY_RETENTION_ENABLED, value) }
+
+    var retentionDays: Int
+        get() = pref.getInt(KEY_RETENTION_DAYS, RetentionPolicy.DEFAULT.maxAgeDays)
+        set(value) = pref.edit { putInt(KEY_RETENTION_DAYS, value) }
+
+    var retentionMaxCount: Int
+        get() = pref.getInt(KEY_RETENTION_MAX_COUNT, RetentionPolicy.DEFAULT.maxCountPerClient)
+        set(value) = pref.edit { putInt(KEY_RETENTION_MAX_COUNT, value) }
+
+    val retentionPolicy: RetentionPolicy
+        get() = RetentionPolicy(retentionEnabled, retentionDays, retentionMaxCount)
+
+    /** Epoch millis of the last successful `VACUUM` run by retention; `0` if never. */
+    var lastVacuumAt: Long
+        get() = pref.getLong(KEY_LAST_VACUUM_AT, 0L)
+        set(value) = pref.edit { putLong(KEY_LAST_VACUUM_AT, value) }
 
     val lastUpdateCheckAt: Long
         get() = pref.getLong(KEY_LAST_UPDATE_CHECK_AT, 0L)
@@ -104,5 +125,9 @@ class AppPref @Inject constructor(appContext: Context) {
         private const val KEY_UPDATE_PROMPT_DAY = "UPDATE_PROMPT_DAY"
         private const val KEY_UPDATE_PROMPT_COUNT = "UPDATE_PROMPT_COUNT"
         private const val KEY_NOTIFIED_UPDATE_VERSION = "NOTIFIED_UPDATE_VERSION"
+        private const val KEY_RETENTION_ENABLED = "RETENTION_ENABLED"
+        private const val KEY_RETENTION_DAYS = "RETENTION_DAYS"
+        private const val KEY_RETENTION_MAX_COUNT = "RETENTION_MAX_COUNT"
+        private const val KEY_LAST_VACUUM_AT = "LAST_VACUUM_AT"
     }
 }

@@ -106,4 +106,18 @@
     <string name="update_action_later">Later</string>
     <string name="starter_footer_update">v%1$s by %2$s · Update available: v%3$s</string>
 
+    <string name="menu_settings">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_storage">Storage</string>
+    <string name="settings_retention_enabled">Auto-delete old logs</string>
+    <string name="settings_retention_enabled_summary">Keeps storage small by removing old logs automatically</string>
+    <string name="settings_keep_logs_for">Keep logs for</string>
+    <string name="settings_max_logs_per_client">Max logs per app</string>
+    <string name="settings_storage_used">Storage used</string>
+    <string name="settings_storage_calculating">Calculating…</string>
+    <plurals name="settings_retention_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+
 </resources>
