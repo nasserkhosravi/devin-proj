@@ -6,7 +6,7 @@ Releases are made by GitHub Actions workflows, run manually from the Actions tab
 
 | Workflow | Releases | Version from | Tag |
 |---|---|---|---|
-| **Release library** (pick `write`, `write-okhttp` or `lib-har`) | `devin-write` + `devin-no-op`, `devin-write-okhttp` + `devin-write-okhttp-no-op`, or `lib-har` to Maven Central | `POM_VERSION_NAME` in the modules' `gradle.properties` (a library's modules must match) | `write_X.Y.Z`, `write-okhttp_X.Y.Z`, `lib-har_X.Y.Z` |
+| **Release library** (pick `write`, `write-okhttp` or `lib-har`) | `devin-write` + `devin-write-no-op`, `devin-write-okhttp` + `devin-write-okhttp-no-op`, or `lib-har` to Maven Central | `POM_VERSION_NAME` in the modules' `gradle.properties` (a library's modules must match) | `write_X.Y.Z`, `write-okhttp_X.Y.Z`, `lib-har_X.Y.Z` |
 | **Release presenter** | Signed `present-app` APK, attached to the GitHub Release (marked "Latest") | `versionName` in `present-app/build.gradle.kts` | `presenter_X.Y.Z` |
 
 1. On the release branch, bump the version and add its `## X.Y.Z` section to the component's `CHANGELOG.md`.

@@ -8,8 +8,8 @@ Devin is an on-device logging framework for Android. Apps embed a lightweight **
 
 | Module | Published as | Purpose |
 |---|---|---|
-| `devin` | `io.github.nasserkhosravi.devin:write` | Core write library: logging API, Room-backed storage, ContentProvider bridge to the presenter app. |
-| `devin-no-op` | `io.github.nasserkhosravi.devin:write-no-op` | Same API, empty implementations. Use in release builds for zero overhead. |
+| `devin-write` | `io.github.nasserkhosravi.devin:write` | Core write library: logging API, Room-backed storage, ContentProvider bridge to the presenter app. |
+| `devin-write-no-op` | `io.github.nasserkhosravi.devin:write-no-op` | Same API, empty implementations. Use in release builds for zero overhead. |
 | `devin-write-okhttp` | `io.github.nasserkhosravi.devin:write-okhttp` | OkHttp interceptor that captures request/response traffic as HAR-formatted logs. |
 | `devin-write-okhttp-no-op` | `io.github.nasserkhosravi.devin:write-okhttp-no-op` | No-op counterpart for release builds. |
 | `present-app` | — (standalone app) | Viewer app: lists connected client apps, browses/filters/searches logs, shows HTTP detail (share as cURL/HAR), notifications, export to JSON/ZIP. |
