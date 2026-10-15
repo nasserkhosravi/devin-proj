@@ -7,16 +7,25 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.date.TimePresent
+import com.khosravi.devin.present.date.getFormattedWithMillis
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.filter.CustomFilterItem
@@ -89,30 +98,7 @@ class LogActivity : BaseActivity() {
         }
 
         setContent {
-            DevinTheme {
-                val items = remember(logRows, searchRow) { buildLogItems() }
-                LogScreen(
-                    calendar = calendar,
-                    filters = filterList,
-                    selectedFilterId = selectedFilterId,
-                    isFilterRowEnabled = isFilterRowEnabled,
-                    logItems = items,
-                    isLoading = isLoading,
-                    onSelectFilter = ::selectNewFilter,
-                    onFilterAction = ::onFilterAction,
-                    onSearchTextChange = { searchInput.tryEmit(it) },
-                    onTextLogClick = { LogItemDetailActivity.startActivity(this, it) },
-                    onHttpLogClick = { HttpLogDetailActivity.startActivity(this, it.logId) },
-                    onLoadMore = { pagination.maybeLoadMore(::loadMoreItems) },
-                    onRefresh = ::refreshLogsAndFilters,
-                    onClearLogs = { viewModel.clearLogs() },
-                    onClearFilters = { viewModel.clearCustomFilters() },
-                    onCreateFilter = ::createFilter,
-                    onExport = ::showExportDialog,
-                    onToggleTheme = { viewModel.toggleTheme() },
-                    onOpenSettings = { startActivity(SettingsActivity.intent(this)) },
-                )
-            }
+            DevinTheme { LogNavHost() }
         }
 
         viewModel.doFirstFetch()
@@ -122,6 +108,66 @@ class LogActivity : BaseActivity() {
         }
         setupNextPageFlow()
         setupSearchFlow()
+    }
+
+    @Composable
+    private fun LogNavHost() {
+        val navController = rememberNavController()
+        NavHost(navController = navController, startDestination = ROUTE_LOGS) {
+            composable(ROUTE_LOGS) { LogsDestination(navController) }
+            composable(LogDetailArgs.ROUTE_PATTERN, arguments = LogDetailArgs.arguments) { entry ->
+                LogDetailDestination(entry, navController)
+            }
+        }
+    }
+
+    @Composable
+    private fun LogsDestination(navController: NavHostController) {
+        val items = remember(logRows, searchRow) { buildLogItems() }
+        LogScreen(
+            calendar = calendar,
+            filters = filterList,
+            selectedFilterId = selectedFilterId,
+            isFilterRowEnabled = isFilterRowEnabled,
+            logItems = items,
+            isLoading = isLoading,
+            onSelectFilter = ::selectNewFilter,
+            onFilterAction = ::onFilterAction,
+            onSearchTextChange = { searchInput.tryEmit(it) },
+            onTextLogClick = {
+                // Ignore a second tap that lands while the detail transition is already running.
+                if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+                    LogDetailArgs.navigate(navController, it)
+                }
+            },
+            onHttpLogClick = { HttpLogDetailActivity.startActivity(this, it.logId) },
+            onLoadMore = { pagination.maybeLoadMore(::loadMoreItems) },
+            onRefresh = ::refreshLogsAndFilters,
+            onClearLogs = { viewModel.clearLogs() },
+            onClearFilters = { viewModel.clearCustomFilters() },
+            onCreateFilter = ::createFilter,
+            onExport = ::showExportDialog,
+            onToggleTheme = { viewModel.toggleTheme() },
+            onOpenSettings = { startActivity(SettingsActivity.intent(this)) },
+        )
+    }
+
+    @Composable
+    private fun LogDetailDestination(entry: NavBackStackEntry, navController: NavHostController) {
+        val args = remember(entry) { LogDetailArgs.read(entry) }
+        val timeText = remember(args.timestamp) {
+            calendar.getFormattedWithMillis(TimePresent(args.timestamp))
+        }
+        LogItemDetailScreen(
+            tag = args.tag,
+            message = args.message,
+            timeText = timeText,
+            meta = args.meta,
+            onCopy = { copyLogDetail(args.tag, timeText, args.message, args.meta) },
+            // Pop back to the logs list rather than "pop the top": a second back tap during the exit
+            // transition would otherwise pop the start destination too and leave an empty NavHost.
+            onBack = { navController.popBackStack(ROUTE_LOGS, inclusive = false) },
+        )
     }
 
     private fun buildLogItems(): List<LogListRowItem> {
@@ -337,6 +383,7 @@ class LogActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_TARGET_TAG = "targetTag"
+        private const val ROUTE_LOGS = "logs"
         private const val CALLBACK_ID_REFRESH = "refresh"
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"
     }

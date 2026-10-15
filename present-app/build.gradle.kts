@@ -110,6 +110,7 @@ dependencies {
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.activity.compose)
     implementation(libs.compose.material.icons.core)
+    implementation(libs.navigation.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.json)
