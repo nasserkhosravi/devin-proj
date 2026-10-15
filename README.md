@@ -25,6 +25,11 @@ Devin is an on-device logging framework for Android. Apps embed a lightweight **
 - Debug/release split via no-op modules — no logging code shipped in release builds
 - Optional per-client password protection and per-tag notification config
 - Image load logging (downloading/succeeded/failed)
+- Automatic cleanup of old logs, pinned filter tags, and in-app update notifications in the presenter app
+
+## Requirements
+
+minSdk 24.
 
 ## Install
 
@@ -46,9 +51,24 @@ dependencies {
 }
 ```
 
-Then install the [present-app](present-app) on your device/emulator to view logs from any client app that has the write library.
+Then install the presenter app on your device/emulator: download the APK from the [latest release](https://github.com/nasserkhosravi/devin-proj/releases/latest).
 
-See [SampleActivity](https://github.com/nasserkhosravi/devin-proj/blob/main/sample-app/src/main/java/ir/khosravi/sample/devin/SampleActivity.kt) for a full integration example.
+## Usage
+
+```kotlin
+DevinTool.init(context)
+
+val devin = DevinTool.get()            // null when Devin is disabled (e.g. no-op build)
+devin?.logger?.info("Login", "User signed in")
+devin?.logger?.generalUncaughtExceptionLogging(true)
+
+// HTTP logging (write-okhttp)
+val client = OkHttpClient.Builder().apply {
+    devin?.okhttpLogger?.getOrCreateInterceptor()?.let { addInterceptor(it) }
+}.build()
+```
+
+See [SampleActivity](sample-app/src/main/java/com/khosravi/sample/devin/SampleActivity.kt) and [OkHttpSampleActivity](sample-app/src/main/java/com/khosravi/sample/devin/OkHttpSampleActivity.kt) for full integration examples, including presenter config (log password, notification groups).
 
 ## Snapshot versions
 
@@ -60,25 +80,34 @@ maven {
     name = "Central Portal Snapshots"
     url = URI("https://central.sonatype.com/repository/maven-snapshots/")
 
-    // Only search this repository for the specific dependency
+    // Only search this repository for Devin's libraries
     content {
         includeModule("io.github.nasserkhosravi.devin", "write")
+        includeModule("io.github.nasserkhosravi.devin", "write-okhttp")
     }
 }
 ```
 
-## Publishing (maintainers)
+## Changelogs
 
-Releases are made by GitHub Actions workflows, run manually from the Actions tab. Each one creates a tag `<name>_X.Y.Z` and a GitHub Release whose notes are the `## X.Y.Z` section of the matching `CHANGELOG.md`.
+[write](devin-write/CHANGELOG.md) · [write-okhttp](devin-write-okhttp/CHANGELOG.md) · [presenter](present-app/CHANGELOG.md)
 
-| Workflow | Releases | Version from | Tag |
-|---|---|---|---|
-| **Release library** (pick `write`, `write-okhttp` or `lib-har`) | `devin` + `devin-no-op`, `devin-write-okhttp` + `devin-write-okhttp-no-op`, or `lib-har` to Maven Central | `POM_VERSION_NAME` in the modules' `gradle.properties` (a library's modules must match) | `write_X.Y.Z`, `write-okhttp_X.Y.Z`, `lib-har_X.Y.Z` |
-| **Release presenter** | Signed `present-app` APK, attached to the GitHub Release (marked "Latest") | `versionName` in `present-app/build.gradle.kts` | `presenter_X.Y.Z` |
+Maintainers: see [RELEASING.md](RELEASING.md).
 
-1. Bump the version and add its `CHANGELOG.md` section.
-2. Merge to `main`, then run the workflow on `main`.
+## License
 
-A `-SNAPSHOT` library version is published to the snapshot repository only, with no tag or GitHub Release. Release `write` before a `write-okhttp` version that depends on it; the workflow checks this.
+```
+Copyright 2023 Nasser Khosravi
 
-Secrets (Settings → Secrets and variables → Actions): `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY_ID`, `SIGNING_KEY`, `SIGNING_KEY_PASSWORD` for libraries, and `PRESENTER_KEYSTORE_BASE64`, `PRESENTER_KEYSTORE_PASSWORD`, `PRESENTER_KEY_ALIAS`, `PRESENTER_KEY_PASSWORD` for the presenter. Deployments can be checked at [central.sonatype.com/publishing](https://central.sonatype.com/publishing).
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
