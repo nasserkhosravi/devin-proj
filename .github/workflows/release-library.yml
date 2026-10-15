@@ -1,0 +1,190 @@
+# Publishes a library to Maven Central, then tags it `<library>_X.Y.Z` and creates a GitHub Release
+# with the `## X.Y.Z` section of the library's CHANGELOG.md as notes.
+#
+#   library       Gradle modules (released together, must share POM_VERSION_NAME)   changelog
+#   write         devin, devin-no-op                                                devin/CHANGELOG.md
+#   write-okhttp  devin-write-okhttp, devin-write-okhttp-no-op                      devin-write-okhttp/CHANGELOG.md
+#   lib-har       lib-har                                                           lib-har/CHANGELOG.md
+#
+# Run it from the Actions tab ("Run workflow") after bumping POM_VERSION_NAME in the modules'
+# gradle.properties and adding the CHANGELOG section. A `-SNAPSHOT` version is published to the
+# Central Portal snapshot repository only: no tag, no GitHub Release, no CHANGELOG needed.
+#
+# Required repository secrets:
+#   MAVEN_CENTRAL_USERNAME   Central Portal user token username (central.sonatype.com -> Account -> Generate User Token)
+#   MAVEN_CENTRAL_PASSWORD   Central Portal user token password
+#   SIGNING_KEY_ID           same values as signingKeyId / signingKey / signingKeyPassword in your local.properties;
+#   SIGNING_KEY              SIGNING_KEY is the ASCII-armored private key (multi-line is fine)
+#   SIGNING_KEY_PASSWORD
+name: Release library
+
+on:
+  workflow_dispatch:
+    inputs:
+      library:
+        description: Library to publish
+        required: true
+        type: choice
+        options:
+          - write
+          - write-okhttp
+          - lib-har
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-library
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      LIBRARY: ${{ inputs.library }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve modules and version
+        run: |
+          case "$LIBRARY" in
+            write)        modules="devin devin-no-op";                           changelog="devin/CHANGELOG.md" ;;
+            write-okhttp) modules="devin-write-okhttp devin-write-okhttp-no-op"; changelog="devin-write-okhttp/CHANGELOG.md" ;;
+            lib-har)      modules="lib-har";                                     changelog="lib-har/CHANGELOG.md" ;;
+            *) echo "::error::Unknown library '$LIBRARY'."; exit 1 ;;
+          esac
+
+          version=""
+          for module in $modules; do
+            module_version=$(sed -n 's/^POM_VERSION_NAME=//p' "$module/gradle.properties" | tr -d '[:space:]')
+            if [ -z "$module_version" ]; then
+              echo "::error::No POM_VERSION_NAME in $module/gradle.properties."
+              exit 1
+            fi
+            if [ -n "$version" ] && [ "$module_version" != "$version" ]; then
+              echo "::error::$module is $module_version but the other modules of '$LIBRARY' are $version; they are released together."
+              exit 1
+            fi
+            version="$module_version"
+          done
+
+          case "$version" in
+            *-SNAPSHOT) snapshot=true ;;
+            *) snapshot=false ;;
+          esac
+
+          tasks=""
+          for module in $modules; do
+            if [ "$snapshot" = true ]; then
+              tasks="$tasks :$module:publishToMavenCentral"
+            else
+              tasks="$tasks :$module:publishAndReleaseToMavenCentral"
+            fi
+          done
+
+          {
+            echo "VERSION=$version"
+            echo "SNAPSHOT=$snapshot"
+            echo "TAG=${LIBRARY}_$version"
+            echo "CHANGELOG=$changelog"
+            echo "GRADLE_TASKS=$tasks"
+          } >> "$GITHUB_ENV"
+          echo "Publishing $LIBRARY $version ($modules), snapshot=$snapshot"
+
+      - name: Check tag
+        if: env.SNAPSHOT == 'false'
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::error::Tag $TAG already exists. Bump POM_VERSION_NAME first."
+            exit 1
+          fi
+
+      # write-okhttp depends on project(":devin") / project(":devin-no-op"), which end up in its POM as
+      # write / write-no-op at their POM_VERSION_NAME, so that version must already be on Maven Central.
+      - name: Check write dependency is published
+        if: env.LIBRARY == 'write-okhttp' && env.SNAPSHOT == 'false'
+        run: |
+          write_version=$(sed -n 's/^POM_VERSION_NAME=//p' devin/gradle.properties | tr -d '[:space:]')
+          for artifact in write write-no-op; do
+            pom="https://repo1.maven.org/maven2/io/github/nasserkhosravi/devin/$artifact/$write_version/$artifact-$write_version.pom"
+            if ! curl -sfI "$pom" > /dev/null; then
+              echo "::error::write-okhttp would depend on $artifact:$write_version, which isn't on Maven Central. Release 'write' $write_version first."
+              exit 1
+            fi
+          done
+
+      - name: Extract changelog section
+        if: env.SNAPSHOT == 'false'
+        run: |
+          if [ ! -f "$CHANGELOG" ]; then
+            echo "::error::$CHANGELOG does not exist."
+            exit 1
+          fi
+          awk -v header="## $VERSION" '
+            $0 == header { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' "$CHANGELOG" | sed '/./,$!d' > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"; then
+            echo "::error::$CHANGELOG has no '## $VERSION' section, or it is empty."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/release-notes.md"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The library build scripts read their PGP signing key from the git-ignored local.properties.
+      - name: Create local.properties
+        env:
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_KEY_ID }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          python3 - <<'EOF'
+          import os
+
+          def escape(value):
+              # .properties escaping: keep backslashes and newlines (armored key) intact.
+              return value.replace("\\", "\\\\").replace("\r", "").replace("\n", "\\n")
+
+          lines = []
+          for prop, env in (
+              ("signingKeyId", "SIGNING_KEY_ID"),
+              ("signingKey", "SIGNING_KEY"),
+              ("signingKeyPassword", "SIGNING_KEY_PASSWORD"),
+          ):
+              value = os.environ.get(env, "")
+              if not value:
+                  raise SystemExit(f"::error::Secret {env} is not set.")
+              lines.append(f"{prop}={escape(value)}\n")
+          with open("local.properties", "w") as file:
+              file.writelines(lines)
+          EOF
+
+      - name: Publish to Maven Central
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: |
+          if [ -z "$ORG_GRADLE_PROJECT_mavenCentralUsername" ] || [ -z "$ORG_GRADLE_PROJECT_mavenCentralPassword" ]; then
+            echo "::error::Secrets MAVEN_CENTRAL_USERNAME and MAVEN_CENTRAL_PASSWORD must be set."
+            exit 1
+          fi
+          # Intentionally unquoted: one Gradle task per module.
+          ./gradlew $GRADLE_TASKS
+
+      - name: Create tag and GitHub Release
+        if: env.SNAPSHOT == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --latest=false

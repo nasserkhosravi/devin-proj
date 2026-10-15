@@ -1,0 +1,103 @@
+# Publishes a present-app release: tag `presenter_X.Y.Z` + GitHub Release with the signed APK and
+# the `## X.Y.Z` section of present-app/CHANGELOG.md as notes. Presenter releases are always marked
+# "Latest" (the only release users download); library releases (release-library.yml) never are. present-app's in-app update check
+# only sees releases tagged like this that have an .apk attached.
+#
+# Run it from the Actions tab ("Run workflow") after bumping `versionName`, incrementing `versionCode`
+# by 1 in present-app/build.gradle.kts, and adding its CHANGELOG section
+# (scripts/check-presenter-release.sh checks all three).
+#
+# Required repository secrets (must be the same key as previous releases, or users can't upgrade):
+#   PRESENTER_KEYSTORE_BASE64   base64 of the .jks/.keystore file (`base64 -i release.jks | pbcopy`)
+#   PRESENTER_KEYSTORE_PASSWORD
+#   PRESENTER_KEY_ALIAS
+#   PRESENTER_KEY_PASSWORD
+name: Release presenter
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-presenter
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # check-presenter-release.sh reads versionCode from the previous presenter_* tag
+
+      # Reads versionName, refuses an existing tag, and requires versionCode = last release's + 1.
+      - name: Check release
+        run: scripts/check-presenter-release.sh
+
+      - name: Extract changelog section
+        run: |
+          awk -v header="## $VERSION" '
+            $0 == header { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' present-app/CHANGELOG.md | sed '/./,$!d' > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"; then
+            echo "::error::present-app/CHANGELOG.md has no '## $VERSION' section, or it is empty."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/release-notes.md"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.PRESENTER_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret PRESENTER_KEYSTORE_BASE64 is not set."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/presenter.keystore"
+          echo "PRESENTER_KEYSTORE_PATH=$RUNNER_TEMP/presenter.keystore" >> "$GITHUB_ENV"
+
+      # local.properties is git-ignored, but the library modules (devin, devin-no-op, devin-write-okhttp,
+      # devin-write-okhttp-no-op, lib-har) load it and read their Maven Central signing keys at
+      # configuration time. This job never publishes, so placeholders are enough.
+      - name: Create local.properties
+        run: |
+          printf '%s\n' \
+            'signingKeyId=unused-on-ci' \
+            'signingKey=unused-on-ci' \
+            'signingKeyPassword=unused-on-ci' > local.properties
+
+      - name: Build release APK
+        env:
+          PRESENTER_KEYSTORE_PASSWORD: ${{ secrets.PRESENTER_KEYSTORE_PASSWORD }}
+          PRESENTER_KEY_ALIAS: ${{ secrets.PRESENTER_KEY_ALIAS }}
+          PRESENTER_KEY_PASSWORD: ${{ secrets.PRESENTER_KEY_PASSWORD }}
+        run: ./gradlew :present-app:assembleRelease
+
+      - name: Verify signature
+        run: |
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          apk="$RUNNER_TEMP/devin-presenter-app-$VERSION-release.apk"
+          cp present-app/build/outputs/apk/release/present-app-release.apk "$apk"
+          "$apksigner" verify --print-certs "$apk"
+          echo "APK=$apk" >> "$GITHUB_ENV"
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" "$APK" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --latest

@@ -72,7 +72,12 @@ object DevinUriHelper {
         val value = getQueryParameter(KEY_LOG_MSL1_VALUE)
         val opId = getQueryParameter(KEY_LOG_MSL1_OP)
         if (!name.isNullOrEmpty() && !value.isNullOrEmpty() && !opId.isNullOrEmpty()) {
-            return OpStringParam(name, OpStringValue.Contain(value))
+            val op = when (opId) {
+                OpStringValue.EqualTo.OP_ID -> OpStringValue.EqualTo(value)
+                OpStringValue.StartWith.OP_ID -> OpStringValue.StartWith(value)
+                else -> OpStringValue.Contain(value)
+            }
+            return OpStringParam(name, op)
         }
         return null
     }

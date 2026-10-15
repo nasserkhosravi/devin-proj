@@ -67,6 +67,7 @@ fun LogScreen(
     onCreateFilter: () -> Unit,
     onExport: () -> Unit,
     onToggleTheme: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     var overflowOpen by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -115,6 +116,10 @@ fun LogScreen(
                         DropdownMenuItem(text = { Text(stringResource(R.string.menu_action_toggle_theme)) }, onClick = {
                             overflowOpen = false
                             onToggleTheme()
+                        })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.menu_settings)) }, onClick = {
+                            overflowOpen = false
+                            onOpenSettings()
                         })
                     }
                 }

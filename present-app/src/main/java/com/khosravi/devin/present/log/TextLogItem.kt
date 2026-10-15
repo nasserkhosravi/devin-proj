@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.databinding.ItemLogBinding
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.date.getFormattedWithMillis
 import com.khosravi.devin.present.gone
 import com.khosravi.devin.present.tool.adapter.FastBindingItem
 import com.khosravi.devin.present.visible
@@ -26,7 +27,7 @@ open class TextLogItem(
 
     override fun bindView(binding: ItemLogBinding, payloads: List<Any>) {
         super.bindView(binding, payloads)
-        val dateText = calender.initIfNeed(data.timePresent).getFormatted()
+        val dateText = calender.getFormattedWithMillis(data.timePresent)
         val itemView = binding.root
 
         binding.run {

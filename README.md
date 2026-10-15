@@ -69,8 +69,16 @@ maven {
 
 ## Publishing (maintainers)
 
-1. Bump `POM_VERSION_NAME` in the module's `gradle.properties` (keep the `-SNAPSHOT` suffix for a snapshot release).
-2. Run, per module:
-   - `$module$ -> build -> assemble`
-   - `$module$ -> publishing -> publishToMavenCentral`
-3. Verify/manage the deployment at [central.sonatype.com/publishing](https://central.sonatype.com/publishing).
+Releases are made by GitHub Actions workflows, run manually from the Actions tab. Each one creates a tag `<name>_X.Y.Z` and a GitHub Release whose notes are the `## X.Y.Z` section of the matching `CHANGELOG.md`.
+
+| Workflow | Releases | Version from | Tag |
+|---|---|---|---|
+| **Release library** (pick `write`, `write-okhttp` or `lib-har`) | `devin` + `devin-no-op`, `devin-write-okhttp` + `devin-write-okhttp-no-op`, or `lib-har` to Maven Central | `POM_VERSION_NAME` in the modules' `gradle.properties` (a library's modules must match) | `write_X.Y.Z`, `write-okhttp_X.Y.Z`, `lib-har_X.Y.Z` |
+| **Release presenter** | Signed `present-app` APK, attached to the GitHub Release (marked "Latest") | `versionName` in `present-app/build.gradle.kts` | `presenter_X.Y.Z` |
+
+1. Bump the version and add its `CHANGELOG.md` section.
+2. Merge to `main`, then run the workflow on `main`.
+
+A `-SNAPSHOT` library version is published to the snapshot repository only, with no tag or GitHub Release. Release `write` before a `write-okhttp` version that depends on it; the workflow checks this.
+
+Secrets (Settings → Secrets and variables → Actions): `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY_ID`, `SIGNING_KEY`, `SIGNING_KEY_PASSWORD` for libraries, and `PRESENTER_KEYSTORE_BASE64`, `PRESENTER_KEYSTORE_PASSWORD`, `PRESENTER_KEY_ALIAS`, `PRESENTER_KEY_PASSWORD` for the presenter. Deployments can be checked at [central.sonatype.com/publishing](https://central.sonatype.com/publishing).

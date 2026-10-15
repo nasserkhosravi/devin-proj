@@ -2,6 +2,7 @@ package com.khosravi.devin.present.present
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,13 +13,17 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.client.ClientData
@@ -31,6 +36,9 @@ fun StarterScreen(
     clients: List<ClientData>,
     onClientClick: (ClientData) -> Unit,
     onRefresh: () -> Unit,
+    footerText: String,
+    isUpdateAvailable: Boolean,
+    onFooterClick: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -44,14 +52,14 @@ fun StarterScreen(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             Text(
                 text = message,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small)
             )
-            LazyColumn {
+            LazyColumn(modifier = Modifier.weight(1f)) {
                 itemsIndexed(clients, key = { _, client -> client.packageId }) { index, client ->
                     Text(
                         text = client.packageId,
@@ -64,6 +72,17 @@ fun StarterScreen(
                     if (index != clients.lastIndex) Divider()
                 }
             }
+            Text(
+                text = footerText,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+                color = if (isUpdateAvailable) colorResource(R.color.update_available_text) else LocalContentColor.current,
+                modifier = Modifier
+                    .padding(horizontal = MaterialTheme.spacing.medium)
+                    .padding(bottom = MaterialTheme.spacing.small)
+                    .fillMaxWidth()
+                    .clickable(onClick = onFooterClick)
+            )
         }
     }
 }

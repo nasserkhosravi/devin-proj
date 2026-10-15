@@ -40,6 +40,13 @@
             android:name=".present.http.HttpLogDetailActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".present.LogItemDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".present.settings.SettingsActivity"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.khosravi.devin.present.fileprovider"

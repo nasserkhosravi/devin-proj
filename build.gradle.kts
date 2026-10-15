@@ -2,23 +2,27 @@
 
 buildscript {
     repositories {
-        maven {
-            url = java.net.URI("https://repo.snapp.tech/repository/android-repo-google/")
+        // repo.snapp.tech is a private mirror that CI runners (e.g. GitHub Actions, which sets CI=true) can't reach.
+        if (System.getenv("CI") == "true") {
+            google()
+            mavenCentral()
+        } else {
+            maven {
+                url = java.net.URI("https://repo.snapp.tech/repository/android-repo-google/")
+            }
+            maven {
+                url = java.net.URI("https://repo.snapp.tech/repository/android-repo-maven-google/")
+            }
+            maven {
+                url = java.net.URI("https://repo.snapp.tech/repository/android-repo-maven/")
+            }
+            maven {
+                url = java.net.URI("https://repo.snapp.tech/repository/android-repo-plugins/")
+            }
+            maven {
+                url = java.net.URI("https://repo.snapp.tech/repository/android-repo-jcenter-bintray/")
+            }
         }
-        maven {
-            url = java.net.URI("https://repo.snapp.tech/repository/android-repo-maven-google/")
-        }
-        maven {
-            url = java.net.URI("https://repo.snapp.tech/repository/android-repo-maven/")
-        }
-        maven {
-            url = java.net.URI("https://repo.snapp.tech/repository/android-repo-plugins/")
-        }
-        maven {
-            url = java.net.URI("https://repo.snapp.tech/repository/android-repo-jcenter-bintray/")
-        }
-//        mavenCentral()
-//        google()
     }
     dependencies {
         classpath(libs.plugins.androidApplication.get().toString())

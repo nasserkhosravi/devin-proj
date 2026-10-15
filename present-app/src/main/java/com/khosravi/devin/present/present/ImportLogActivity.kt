@@ -42,7 +42,6 @@ class ImportLogActivity : BaseActivity(){
     private val binding: ActivityImportLogBinding
         get() = _binding!!
 
-    private val logDetailDialogHost by lazy { LogDetailDialogHost(this, binding.root) }
 
     private val itemAdapter = GenericItemAdapter()
     private val adapter = FastAdapter.with(itemAdapter)
@@ -131,7 +130,7 @@ class ImportLogActivity : BaseActivity(){
     }
 
     private fun onTextLogItemClick(item: TextLogItem) {
-        logDetailDialogHost.show(item.data)
+        LogItemDetailActivity.startActivity(this, item.data)
     }
 
 

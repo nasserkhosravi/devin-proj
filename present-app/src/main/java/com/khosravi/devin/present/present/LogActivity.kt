@@ -28,9 +28,11 @@ import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.LogListRowItem
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
+import com.khosravi.devin.present.present.settings.SettingsActivity
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.update.UpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -51,11 +53,15 @@ class LogActivity : BaseActivity() {
     @Inject
     lateinit var calendar: CalendarProxy
 
+    @Inject
+    lateinit var updateChecker: UpdateChecker
+
+    private var updateJob: Job? = null
+
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
 
-    private val logDetailDialogHost by lazy { LogDetailDialogHost(this, findViewById(android.R.id.content)) }
     private val filterDialogHost by lazy { FilterDialogHost(this, findViewById(android.R.id.content)) }
 
     private var filterList by mutableStateOf<List<FilterItem>>(emptyList())
@@ -95,7 +101,7 @@ class LogActivity : BaseActivity() {
                     onSelectFilter = ::selectNewFilter,
                     onFilterAction = ::onFilterAction,
                     onSearchTextChange = { searchInput.tryEmit(it) },
-                    onTextLogClick = { logDetailDialogHost.show(it) },
+                    onTextLogClick = { LogItemDetailActivity.startActivity(this, it) },
                     onHttpLogClick = { HttpLogDetailActivity.startActivity(this, it.logId) },
                     onLoadMore = { pagination.maybeLoadMore(::loadMoreItems) },
                     onRefresh = ::refreshLogsAndFilters,
@@ -104,6 +110,7 @@ class LogActivity : BaseActivity() {
                     onCreateFilter = ::createFilter,
                     onExport = ::showExportDialog,
                     onToggleTheme = { viewModel.toggleTheme() },
+                    onOpenSettings = { startActivity(SettingsActivity.intent(this)) },
                 )
             }
         }
@@ -272,6 +279,26 @@ class LogActivity : BaseActivity() {
         LogExportDialog.newInstance().apply {
             show(supportFragmentManager, LogExportDialog.TAG)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateJob = lifecycleScope.launch {
+            updateChecker.availableUpdate.collect { update ->
+                if (update?.isForceUpdate == true) {
+                    // StarterActivity owns the update dialogs and the force-update gate; drop back to it.
+                    startActivity(Intent(this@LogActivity, StarterActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+                    finish()
+                }
+            }
+        }
+        updateChecker.checkInBackgroundIfDue()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        updateJob?.cancel()
+        updateJob = null
     }
 
     private fun onImportFileIntentResult(activityResult: ActivityResult) {

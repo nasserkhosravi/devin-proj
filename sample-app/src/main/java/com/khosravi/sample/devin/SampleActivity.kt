@@ -42,6 +42,7 @@ class SampleActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             Snackbar.make(binding.root, "Devin is not available", Snackbar.LENGTH_INDEFINITE).show()
             return
         }
+        binding.tvProviderStatus.text = "Provider installed: ${devinTool.isProviderInstalled() ?: "unknown"}"
         setupSpinnerAdapter(binding)
 
         logger.logSessionStart(this)
