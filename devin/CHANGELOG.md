@@ -1,6 +1,13 @@
 # Changelog
 **Write module:**
 
+## 4.4.1
+- Fix `generalUncaughtExceptionLogging(false)` clearing the app's own uncaught-exception handler when Devin's handler was never enabled.
+- Fix `generalUncaughtExceptionLogging(true)` called twice logging every crash twice.
+- Fix provider meta search: it failed without a selection, `StartWith`/`EqualTo` behaved as `Contain`, and search values are now bound as SQL arguments.
+- Fix deleting logs without a client id crashing the provider.
+- Fix log content files being written under log id `0` (and failing when the client directory didn't exist).
+
 ## 4.4.0
 - Add `DevinTool.isProviderInstalled()` to check whether a Devin presenter app was found during `init` (`null` when Devin is disabled; always `null` in no-op).
 

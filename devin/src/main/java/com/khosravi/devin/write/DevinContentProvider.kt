@@ -90,21 +90,17 @@ class DevinContentProvider : ContentProvider() {
         msl1: DevinUriHelper.OpStringParam?
     ): SimpleSQLiteQuery {
         val columns = projection?.joinToString(",") ?: "*"
-        val fSelection = if (selection != null || msl1 != null) {
-            val msResult = msl1?.let {
+        val conditions = listOfNotNull(
+            msl1?.let {
                 """${LogTable.COLUMN_ID} IN (SELECT ${MetaIndexTable.COLUMN_ID} FROM ${MetaIndexTable.TABLE_NAME}
-    WHERE field = '${msl1.fName}' AND ${msl1.toSqlQuery()}
+    WHERE ${MetaIndexTable.COLUMN_FIELD_NAME} = ? AND ${it.toSqlCondition()}
     )"""
-            }
-            if (msResult != null) {
-                "WHERE $msResult AND ${selection ?: ""}"
-            } else {
-                selection?.let {
-                    "WHERE $it"
-                }
-
-            }
-        } else ""
+            },
+            selection?.takeIf { it.isNotBlank() }?.let { "($it)" },
+        )
+        val fSelection = if (conditions.isEmpty()) "" else conditions.joinToString(" AND ", prefix = "WHERE ")
+        // The meta search comes first in the WHERE clause, so its args come before the selection's.
+        val args: Array<Any?> = (msl1?.toSqlArgs().orEmpty() + selectionArgs.orEmpty()).toTypedArray()
 
         val orderBy = sortOrder?.let {
             "ORDER BY $it"
@@ -120,7 +116,7 @@ class DevinContentProvider : ContentProvider() {
 
 
         val sql = """SELECT $columns FROM ${LogTable.TABLE_NAME} $fSelection $orderBy $fCountQuery"""
-        return SimpleSQLiteQuery(sql, selectionArgs)
+        return SimpleSQLiteQuery(sql, args)
     }
 
 
@@ -140,7 +136,7 @@ class DevinContentProvider : ContentProvider() {
                 val resultId = instance.metaIndexDao().put(MetaIndexTable(id, it.first, it.second))
                 Log.d(TAG, "put meta index: $resultId")
             }
-            writeContentFileIfItsPossible(values, context, logTable.clientId, logTable.id)
+            writeContentFileIfItsPossible(values, context, logTable.clientId, id)
             context.contentResolver.notifyChange(
                 DevinUriHelper.getLogChangeUri(id, logTable.clientId, logTable.tag),
                 null,
@@ -172,7 +168,7 @@ class DevinContentProvider : ContentProvider() {
         if (rawData != null) {
             val clientDir = File(context.filesDir, "$clientId/$logId")
             if (!clientDir.exists()) {
-                if (!clientDir.mkdir()) {
+                if (!clientDir.mkdirs()) {
                     Log.e(TAG, "Error in creating content dir")
                 }
             }
@@ -189,7 +185,7 @@ class DevinContentProvider : ContentProvider() {
         val context = context ?: return FLAG_OPERATION_FAILED
         if (!uri.isDevinScope()) return FLAG_OPERATION_FAILED
         if (uri.isLogPath()) {
-            val clientId = uri.getQueryParameter(KEY_CLIENT_ID)!!
+            val clientId = uri.getQueryParameter(KEY_CLIENT_ID) ?: return FLAG_OPERATION_FAILED
             DevinDB.getInstance(context).logDao()
                 .removeLogs(clientId)
             return FLAG_OPERATION_SUCCESS
@@ -247,13 +243,21 @@ class DevinContentProvider : ContentProvider() {
         return null
     }
 
-    private fun DevinUriHelper.OpStringParam.toSqlQuery(): String {
-        return when (this.op) {
-            is DevinUriHelper.OpStringValue.Contain -> "${MetaIndexTable.COLUMN_FIELD_VALUE} LIKE '%${op.value}%'"
-            is DevinUriHelper.OpStringValue.StartWith -> "${MetaIndexTable.COLUMN_FIELD_VALUE} = '${op.value}%'"
-            is DevinUriHelper.OpStringValue.EqualTo -> "${MetaIndexTable.COLUMN_FIELD_VALUE} = ${op.value}"
-        }
+    private fun DevinUriHelper.OpStringParam.toSqlCondition(): String = when (op) {
+        is DevinUriHelper.OpStringValue.Contain,
+        is DevinUriHelper.OpStringValue.StartWith -> "${MetaIndexTable.COLUMN_FIELD_VALUE} LIKE ?"
+        is DevinUriHelper.OpStringValue.EqualTo -> "${MetaIndexTable.COLUMN_FIELD_VALUE} = ?"
     }
+
+    /** Bind args for [toSqlCondition], preceded by the field name. */
+    private fun DevinUriHelper.OpStringParam.toSqlArgs(): List<String> = listOf(
+        fName,
+        when (op) {
+            is DevinUriHelper.OpStringValue.Contain -> "%${op.value}%"
+            is DevinUriHelper.OpStringValue.StartWith -> "${op.value}%"
+            is DevinUriHelper.OpStringValue.EqualTo -> op.value
+        },
+    )
 
     companion object {
         private const val TAG = "DevinContentProvider"
