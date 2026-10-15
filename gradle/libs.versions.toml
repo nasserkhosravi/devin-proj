@@ -16,6 +16,8 @@ material = "1.9.0"
 fragmentKtx = "1.4.0"
 constraintlayout = "2.1.4"
 room = "2.5.1"
+# Same version room-ktx brings in transitively; declared because devin uses coroutines directly.
+coroutines = "1.6.4"
 dagger = "2.24"
 fastadapter = "5.7.0"
 glide = "4.16.0"
@@ -39,6 +41,7 @@ room-common = { module = "androidx.room:room-common", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 dagger-android = { module = "com.google.dagger:dagger-android", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 fastadapter = { module = "com.mikepenz:fastadapter", version.ref = "fastadapter" }

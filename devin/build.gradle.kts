@@ -53,6 +53,7 @@ android {
 
 dependencies {
     implementation(libs.coreKtx)
+    implementation(libs.kotlinx.coroutines.android)
 
     implementation(libs.room.common)
     implementation(libs.room.ktx)
