@@ -7,7 +7,7 @@ project-targetSdk = "35"
 #build
 agpVersion = "8.10.0"
 agpLibraryVersion = "8.3.2"
-kotlinVersion = "1.9.0"
+kotlinVersion = "2.1.20"
 
 #library
 coreKtx = "1.9.0"
@@ -16,8 +16,8 @@ material = "1.9.0"
 fragmentKtx = "1.4.0"
 constraintlayout = "2.1.4"
 room = "2.5.1"
-# Same version room-ktx brings in transitively; declared because devin uses coroutines directly.
-coroutines = "1.6.4"
+# Aligned with the lowest version used by Devin's consumers, so Devin never upgrades theirs.
+coroutines = "1.7.3"
 dagger = "2.24"
 fastadapter = "5.7.0"
 glide = "4.16.0"
