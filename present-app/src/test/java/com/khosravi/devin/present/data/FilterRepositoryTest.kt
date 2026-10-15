@@ -83,13 +83,15 @@ class FilterRepositoryTest {
     fun `pinning is reflected in loaded filters and can be undone`() {
         val item = filter("pinned")
         saveInOrder("a", item)
+        // Default pins (e.g. okhttp) are seeded on first read; only the change from this item matters.
+        val defaultPins = repository.getPinnedListIds().toSet()
 
         repository.saveAsPinned(item)
-        assertEquals(listOf("pinned"), repository.getPinnedListIds())
+        assertEquals(defaultPins + "pinned", repository.getPinnedListIds().toSet())
         assertTrue(repository.getCustomFilterItemList("a").single().ui.isPinned)
 
         repository.removeAsPinned(item)
-        assertTrue(repository.getPinnedListIds().isEmpty())
+        assertEquals(defaultPins, repository.getPinnedListIds().toSet())
         assertFalse(repository.getCustomFilterItemList("a").single().ui.isPinned)
     }
 
