@@ -16,7 +16,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -108,7 +107,6 @@ class DevinContentProviderTest {
         assertEquals(emptyList<Pair<String, String>>(), DevinTestFixture.metaIndexes(context, id))
     }
 
-    @Ignore("bug: content dir is created with mkdir(), which fails while the client dir doesn't exist yet")
     @Test
     fun `insert log with content writes it to a file`() {
         val bytes = byteArrayOf(1, 2, 3)
@@ -198,7 +196,6 @@ class DevinContentProviderTest {
         assertEquals(listOf("match"), values)
     }
 
-    @Ignore("bug: a meta search without a selection builds 'WHERE ... AND ' and the SQL fails")
     @Test
     fun `raw query meta search works without a selection`() {
         insertLog(value = "match", metaIndex = "url" to "https://x/api")
@@ -215,7 +212,6 @@ class DevinContentProviderTest {
         assertEquals(listOf("match"), values)
     }
 
-    @Ignore("bug: StartWith is read back as Contain, and its SQL uses '=' instead of LIKE")
     @Test
     fun `raw query meta search StartWith matches prefixes only`() {
         insertLog(value = "prefix", metaIndex = "url" to "api/users")
@@ -232,6 +228,22 @@ class DevinContentProviderTest {
         )
 
         assertEquals(listOf("prefix"), values)
+    }
+
+    @Test
+    fun `raw query meta search EqualTo matches whole values only`() {
+        insertLog(value = "exact", metaIndex = "url" to "it's/api")
+        insertLog(value = "longer", metaIndex = "url" to "it's/api/users")
+
+        val values = rawQuery(
+            DevinUriHelper.getLogListUri(
+                "client",
+                msl1 = DevinUriHelper.OpStringParam("url", DevinUriHelper.OpStringValue.EqualTo("it's/api")),
+                isRawQuery = true,
+            ),
+        )
+
+        assertEquals(listOf("exact"), values)
     }
 
     @Test
@@ -283,7 +295,6 @@ class DevinContentProviderTest {
         assertEquals(1, DevinTestFixture.logs(context, "b").size)
     }
 
-    @Ignore("bug: delete on the log path without a clientId throws NullPointerException")
     @Test
     fun `delete logs without a client fails cleanly`() {
         val result = onWorker { resolver.delete(DevinUriHelper.getLogListUri(), null, null) }

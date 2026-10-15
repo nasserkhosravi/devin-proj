@@ -11,7 +11,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -71,7 +70,6 @@ class DevinExceptionLoggerTest {
         assertSame(previousHandler, Thread.getDefaultUncaughtExceptionHandler())
     }
 
-    @Ignore("bug: disabling without enabling first sets the default handler to null, dropping the app's handler")
     @Test
     fun `disabling without enabling keeps the current handler`() {
         exceptionLogger.generalUncaughtExceptionLogging(false)
@@ -79,7 +77,6 @@ class DevinExceptionLoggerTest {
         assertSame(previousHandler, Thread.getDefaultUncaughtExceptionHandler())
     }
 
-    @Ignore("bug: enabling twice wraps the handler twice, so each crash is logged twice")
     @Test
     fun `enabling twice logs each crash once`() {
         exceptionLogger.generalUncaughtExceptionLogging(true)

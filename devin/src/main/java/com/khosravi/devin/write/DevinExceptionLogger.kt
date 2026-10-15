@@ -11,11 +11,16 @@ internal class DevinExceptionLogger(
     private var uncaughtExceptionHandler: TwinUncaughtExceptionHandler? = null
 
     fun generalUncaughtExceptionLogging(isEnable: Boolean) {
+        val current = uncaughtExceptionHandler
         if (!isEnable) {
-            Thread.setDefaultUncaughtExceptionHandler(uncaughtExceptionHandler?.defaultUncaughtExceptionHandler)
+            // Never installed: leave the app's handler alone instead of replacing it with null.
+            if (current == null) return
+            Thread.setDefaultUncaughtExceptionHandler(current.defaultUncaughtExceptionHandler)
             uncaughtExceptionHandler = null
             return
         }
+        // Already installed: wrapping again would log every crash twice.
+        if (current != null) return
         uncaughtExceptionHandler = TwinUncaughtExceptionHandler(this, Thread.getDefaultUncaughtExceptionHandler())
         Thread.setDefaultUncaughtExceptionHandler(uncaughtExceptionHandler)
     }

@@ -5,7 +5,6 @@ import com.khosravi.devin.read.DevinUriHelper.getMsl1
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -91,7 +90,6 @@ class DevinUriHelperTest {
         assertNull(DevinUriHelper.getLogListUri(clientId = "client").getMsl1())
     }
 
-    @Ignore("bug: getMsl1 ignores the operation id and always returns Contain")
     @Test
     fun `getMsl1 keeps the operation`() {
         val startWith = DevinUriHelper.getLogListUri(
