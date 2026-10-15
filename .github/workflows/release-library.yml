@@ -2,7 +2,7 @@
 # with the `## X.Y.Z` section of the library's CHANGELOG.md as notes.
 #
 #   library       Gradle modules (released together, must share POM_VERSION_NAME)   changelog
-#   write         devin, devin-no-op                                                devin/CHANGELOG.md
+#   write         devin-write, devin-write-no-op                                    devin-write/CHANGELOG.md
 #   write-okhttp  devin-write-okhttp, devin-write-okhttp-no-op                      devin-write-okhttp/CHANGELOG.md
 #   lib-har       lib-har                                                           lib-har/CHANGELOG.md
 #
@@ -48,7 +48,7 @@ jobs:
       - name: Resolve modules and version
         run: |
           case "$LIBRARY" in
-            write)        modules="devin devin-no-op";                           changelog="devin/CHANGELOG.md" ;;
+            write)        modules="devin-write devin-write-no-op";               changelog="devin-write/CHANGELOG.md" ;;
             write-okhttp) modules="devin-write-okhttp devin-write-okhttp-no-op"; changelog="devin-write-okhttp/CHANGELOG.md" ;;
             lib-har)      modules="lib-har";                                     changelog="lib-har/CHANGELOG.md" ;;
             *) echo "::error::Unknown library '$LIBRARY'."; exit 1 ;;
@@ -99,12 +99,12 @@ jobs:
             exit 1
           fi
 
-      # write-okhttp depends on project(":devin") / project(":devin-no-op"), which end up in its POM as
+      # write-okhttp depends on project(":devin-write") / project(":devin-write-no-op"), which end up in its POM as
       # write / write-no-op at their POM_VERSION_NAME, so that version must already be on Maven Central.
       - name: Check write dependency is published
         if: env.LIBRARY == 'write-okhttp' && env.SNAPSHOT == 'false'
         run: |
-          write_version=$(sed -n 's/^POM_VERSION_NAME=//p' devin/gradle.properties | tr -d '[:space:]')
+          write_version=$(sed -n 's/^POM_VERSION_NAME=//p' devin-write/gradle.properties | tr -d '[:space:]')
           for artifact in write write-no-op; do
             pom="https://repo1.maven.org/maven2/io/github/nasserkhosravi/devin/$artifact/$write_version/$artifact-$write_version.pom"
             if ! curl -sfI "$pom" > /dev/null; then
