@@ -14,8 +14,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.divider.MaterialDividerItemDecoration
 import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
+import com.khosravi.devin.present.analytics.Analytics.ClientOpenSource
+import com.khosravi.devin.present.analytics.Analytics.UpdatePromptAction
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.client.ClientItem
+import com.khosravi.devin.present.client.getLogPassword
 import com.khosravi.devin.present.data.ClientLoadedState
 import com.khosravi.devin.present.databinding.ActivityStarterBinding
 import com.khosravi.devin.present.di.ViewModelFactory
@@ -84,7 +88,7 @@ class StarterActivity : BaseActivity() {
         notificationLaunchCoordinator.readTarget(intent)
 
         adapter.onClickListener = { _, _, item: ClientItem, _ ->
-            onSelectClient(item.data)
+            onSelectClient(item.data, ClientOpenSource.LIST)
             true
         }
 
@@ -124,6 +128,7 @@ class StarterActivity : BaseActivity() {
         }
         val url = update?.pageUrl ?: GitHubReleaseSource.RELEASES_PAGE_URL
         binding.tvFooter.setOnClickListener {
+            Analytics.updateFooterClicked(hasUpdate = update != null)
             openReleasePage(url)
         }
     }
@@ -139,11 +144,18 @@ class StarterActivity : BaseActivity() {
             return
         }
         if (forceUpdateDialog?.isShowing == true) return
+        Analytics.updatePromptShown(isForceUpdate = true)
         forceUpdateDialog = AlertDialog.Builder(this)
             .setTitle(updateTitle(update))
             .setMessage(updateMessage(update))
-            .setPositiveButton(R.string.update_action_download) { _, _ -> openReleasePage(update.pageUrl) }
-            .setOnCancelListener { finish() }
+            .setPositiveButton(R.string.update_action_download) { _, _ ->
+                Analytics.updatePromptAction(isForceUpdate = true, UpdatePromptAction.DOWNLOAD)
+                openReleasePage(update.pageUrl)
+            }
+            .setOnCancelListener {
+                Analytics.updatePromptAction(isForceUpdate = true, UpdatePromptAction.DISMISS)
+                finish()
+            }
             .create()
             .apply {
                 setCanceledOnTouchOutside(false)
@@ -156,17 +168,23 @@ class StarterActivity : BaseActivity() {
         if (update == null || update.isForceUpdate) return
         if (optionalUpdateDialog?.isShowing == true) return
         val pending = updateChecker.pendingPrompt() ?: return
+        Analytics.updatePromptShown(isForceUpdate = false)
         optionalUpdateDialog = AlertDialog.Builder(this)
             .setTitle(updateTitle(pending))
             .setMessage(updateMessage(pending))
             .setPositiveButton(R.string.update_action_download) { _, _ ->
+                Analytics.updatePromptAction(isForceUpdate = false, UpdatePromptAction.DOWNLOAD)
                 updateChecker.markPrompted()
                 openReleasePage(pending.pageUrl)
             }
             .setNegativeButton(R.string.update_action_later) { _, _ ->
+                Analytics.updatePromptAction(isForceUpdate = false, UpdatePromptAction.LATER)
                 updateChecker.markPrompted()
             }
-            .setOnCancelListener { updateChecker.markPrompted() }
+            .setOnCancelListener {
+                Analytics.updatePromptAction(isForceUpdate = false, UpdatePromptAction.DISMISS)
+                updateChecker.markPrompted()
+            }
             .setOnDismissListener {
                 val route = pendingRoute
                 pendingRoute = null
@@ -214,10 +232,11 @@ class StarterActivity : BaseActivity() {
         }
     }
 
-    private fun onSelectClient(clientData: ClientData) {
+    private fun onSelectClient(clientData: ClientData, source: ClientOpenSource) {
         if (isBlockedByForceUpdate()) return
         viewModel.setSelectedClientId(clientData)
         clientLoginInteractor.onClientSelect(this, clientData) {
+            if (it) Analytics.clientOpened(source, isPasswordProtected = clientData.getLogPassword() != null)
             isRouteSuccessful(it)
         }
     }
@@ -228,6 +247,10 @@ class StarterActivity : BaseActivity() {
         clientLoginInteractor.onClientSelect(this, target.client) { canRoute ->
             if (isBlockedByForceUpdate()) return@onClientSelect
             if (canRoute) {
+                Analytics.clientOpened(
+                    ClientOpenSource.NOTIFICATION,
+                    isPasswordProtected = target.client.getLogPassword() != null
+                )
                 startActivity(Intent(this, LogActivity::class.java).apply {
                     target.tag?.let { putExtra(LogActivity.EXTRA_TARGET_TAG, it) }
                 })
@@ -279,6 +302,13 @@ class StarterActivity : BaseActivity() {
 
     private fun onClientListFetchResult(loadState: ClientLoadedState) {
         val notificationTarget = notificationLaunchCoordinator.takeTarget(loadState)
+        Analytics.clientListLoaded(
+            when (loadState) {
+                is ClientLoadedState.Zero -> 0
+                is ClientLoadedState.Single -> 1
+                is ClientLoadedState.Multi -> loadState.clients.size
+            }
+        )
 
         when (loadState) {
             is ClientLoadedState.Single -> {
@@ -290,7 +320,7 @@ class StarterActivity : BaseActivity() {
                     if (notificationTarget != null) {
                         onSelectNotificationTarget(notificationTarget)
                     } else {
-                        onSelectClient(clientData)
+                        onSelectClient(clientData, ClientOpenSource.AUTO)
                     }
                 }
                 binding.rvClients.adapter = adapter

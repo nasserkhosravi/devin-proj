@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.MenuItem
 import android.widget.Toast
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.databinding.ActivityLogItemDetailBinding
 import com.khosravi.devin.present.date.CalendarProxy
@@ -84,6 +85,7 @@ class LogItemDetailActivity : BaseActivity() {
             meta?.let { appendLine("Meta: $it") }
         }
         if (setClipboardSafe(content)) {
+            Analytics.textLogDetailCopied()
             Toast.makeText(this, getString(R.string.copied), Toast.LENGTH_SHORT).show()
         }
     }

@@ -2,6 +2,7 @@ package com.khosravi.devin.present.crash
 
 import android.app.Application
 import com.khosravi.devin.present.BuildConfig
+import com.khosravi.devin.present.analytics.Analytics
 import io.appmetrica.analytics.AppMetrica
 import io.appmetrica.analytics.AppMetricaConfig
 
@@ -21,13 +22,22 @@ object CrashReporting {
             .withAppOpenTrackingEnabled(false)
             .withLocationTracking(false)
             .build()
-        AppMetrica.activate(application, config)
-        isActivated = true
+        try {
+            AppMetrica.activate(application, config)
+            Analytics.isEnabled = true
+            isActivated = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     /** Reports a caught, non-fatal error. No-op when AppMetrica isn't activated (e.g. debug builds). */
     fun reportError(message: String, error: Throwable) {
         if (!isActivated) return
-        AppMetrica.reportError(message, error)
+        try {
+            AppMetrica.reportError(message, error)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

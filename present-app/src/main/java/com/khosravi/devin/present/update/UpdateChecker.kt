@@ -3,6 +3,7 @@ package com.khosravi.devin.present.update
 import android.content.Context
 import android.util.Log
 import com.khosravi.devin.present.BuildConfig
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.data.AppPref
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -70,6 +71,7 @@ class UpdateChecker(
         val version = update.version.toString()
         if (appPref.notifiedUpdateVersion != version && notifier.notify(update)) {
             appPref.notifiedUpdateVersion = version
+            Analytics.updateNotificationPosted()
         }
     }
 

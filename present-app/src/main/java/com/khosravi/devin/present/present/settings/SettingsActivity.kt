@@ -12,6 +12,7 @@ import android.widget.FrameLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.databinding.ActivitySettingsBinding
@@ -42,12 +43,14 @@ class SettingsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         _binding = ActivitySettingsBinding.inflate(LayoutInflater.from(this))
         setContentView(binding.root)
+        if (savedInstanceState == null) Analytics.settingsOpened()
 
         binding.toolbar.setNavigationOnClickListener { finish() }
 
         binding.switchRetention.isChecked = appPref.retentionEnabled
         binding.switchRetention.setOnCheckedChangeListener { _, isChecked ->
             appPref.retentionEnabled = isChecked
+            Analytics.retentionToggled(isChecked)
             onRetentionChanged()
         }
         binding.rowKeepDays.setOnClickListener { showKeepDaysPicker() }
@@ -83,6 +86,7 @@ class SettingsActivity : BaseActivity() {
             checkedIndex = options.indexOf(appPref.retentionDays),
         ) { index ->
             appPref.retentionDays = options[index]
+            Analytics.retentionDaysChanged(options[index])
             onRetentionChanged()
         }
     }
@@ -95,6 +99,7 @@ class SettingsActivity : BaseActivity() {
             checkedIndex = options.indexOf(appPref.retentionMaxCount),
         ) { index ->
             appPref.retentionMaxCount = options[index]
+            Analytics.retentionMaxCountChanged(options[index])
             onRetentionChanged()
         }
     }
@@ -132,6 +137,7 @@ class SettingsActivity : BaseActivity() {
                 closeIconContentDescription = getString(R.string.settings_pinned_tags_remove, tag)
                 setOnCloseIconClickListener {
                     filterRepository.unpinTag(tag)
+                    Analytics.pinnedTagRemoved()
                     bindPinnedTags()
                 }
             })
@@ -157,7 +163,9 @@ class SettingsActivity : BaseActivity() {
             .setTitle(R.string.settings_pinned_tags_add)
             .setView(container)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                filterRepository.pinTag(input.text.toString())
+                val tag = input.text.toString()
+                filterRepository.pinTag(tag)
+                if (tag.isNotBlank()) Analytics.pinnedTagAdded()
                 bindPinnedTags()
             }
             .setNegativeButton(android.R.string.cancel, null)

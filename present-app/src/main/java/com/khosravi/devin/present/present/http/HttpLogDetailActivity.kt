@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.tabs.TabLayoutMediator
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.createCacheShareFile
 import com.khosravi.devin.present.createFlowForExportFileIntentResult
 import com.khosravi.devin.present.createJsonFileNameForExport
@@ -228,6 +229,7 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val detailData = viewModel.detailData.value ?: return false
+        httpDetailActionName(item.itemId)?.let(Analytics::httpDetailAction)
         return when (item.itemId) {
             R.id.action_http_share_har_json -> {
                 shareHarAsJsonFile(detailData)
@@ -276,6 +278,17 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
 
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun httpDetailActionName(itemId: Int): String? = when (itemId) {
+        R.id.action_http_share_har_json -> "share_har"
+        R.id.action_http_share_as_curl -> "share_curl"
+        R.id.action_http_copy_har -> "copy_har"
+        R.id.action_http_copy_as_curl -> "copy_curl"
+        R.id.action_http_copy_response_content -> "copy_response_body"
+        R.id.action_http_copy_request_content -> "copy_request_body"
+        R.id.action_http_export_har_as_json -> "save_har"
+        else -> null
     }
 
     companion object {
