@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
@@ -107,7 +108,7 @@ fun ImageLogRow(calendar: CalendarProxy, data: ImageLogItemData) {
                         withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = colorResource(statusColorRes))) { append(statusText) }
                         append("\n")
                         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(namePrefix) }
-                        append(data.data.name + "\n")
+                        append(data.data.name.toRowPreview() + "\n")
                         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(datePrefix) }
                         append(calendar.initIfNeed(data.datePresent).getFormatted() + "\n")
                         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(timePrefix) }
@@ -126,8 +127,10 @@ fun ImageLogRow(calendar: CalendarProxy, data: ImageLogItemData) {
             Text(
                 text = buildAnnotatedString {
                     withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("URL: ") }
-                    append(data.data.url)
+                    append(data.data.url.toRowPreview())
                 },
+                maxLines = URL_PREVIEW_MAX_LINES,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.clickable {
                     Toast.makeText(context, "URL Copied", Toast.LENGTH_SHORT).show()
                     context.setClipboard(data.data.url)

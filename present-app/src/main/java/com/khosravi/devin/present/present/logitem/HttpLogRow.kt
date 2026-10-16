@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.data.http.HttpLogOperationStatus
@@ -61,9 +62,19 @@ fun HttpLogRow(calendar: CalendarProxy, data: HttpLogItemData, onClick: () -> Un
         ) {
             Text(text = statusText, color = statusColor, modifier = Modifier.width(56.dp))
             Column {
-                Text(text = data.getL1SummeryText(), color = statusColor)
+                Text(
+                    text = data.getL1SummeryText().toRowPreview(),
+                    color = statusColor,
+                    maxLines = URL_PREVIEW_MAX_LINES,
+                    overflow = TextOverflow.Ellipsis
+                )
                 // Matches HttpLogItemView.createBinding(): domain text is deliberately fixed gray, overriding text_secondary.
-                Text(text = data.getFullDomainText(), color = Color.Gray)
+                Text(
+                    text = data.getFullDomainText().toRowPreview(),
+                    color = Color.Gray,
+                    maxLines = URL_PREVIEW_MAX_LINES,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(text = data.getTimeText(calendar), color = colorResource(R.color.text_primary))
             }
         }

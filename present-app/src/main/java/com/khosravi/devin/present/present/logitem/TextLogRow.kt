@@ -16,11 +16,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khosravi.devin.present.R
@@ -76,6 +78,7 @@ fun TextLogRow(
 ) {
     val dateText = calendar.initIfNeed(data.timePresent).getFormatted()
     val style = logLevelStyle(data.logLevel)
+    val previewText = remember(data.text) { data.text.toRowPreview() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Divider()
@@ -134,9 +137,11 @@ fun TextLogRow(
                     }
                 }
                 Text(
-                    text = data.text,
+                    text = previewText,
                     fontSize = 14.sp,
                     color = colorResource(R.color.text_primary),
+                    maxLines = TEXT_LOG_PREVIEW_MAX_LINES,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = MaterialTheme.spacing.xs)
                 )
             }
