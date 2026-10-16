@@ -68,7 +68,7 @@ fun HttpLogRow(calendar: CalendarProxy, data: HttpLogItemData, onClick: () -> Un
                     maxLines = URL_PREVIEW_MAX_LINES,
                     overflow = TextOverflow.Ellipsis
                 )
-                // Matches HttpLogItemView.createBinding(): domain text is deliberately fixed gray, overriding text_secondary.
+                // Domain text is deliberately fixed gray, overriding text_secondary.
                 Text(
                     text = data.getFullDomainText().toRowPreview(),
                     color = Color.Gray,

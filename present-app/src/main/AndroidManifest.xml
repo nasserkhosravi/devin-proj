@@ -41,9 +41,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".present.LogItemDetailActivity"
-            android:exported="false" />
-        <activity
             android:name=".present.settings.SettingsActivity"
             android:exported="false" />
 

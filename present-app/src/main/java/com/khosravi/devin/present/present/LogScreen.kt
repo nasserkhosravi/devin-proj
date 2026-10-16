@@ -35,6 +35,7 @@ import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HttpLogItemData
 import com.khosravi.devin.present.log.ImageLogItemData
+import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.LogListRowItem
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
 import com.khosravi.devin.present.log.SessionStartLogItemData
@@ -166,13 +167,24 @@ private fun LogListRow(
 ) {
     when (rowItem) {
         is LogListRowItem.Search -> SearchBarRow(sessionId = rowItem.sessionId, text = rowItem.text, hint = rowItem.hint, onTextChange = onSearchTextChange)
-        is LogListRowItem.Row -> when (val d = rowItem.data) {
-            is DateLogItemData -> DateHeaderRow(calendar, d)
-            is TextLogItemData -> TextLogRow(calendar, d, ignoreTagChip = false, onClick = { onTextLogClick(d) })
-            is HttpLogItemData -> HttpLogRow(calendar, d, onClick = { onHttpLogClick(d) })
-            is ImageLogItemData -> ImageLogRow(calendar, d)
-            is SessionStartLogItemData -> SessionStartRow(calendar, d)
-            is ReplicatedTextLogItemData -> Unit // never emitted by ReaderViewModel; exhaustiveness guard only
-        }
+        is LogListRowItem.Row -> LogItemDataRow(calendar, rowItem.data, onTextLogClick, onHttpLogClick)
+    }
+}
+
+/** One log row for a [LogItemData]. Shared by [LogScreen] and [ImportLogScreen]. */
+@Composable
+internal fun LogItemDataRow(
+    calendar: CalendarProxy,
+    data: LogItemData,
+    onTextLogClick: (TextLogItemData) -> Unit,
+    onHttpLogClick: (HttpLogItemData) -> Unit,
+) {
+    when (data) {
+        is DateLogItemData -> DateHeaderRow(calendar, data)
+        is TextLogItemData -> TextLogRow(calendar, data, ignoreTagChip = false, onClick = { onTextLogClick(data) })
+        is HttpLogItemData -> HttpLogRow(calendar, data, onClick = { onHttpLogClick(data) })
+        is ImageLogItemData -> ImageLogRow(calendar, data)
+        is SessionStartLogItemData -> SessionStartRow(calendar, data)
+        is ReplicatedTextLogItemData -> Unit // never emitted by ReaderViewModel; exhaustiveness guard only
     }
 }

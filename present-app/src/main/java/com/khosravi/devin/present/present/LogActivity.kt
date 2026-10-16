@@ -12,11 +12,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,8 +24,6 @@ import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.date.CalendarProxy
-import com.khosravi.devin.present.date.TimePresent
-import com.khosravi.devin.present.date.getFormattedWithMillis
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.filter.CustomFilterItem
@@ -117,9 +113,7 @@ class LogActivity : BaseActivity() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ROUTE_LOGS) {
             composable(ROUTE_LOGS) { LogsDestination(navController) }
-            composable(LogDetailArgs.ROUTE_PATTERN, arguments = LogDetailArgs.arguments) { entry ->
-                LogDetailDestination(entry, navController)
-            }
+            logDetailDestination(navController, calendar, startRoute = ROUTE_LOGS)
             dialog(ROUTE_EXPORT) {
                 // Scoped to this back-stack entry: cleared (job cancelled, temp file deleted) when the dialog closes.
                 val exportViewModel: ExportViewModel = viewModel(factory = vmFactory)
@@ -165,27 +159,6 @@ class LogActivity : BaseActivity() {
             onOpenSettings = { startActivity(SettingsActivity.intent(this)) },
         )
     }
-
-    @Composable
-    private fun LogDetailDestination(entry: NavBackStackEntry, navController: NavHostController) {
-        val args = remember(entry) { LogDetailArgs.read(entry) }
-        val timeText = remember(args.timestamp) {
-            calendar.getFormattedWithMillis(TimePresent(args.timestamp))
-        }
-        LogItemDetailScreen(
-            tag = args.tag,
-            message = args.message,
-            timeText = timeText,
-            meta = args.meta,
-            onCopy = { copyLogDetail(args.tag, timeText, args.message, args.meta) },
-            // Pop back to the logs list rather than "pop the top": a second back tap during the exit
-            // transition would otherwise pop the start destination too and leave an empty NavHost.
-            onBack = { navController.popBackStack(ROUTE_LOGS, inclusive = false) },
-        )
-    }
-
-    private fun NavHostController.isCurrentEntryResumed() =
-        currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED
 
     private fun buildLogItems(): List<LogListRowItem> {
         val rows = logRows.map { LogListRowItem.Row(it) }

@@ -1,51 +1,34 @@
 package com.khosravi.devin.present.present
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.text.TextWatcher
-import android.view.LayoutInflater
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.widget.addTextChangedListener
+import androidx.activity.compose.setContent
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.khosravi.devin.present.KEY_DATA
 import com.khosravi.devin.present.R
-import com.khosravi.devin.present.databinding.ActivityImportLogBinding
+import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.getParcelableExtraSupport
-import com.khosravi.devin.present.arch.BaseActivity
-import com.khosravi.devin.present.log.HttpLogItemView
-import com.khosravi.devin.present.log.ReplicatedTextLogItem
-import com.khosravi.devin.present.log.TextLogItem
-import com.khosravi.devin.present.readTextAndClose
-import com.khosravi.devin.present.toItemViewHolder
-import com.mikepenz.fastadapter.FastAdapter
-import com.mikepenz.fastadapter.GenericItem
-import com.mikepenz.fastadapter.adapters.GenericItemAdapter
-import com.mikepenz.fastadapter.expandable.getExpandableExtension
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
+import com.khosravi.devin.present.log.LogItemData
+import com.khosravi.devin.present.uikit.theme.DevinTheme
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class ImportLogActivity : BaseActivity(){
-
-    private var _binding: ActivityImportLogBinding? = null
-    private val binding: ActivityImportLogBinding
-        get() = _binding!!
-
-
-    private val itemAdapter = GenericItemAdapter()
-    private val adapter = FastAdapter.with(itemAdapter)
-    private var searchTextWatcher: TextWatcher? = null
+class ImportLogActivity : BaseActivity() {
 
     @Inject
     lateinit var calendar: CalendarProxy
@@ -57,84 +40,66 @@ class ImportLogActivity : BaseActivity(){
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
 
+    /** Null until the imported file has been read and converted. */
+    private var items by mutableStateOf<List<LogItemData>?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
-        _binding = ActivityImportLogBinding.inflate(LayoutInflater.from(this))
-        setContentView(binding.root)
 
-        val content = intent.getParcelableExtraSupport(KEY_DATA, Uri::class.java)?.let { readUriText(it) }
-        if (content.isNullOrEmpty()) {
-            val errorText =
-                if (content == null) getString(R.string.error_msg_something_went_wrong) else getString(R.string.error_msg_empty_file_text)
-            Toast.makeText(this, errorText, Toast.LENGTH_LONG).show()
-            finish()
-            return
+        setContent {
+            DevinTheme { ImportLogNavHost() }
         }
+        // No-op after a configuration change: the ViewModel keeps the already loaded result.
+        viewModel.loadImportedLogs(intent.getParcelableExtraSupport(KEY_DATA, Uri::class.java))
+        observeImportedLogs()
+    }
 
-        binding.rvMain.adapter = adapter
-        adapter.getExpandableExtension()
-        adapter.onClickListener = { _, _, item, _ ->
-            when (item) {
-                is TextLogItem -> {
-                    onTextLogItemClick(item)
-                    true
+    @Composable
+    private fun ImportLogNavHost() {
+        val navController = rememberNavController()
+        NavHost(navController = navController, startDestination = ROUTE_IMPORTED) {
+            composable(ROUTE_IMPORTED) {
+                ImportLogScreen(
+                    calendar = calendar,
+                    items = items,
+                    onTextLogClick = {
+                        // Ignore a second tap that lands while the detail transition is already running.
+                        if (navController.isCurrentEntryResumed()) {
+                            LogDetailArgs.navigate(navController, it)
+                        }
+                    },
+                    onHttpLogClick = {
+                        //TODO: support http detail viewer
+                        Toast.makeText(this@ImportLogActivity, "Coming soon", Toast.LENGTH_SHORT).show()
+                    },
+                )
+            }
+            logDetailDestination(navController, calendar, startRoute = ROUTE_IMPORTED)
+        }
+    }
 
+    private fun observeImportedLogs() {
+        lifecycleScope.launch {
+            viewModel.importedLogs.collect { result ->
+                when (result) {
+                    null -> Unit // still loading
+                    is ReaderViewModel.ImportResult.Loaded -> items = result.logs
+                    ReaderViewModel.ImportResult.ReadFailed -> finishWithError(R.string.error_msg_something_went_wrong)
+                    ReaderViewModel.ImportResult.Empty -> finishWithError(R.string.error_msg_empty_file_text)
                 }
-
-                is HttpLogItemView -> {
-                    //TODO: support http detail viewer
-                    Toast.makeText(this,"Coming soon",Toast.LENGTH_SHORT).show()
-                    true
-                }
-                else -> false
             }
         }
-
-        launch {
-            viewModel.convertImportedLogsToPresentableLogItems(content)
-                .map { it.toItemViewHolder(calendar,false) }
-                .flowOn(Dispatchers.Main)
-                .collect { itemAdapter.set(it) }
-        }
-
-        itemAdapter.itemFilter.filterPredicate = { item: GenericItem, constraint: CharSequence? ->
-            getTextIfPossible(item)?.contains(constraint.toString(), ignoreCase = true) ?: true
-        }
-        binding.edSearch.addTextChangedListener { itemAdapter.filter(it.toString()) }
     }
 
-    private fun getTextIfPossible(item: GenericItem): String? {
-        return when (item) {
-            is ReplicatedTextLogItem -> item.data.text
-            is TextLogItem -> item.data.text
-            else -> null
-        }
+    private fun finishWithError(@StringRes messageRes: Int) {
+        if (isFinishing) return
+        Toast.makeText(this, getString(messageRes), Toast.LENGTH_LONG).show()
+        finish()
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        searchTextWatcher?.let { binding.edSearch.removeTextChangedListener(it) }
-        adapter.onClickListener = null
-    }
-
-    @SuppressLint("Recycle")
-    /**
-     * Read text from [android.net.Uri]
-     * Added @SuppressLint("Recycle") because [com.khosravi.devin.present.readTextAndClose] close the InputStream
-     */
-    private fun readUriText(data: Uri): String? {
-        //TODO: maybe heavy file, async the reading operation
-        val inputStream = contentResolver.openInputStream(data) ?: return null
-        return inputStream.readTextAndClose()
-    }
-
-    private fun onTextLogItemClick(item: TextLogItem) {
-        LogItemDetailActivity.startActivity(this, item.data)
-    }
-
 
     companion object {
+        private const val ROUTE_IMPORTED = "imported"
 
         fun intent(context: Context, logUri: Uri) = Intent(context, ImportLogActivity::class.java).apply {
             putExtra(KEY_DATA, logUri)

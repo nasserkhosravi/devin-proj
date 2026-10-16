@@ -9,8 +9,8 @@ import androidx.navigation.navArgument
 import com.khosravi.devin.present.log.TextLogItemData
 
 /**
- * Single owner of the `logDetail` navigation destination used by [LogActivity]'s NavHost.
- * Carries the same values [LogItemDetailActivity] receives as Intent extras.
+ * Single owner of the `logDetail` navigation arguments, used by [logDetailDestination] in the NavHosts of
+ * [LogActivity] and [ImportLogActivity].
  *
  * Values travel as a Bundle, navigating by destination id ([navigate]), not as a route URI:
  * navigation matches route URIs with a regex, which fails for very long messages (~50k chars).
