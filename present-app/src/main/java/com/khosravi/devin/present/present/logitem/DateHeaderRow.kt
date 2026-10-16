@@ -31,7 +31,7 @@ fun DateHeaderRow(calendar: CalendarProxy, data: DateLogItemData) {
             Text(
                 text = dateText,
                 color = MaterialTheme.colorScheme.onTertiary,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = MaterialTheme.spacing.xs)
             )
         }
     }

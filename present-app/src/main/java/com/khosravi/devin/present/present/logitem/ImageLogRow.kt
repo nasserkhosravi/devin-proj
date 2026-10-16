@@ -21,7 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -36,6 +36,7 @@ import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.humanReadableByteCountSI
 import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.setClipboard
+import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
 import com.khosravi.devin.read.DevinImageFlagsApi
 import java.io.File
@@ -75,10 +76,11 @@ fun ImageLogRow(calendar: CalendarProxy, data: ImageLogItemData) {
         }
     }
 
-    val (statusText, statusColorRes) = when (data.data.status) {
-        DevinImageFlagsApi.Status.SUCCEED -> stringResource(R.string.image_status_success) to R.color.status_success
-        DevinImageFlagsApi.Status.FAILED -> stringResource(R.string.image_status_failed) to R.color.status_error
-        else -> "" to android.R.color.black
+    val (statusText, statusColor) = when (data.data.status) {
+        DevinImageFlagsApi.Status.SUCCEED -> stringResource(R.string.image_status_success) to MaterialTheme.devinColors.statusSuccess
+        DevinImageFlagsApi.Status.FAILED -> stringResource(R.string.image_status_failed) to MaterialTheme.devinColors.statusError
+        // No status text: the span keeps the row's content colour.
+        else -> "" to Color.Unspecified
     }
 
     // stringResource() is @Composable and can't be called inside the buildAnnotatedString{} lambda below
@@ -105,7 +107,7 @@ fun ImageLogRow(calendar: CalendarProxy, data: ImageLogItemData) {
                     if (state is ImageLoadState.Loading) {
                         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(loadingText) }
                     } else {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = colorResource(statusColorRes))) { append(statusText) }
+                        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = statusColor)) { append(statusText) }
                         append("\n")
                         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(namePrefix) }
                         append(data.data.name.toRowPreview() + "\n")

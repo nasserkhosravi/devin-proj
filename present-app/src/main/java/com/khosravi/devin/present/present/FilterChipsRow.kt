@@ -22,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -31,6 +30,7 @@ import com.khosravi.devin.present.filter.CustomFilterItem
 import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
 import com.khosravi.devin.present.filter.isIndexFilterItem
+import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
 import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 
@@ -77,29 +77,18 @@ private fun FilterChipView(
     val isOkHttp = filter is TagFilterItem && filter.tagValue == DevinHttpFlagsApi.LOG_TAG
     val label = if (isOkHttp) "http" else filter.ui.title.value
 
+    val colors = MaterialTheme.devinColors
     val chipColors = if (isOkHttp) {
         if (isSelected) {
-            ChipColors(
-                container = colorResource(R.color.tag_okhttp_container_selected),
-                content = colorResource(R.color.tag_okhttp_text_selected),
-            )
+            ChipColors(container = colors.okHttpChipSelected, content = colors.okHttpChipTextSelected)
         } else {
-            ChipColors(
-                container = colorResource(R.color.tag_okhttp_container_unselected),
-                content = colorResource(R.color.tag_okhttp_text_unselected),
-            )
+            ChipColors(container = colors.okHttpChipUnselected, content = colors.okHttpChipTextUnselected)
         }
     } else {
         if (isSelected) {
-            ChipColors(
-                container = colorResource(R.color.chip_selected),
-                content = colorResource(R.color.chip_text_selected),
-            )
+            ChipColors(container = colors.chipSelected, content = colors.chipTextSelected)
         } else {
-            ChipColors(
-                container = colorResource(R.color.chip_unselected),
-                content = colorResource(R.color.chip_text_unselected),
-            )
+            ChipColors(container = colors.chipUnselected, content = colors.chipTextUnselected)
         }
     }
 
@@ -121,14 +110,14 @@ private fun FilterChipView(
                 onClick = onSelect,
                 onLongClick = onLongClick,
             )
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 12.dp, vertical = MaterialTheme.spacing.xs)
     ) {
         if (filter.ui.isPinned) {
             Icon(
                 painter = painterResource(R.drawable.ic_keep_24px),
                 contentDescription = null,
                 tint = chipColors.content,
-                modifier = Modifier.padding(end = 4.dp)
+                modifier = Modifier.padding(end = MaterialTheme.spacing.xs)
             )
         }
         Text(text = label, color = chipColors.content)

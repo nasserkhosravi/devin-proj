@@ -127,8 +127,26 @@ internal suspend fun searchBody(lines: List<String>, query: String): BodySearchR
     return BodySearchResult(query, matches)
 }
 
-/** Overlays search highlights (all matches yellow/red, [current] green/red, underlined) on the item's colours. */
-internal fun BodyDisplayItem.highlighted(result: BodySearchResult?, current: BodyMatch?): AnnotatedString {
+/** Search-highlight span styles: one for every match, one for the current match. */
+internal class SearchHighlightStyles(val match: SpanStyle, val current: SpanStyle)
+
+/** Underlined highlight styles in the theme's search colours (see `DevinColors.searchMatch*`). */
+internal fun searchHighlightStyles(
+    matchText: Color,
+    matchBackground: Color,
+    currentText: Color,
+    currentBackground: Color,
+) = SearchHighlightStyles(
+    match = SpanStyle(color = matchText, background = matchBackground, textDecoration = TextDecoration.Underline),
+    current = SpanStyle(color = currentText, background = currentBackground, textDecoration = TextDecoration.Underline),
+)
+
+/** Overlays search highlights ([styles] for all matches and for [current]) on the item's colours. */
+internal fun BodyDisplayItem.highlighted(
+    result: BodySearchResult?,
+    current: BodyMatch?,
+    styles: SearchHighlightStyles,
+): AnnotatedString {
     if (result == null) return text
     val starts = result.startsByLine[lineIndex] ?: return text
     val queryLength = result.query.length
@@ -140,19 +158,8 @@ internal fun BodyDisplayItem.highlighted(result: BodySearchResult?, current: Bod
         if (from < to) {
             val isCurrent = current != null && current.lineIndex == lineIndex && current.start == start
             val b = builder ?: AnnotatedString.Builder(text).also { builder = it }
-            b.addStyle(if (isCurrent) CurrentMatchStyle else MatchStyle, from - offsetInLine, to - offsetInLine)
+            b.addStyle(if (isCurrent) styles.current else styles.match, from - offsetInLine, to - offsetInLine)
         }
     }
     return builder?.toAnnotatedString() ?: text
 }
-
-private val MatchStyle = SpanStyle(
-    color = Color.Red,
-    background = Color.Yellow,
-    textDecoration = TextDecoration.Underline,
-)
-private val CurrentMatchStyle = SpanStyle(
-    color = Color.Red,
-    background = Color.Green,
-    textDecoration = TextDecoration.Underline,
-)

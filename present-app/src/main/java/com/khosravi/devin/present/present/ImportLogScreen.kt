@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -20,13 +21,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.log.HttpLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
 import com.khosravi.devin.present.log.TextLogItemData
+import com.khosravi.devin.present.uikit.theme.spacing
 
 /**
  * Logs read from an imported JSON file, with a "contains" search field above them.
@@ -56,7 +57,7 @@ fun ImportLogScreen(
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp),
+                    .padding(MaterialTheme.spacing.small),
             )
             if (visibleItems == null) {
                 Box(modifier = Modifier.fillMaxSize()) {

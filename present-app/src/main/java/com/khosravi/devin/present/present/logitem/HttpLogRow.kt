@@ -12,42 +12,42 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.khosravi.devin.present.R
 import com.khosravi.devin.present.data.http.HttpLogOperationStatus
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.log.HttpLogItemData
+import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
 
 @Composable
 fun HttpLogRow(calendar: CalendarProxy, data: HttpLogItemData, onClick: () -> Unit) {
-    val statusColorRes: Int
+    val statusError = MaterialTheme.devinColors.statusError
+    val onSurface = MaterialTheme.colorScheme.onSurface
+    val statusColor: Color
     val statusText: String
     when (val operationStatus = data.data.operationStatus) {
         is HttpLogOperationStatus.Respond -> {
             val statusCode = operationStatus.status
             statusText = statusCode.toString()
-            statusColorRes = if (statusCode in 400..600) R.color.status_error else R.color.text_primary
+            statusColor = if (statusCode in 400..600) statusError else onSurface
         }
 
         HttpLogOperationStatus.Requested -> {
             statusText = "Requested"
-            statusColorRes = R.color.text_primary
+            statusColor = onSurface
         }
 
         HttpLogOperationStatus.NetworkFailed -> {
             statusText = "!!!"
-            statusColorRes = R.color.status_error
+            statusColor = statusError
         }
 
         HttpLogOperationStatus.Unsupported -> {
             statusText = ""
-            statusColorRes = R.color.text_primary
+            statusColor = onSurface
         }
     }
-    val statusColor = colorResource(statusColorRes)
 
     Column(
         modifier = Modifier
@@ -68,14 +68,13 @@ fun HttpLogRow(calendar: CalendarProxy, data: HttpLogItemData, onClick: () -> Un
                     maxLines = URL_PREVIEW_MAX_LINES,
                     overflow = TextOverflow.Ellipsis
                 )
-                // Domain text is deliberately fixed gray, overriding text_secondary.
                 Text(
                     text = data.getFullDomainText().toRowPreview(),
-                    color = Color.Gray,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = URL_PREVIEW_MAX_LINES,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(text = data.getTimeText(calendar), color = colorResource(R.color.text_primary))
+                Text(text = data.getTimeText(calendar), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

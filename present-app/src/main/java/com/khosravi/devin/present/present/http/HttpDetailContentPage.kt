@@ -46,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -57,6 +56,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDirection
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.data.http.HttpLogDetailData
+import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -163,11 +163,11 @@ private fun BodySearchBar(
             scope.launch { listState.animateScrollToItem(body.itemIndexOf(target) + bodyItemsOffset) }
         }
 
-        val onBar = colorResource(R.color.white_light_1)
+        val onBar = MaterialTheme.devinColors.searchCounterText
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(colorResource(R.color.green_dark_2)),
+                .background(MaterialTheme.devinColors.searchCounterBackground),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -208,6 +208,15 @@ private fun HttpContentList(
 ) {
     val horizontalPadding = MaterialTheme.spacing.medium
     val body = model.body
+    val colors = MaterialTheme.devinColors
+    val highlightStyles = remember(colors) {
+        searchHighlightStyles(
+            matchText = colors.searchMatchText,
+            matchBackground = colors.searchMatchBackground,
+            currentText = colors.searchCurrentMatchText,
+            currentBackground = colors.searchCurrentMatchBackground,
+        )
+    }
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize(),
@@ -247,7 +256,9 @@ private fun HttpContentList(
                 val item = body.items[index]
                 val result = search.result
                 val currentMatch = search.currentMatch
-                val text = remember(item, result, currentMatch) { item.highlighted(result, currentMatch) }
+                val text = remember(item, result, currentMatch, highlightStyles) {
+                    item.highlighted(result, currentMatch, highlightStyles)
+                }
                 SelectionContainer {
                     BodyText(text = text, modifier = Modifier.padding(horizontal = horizontalPadding))
                 }

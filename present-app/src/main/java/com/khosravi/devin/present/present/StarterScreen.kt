@@ -23,14 +23,13 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.window.DialogProperties
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.client.ClientData
+import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
 import com.khosravi.devin.present.update.ReleaseInfo
 import com.khosravi.devin.present.update.updateMessage
@@ -87,9 +86,9 @@ fun StarterScreen(
             }
             Text(
                 text = footerText,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
-                color = if (isUpdateAvailable) colorResource(R.color.update_available_text) else LocalContentColor.current,
+                color = if (isUpdateAvailable) MaterialTheme.devinColors.updateAvailableText else LocalContentColor.current,
                 modifier = Modifier
                     .padding(horizontal = MaterialTheme.spacing.medium)
                     .padding(bottom = MaterialTheme.spacing.small)
