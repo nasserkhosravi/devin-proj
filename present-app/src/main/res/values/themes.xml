@@ -87,10 +87,6 @@
         <item name="android:elevation">2dp</item>
     </style>
 
-    <style name="Widget.LoggerApp.TabLayout" parent="Widget.Material3.TabLayout">
-        <item name="tabIndicatorColor">?attr/colorControlNormal</item>
-    </style>
-
     <style name="AppTheme.TextAppearance.Label" parent="android:TextAppearance.Small">
         <item name="android:textStyle">bold</item>
     </style>

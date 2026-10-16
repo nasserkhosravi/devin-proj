@@ -29,14 +29,23 @@ class HttpDetailViewModel(
     private val _detailData = MutableStateFlow<HttpLogDetailData?>(null)
     val detailData: StateFlow<HttpLogDetailData?> = _detailData
 
+    private val _isLoadFailed = MutableStateFlow(false)
+
+    /** True when the fetch finished without a detail (the log is missing or couldn't be parsed). */
+    val isLoadFailed: StateFlow<Boolean> = _isLoadFailed
+
     fun fetchHttpLogDetail(context: Context, logId: LogId) {
+        _isLoadFailed.value = false
         viewModelScope.launch {
             flow {
-                val value = ContentProviderLogsDao.getHttpLog(context, cacheRepo.getSelectedClientId()!!, logId)
+                // No selected client means nothing to show: treat it as a failed load rather than crashing.
+                val clientId = cacheRepo.getSelectedClientId()
+                val value = clientId?.let { ContentProviderLogsDao.getHttpLog(context, it, logId) }
                 emit(value)
             }.flowOn(Dispatchers.Default)
                 .collect { result ->
                     _detailData.update { result }
+                    _isLoadFailed.update { result == null }
                 }
         }
     }

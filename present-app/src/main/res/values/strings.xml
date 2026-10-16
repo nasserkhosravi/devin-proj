@@ -63,6 +63,11 @@
     <string name="menu_http_save_har_as_json">Save HAR as json</string>
     <string name="menu_http_copy_har">Copy HAR (whole log)</string>
     <string name="msg_response_null">Response is null</string>
+    <string name="hint_search_in_body">Search in body</string>
+    <string name="search_previous_match">Previous match</string>
+    <string name="search_next_match">Next match</string>
+    <string name="search_clear">Clear search</string>
+    <string name="more_options">More options</string>
     <string name="total_size">Total size</string>
     <string name="btn_save_logs">Save Logs</string>
     <string name="btn_share_logs">Share Logs</string>

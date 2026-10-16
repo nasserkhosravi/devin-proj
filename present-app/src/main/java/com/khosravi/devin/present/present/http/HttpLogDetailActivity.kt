@@ -3,18 +3,17 @@ package com.khosravi.devin.present.present.http
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.MenuItem
-import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.app.ShareCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.tabs.TabLayoutMediator
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.createCacheShareFile
@@ -22,7 +21,6 @@ import com.khosravi.devin.present.createFlowForExportFileIntentResult
 import com.khosravi.devin.present.createJsonFileNameForExport
 import com.khosravi.devin.present.data.LogId
 import com.khosravi.devin.present.data.http.HttpLogDetailData
-import com.khosravi.devin.present.databinding.ActivityHttpLogDetailBinding
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
@@ -30,16 +28,10 @@ import com.khosravi.devin.present.formatter.HttpCurlBuilder
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.getLongExtraOrFail
-import com.khosravi.devin.present.present.http.items.HttpDetailContentItemView
-import com.khosravi.devin.present.present.http.items.HttpDetailOverviewItemView
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.setClipboardSafe
-import com.khosravi.devin.present.tool.adapter.isEmpty
-import com.mikepenz.fastadapter.FastAdapter
-import com.mikepenz.fastadapter.adapters.GenericItemAdapter
-import kotlinx.coroutines.CoroutineScope
+import com.khosravi.devin.present.uikit.theme.DevinTheme
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
@@ -52,11 +44,7 @@ import okio.buffer
 import javax.inject.Inject
 
 
-class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope() {
-
-    private var _binding: ActivityHttpLogDetailBinding? = null
-    private val binding: ActivityHttpLogDetailBinding
-        get() = _binding!!
+class HttpLogDetailActivity : AppCompatActivity() {
 
     @Inject
     lateinit var vmFactory: ViewModelFactory
@@ -67,16 +55,13 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[HttpDetailViewModel::class.java]
     }
+
+    // Registered unconditionally in onCreate so the result is delivered after a recreation too.
     private lateinit var saveIntentLauncher: ActivityResultLauncher<Intent>
-
-
-    private val itemAdapter = GenericItemAdapter()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         getAppComponent().inject(this)
-        _binding = ActivityHttpLogDetailBinding.inflate(LayoutInflater.from(this))
-        setContentView(binding.root)
 
         val logId = LogId(intent.getLongExtraOrFail(KEY_LOG_ID))
 
@@ -84,62 +69,28 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
             onSaveHarJsonFileIntentResult(it)
         }
 
-        launch {
-            viewModel.detailData.collect {
-                if (it != null) {
-                    showResult(it)
-                }
+        setContent {
+            DevinTheme {
+                val data by viewModel.detailData.collectAsState()
+                val isLoadFailed by viewModel.isLoadFailed.collectAsState()
+                HttpLogDetailScreen(
+                    data = data,
+                    isLoadFailed = isLoadFailed,
+                    calendar = calendar,
+                    onAction = ::onAction,
+                    onCopyText = ::copyTextToClipboard,
+                )
             }
         }
-        viewModel.fetchHttpLogDetail(this, logId)
-
-        val adapter = FastAdapter.with(itemAdapter)
-        binding.viewPager.adapter = adapter
-
-        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            when (position) {
-                0 -> tab.text = getString(R.string.overview)
-                1 -> tab.text = getString(R.string.request)
-                2 -> tab.text = getString(R.string.response)
-            }
-        }.attach()
-
-        binding.ivIcMenu.setOnClickListener { v ->
-            val popup = PopupMenu(this, v)
-            popup.menuInflater.inflate(R.menu.http_detail_menu, popup.menu)
-            popup.setOnMenuItemClickListener { item ->
-                onOptionsItemSelected(item)
-            }
-            popup.show()
+        // No-op after a configuration change: the ViewModel keeps the already loaded detail.
+        if (viewModel.detailData.value == null) {
+            viewModel.fetchHttpLogDetail(this, logId)
         }
-        binding.ivIcMenu.setBackgroundColor(window.statusBarColor)
-
     }
 
     private fun requestFileUriForHarSave(title: String) {
         val intent = viewModel.createIntentForSave()
         saveIntentLauncher.launch(Intent.createChooser(intent, title))
-    }
-
-    private fun showResult(detail: HttpLogDetailData) {
-        if (itemAdapter.isEmpty()) {
-            val jsonConfigColor = JsonConfigColor.create(this)
-            itemAdapter.apply {
-                add(HttpDetailOverviewItemView(detail, calendar))
-                add(
-                    HttpDetailContentItemView(
-                        detail, R.id.vh_item_http_detail_request.toLong(),
-                        lifecycleScope, lifecycle, jsonConfigColor
-                    )
-                )
-                add(
-                    HttpDetailContentItemView(
-                        detail, R.id.vh_item_http_detail_response.toLong(),
-                        lifecycleScope, lifecycle, jsonConfigColor
-                    )
-                )
-            }
-        }
     }
 
     private fun buildCURL(data: HttpLogDetailData): Flow<String> {
@@ -153,7 +104,7 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
     }
 
     private fun buildAndShareCURL(data: HttpLogDetailData) {
-        launch {
+        lifecycleScope.launch {
             buildCURL(data).flowOn(Dispatchers.Main).collect { content ->
                 val intent = ShareCompat.IntentBuilder(this@HttpLogDetailActivity)
                     .setType("text/plain")
@@ -166,17 +117,13 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
     }
 
     private fun buildAndCopyCURL(data: HttpLogDetailData) {
-        launch {
-            buildCURL(data).flowOn(Dispatchers.Main).collect { content ->
-                if (setClipboardSafe(content)) {
-                    Toast.makeText(this@HttpLogDetailActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
-                }
-            }
+        lifecycleScope.launch {
+            buildCURL(data).flowOn(Dispatchers.Main).collect { content -> copyTextToClipboard(content) }
         }
     }
 
     private fun shareHarAsJsonFile(data: HttpLogDetailData) {
-        launch {
+        lifecycleScope.launch {
             toSharableContent(data)
                 .flowOn(Dispatchers.Main)
                 .map {
@@ -192,14 +139,10 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
     }
 
     private fun copyHarToClipboard(data: HttpLogDetailData) {
-        launch {
+        lifecycleScope.launch {
             toSharableContent(data)
                 .flowOn(Dispatchers.Main)
-                .collect { content ->
-                    if (setClipboardSafe(content)) {
-                        Toast.makeText(this@HttpLogDetailActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
-                    }
-                }
+                .collect { content -> copyTextToClipboard(content) }
         }
     }
 
@@ -212,7 +155,7 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
 
     private fun onSaveHarJsonFileIntentResult(activityResult: ActivityResult) {
         val value = viewModel.detailData.value ?: return
-        launch {
+        lifecycleScope.launch {
             toSharableContent(value).flatMapConcat {
                 createFlowForExportFileIntentResult(it, activityResult)
             }.collect {}
@@ -220,61 +163,30 @@ class HttpLogDetailActivity : AppCompatActivity(), CoroutineScope by MainScope()
 
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        _binding = null
-        saveIntentLauncher.unregister()
+    private fun onAction(action: HttpDetailAction) {
+        val detailData = viewModel.detailData.value ?: return
+        when (action) {
+            HttpDetailAction.ShareHarJson -> shareHarAsJsonFile(detailData)
+            HttpDetailAction.ShareCurl -> buildAndShareCURL(detailData)
+            HttpDetailAction.CopyHar -> copyHarToClipboard(detailData)
+            HttpDetailAction.CopyCurl -> buildAndCopyCURL(detailData)
+            HttpDetailAction.CopyResponseContent -> copyBodyToClipboard(detailData.responseBody)
+            HttpDetailAction.CopyRequestContent -> copyBodyToClipboard(detailData.requestBody)
+            HttpDetailAction.SaveHarJson -> requestFileUriForHarSave(getString(R.string.menu_http_save_har_as_json))
+        }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        val detailData = viewModel.detailData.value ?: return false
-        return when (item.itemId) {
-            R.id.action_http_share_har_json -> {
-                shareHarAsJsonFile(detailData)
-                true
-            }
+    private fun copyBodyToClipboard(text: String?) {
+        if (text == null) {
+            Toast.makeText(this, getString(R.string.msg_response_null), Toast.LENGTH_SHORT).show()
+        } else {
+            copyTextToClipboard(text)
+        }
+    }
 
-            R.id.action_http_share_as_curl -> {
-                buildAndShareCURL(detailData)
-                true
-            }
-
-            R.id.action_http_copy_har -> {
-                copyHarToClipboard(detailData)
-                true
-            }
-
-            R.id.action_http_copy_as_curl -> {
-                buildAndCopyCURL(detailData)
-                true
-            }
-
-            R.id.action_http_copy_response_content -> {
-                val text = detailData.responseBody
-                if (text == null) {
-                    Toast.makeText(this@HttpLogDetailActivity, getString(R.string.msg_response_null), Toast.LENGTH_SHORT).show()
-                } else if (setClipboardSafe(text)) {
-                    Toast.makeText(this@HttpLogDetailActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
-                }
-                true
-            }
-
-            R.id.action_http_copy_request_content -> {
-                val text = detailData.requestBody
-                if (text == null) {
-                    Toast.makeText(this@HttpLogDetailActivity, getString(R.string.msg_response_null), Toast.LENGTH_SHORT).show()
-                } else if (setClipboardSafe(text)) {
-                    Toast.makeText(this@HttpLogDetailActivity, getString(R.string.copied), Toast.LENGTH_SHORT).show()
-                }
-                true
-            }
-
-            R.id.action_http_export_har_as_json -> {
-                requestFileUriForHarSave(getString(R.string.menu_http_save_har_as_json))
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
+    private fun copyTextToClipboard(text: String) {
+        if (setClipboardSafe(text)) {
+            Toast.makeText(this, getString(R.string.copied), Toast.LENGTH_SHORT).show()
         }
     }
 
