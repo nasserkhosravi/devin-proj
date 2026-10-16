@@ -30,6 +30,8 @@ composeCompiler = "1.5.2"
 activityCompose = "1.7.2"
 # 2.8+ needs Compose 1.7; keep on 2.7.x while Compose is pinned to 1.5.2
 navigationCompose = "2.7.7"
+# Matches what navigation-compose 2.7.7 already pulls in transitively
+lifecycleViewmodelCompose = "2.6.2"
 robolectric = "4.12.2"
 androidxTestCore = "1.5.0"
 appmetrica = "8.5.1"
@@ -64,6 +66,7 @@ compose-material3 = { module = "androidx.compose.material3:material3" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 appmetrica-analytics = { module = "io.appmetrica.analytics:analytics", version.ref = "appmetrica" }

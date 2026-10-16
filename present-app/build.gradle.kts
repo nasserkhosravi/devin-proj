@@ -111,6 +111,7 @@ dependencies {
     implementation(libs.activity.compose)
     implementation(libs.compose.material.icons.core)
     implementation(libs.navigation.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.json)

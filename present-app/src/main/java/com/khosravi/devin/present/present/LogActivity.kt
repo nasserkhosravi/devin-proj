@@ -15,10 +15,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
@@ -118,6 +120,14 @@ class LogActivity : BaseActivity() {
             composable(LogDetailArgs.ROUTE_PATTERN, arguments = LogDetailArgs.arguments) { entry ->
                 LogDetailDestination(entry, navController)
             }
+            dialog(ROUTE_EXPORT) {
+                // Scoped to this back-stack entry: cleared (job cancelled, temp file deleted) when the dialog closes.
+                val exportViewModel: ExportViewModel = viewModel(factory = vmFactory)
+                LogExportRoute(
+                    viewModel = exportViewModel,
+                    onClose = { navController.popBackStack(ROUTE_LOGS, inclusive = false) },
+                )
+            }
         }
     }
 
@@ -136,7 +146,7 @@ class LogActivity : BaseActivity() {
             onSearchTextChange = { searchInput.tryEmit(it) },
             onTextLogClick = {
                 // Ignore a second tap that lands while the detail transition is already running.
-                if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+                if (navController.isCurrentEntryResumed()) {
                     LogDetailArgs.navigate(navController, it)
                 }
             },
@@ -146,7 +156,11 @@ class LogActivity : BaseActivity() {
             onClearLogs = { viewModel.clearLogs() },
             onClearFilters = { viewModel.clearCustomFilters() },
             onCreateFilter = ::createFilter,
-            onExport = ::showExportDialog,
+            onExport = {
+                if (navController.isCurrentEntryResumed()) {
+                    navController.navigate(ROUTE_EXPORT)
+                }
+            },
             onToggleTheme = { viewModel.toggleTheme() },
             onOpenSettings = { startActivity(SettingsActivity.intent(this)) },
         )
@@ -169,6 +183,9 @@ class LogActivity : BaseActivity() {
             onBack = { navController.popBackStack(ROUTE_LOGS, inclusive = false) },
         )
     }
+
+    private fun NavHostController.isCurrentEntryResumed() =
+        currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED
 
     private fun buildLogItems(): List<LogListRowItem> {
         val rows = logRows.map { LogListRowItem.Row(it) }
@@ -321,12 +338,6 @@ class LogActivity : BaseActivity() {
         filterDialogHost.show { viewModel.addFilter(it, CALLBACK_ID_ADD_FILTER) }
     }
 
-    private fun showExportDialog() {
-        LogExportDialog.newInstance().apply {
-            show(supportFragmentManager, LogExportDialog.TAG)
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         updateJob = lifecycleScope.launch {
@@ -384,6 +395,7 @@ class LogActivity : BaseActivity() {
     companion object {
         const val EXTRA_TARGET_TAG = "targetTag"
         private const val ROUTE_LOGS = "logs"
+        private const val ROUTE_EXPORT = "export"
         private const val CALLBACK_ID_REFRESH = "refresh"
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"
     }

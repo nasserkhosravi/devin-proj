@@ -1,191 +1,215 @@
 package com.khosravi.devin.present.present
 
+import android.app.Activity
 import android.content.Intent
-import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity.RESULT_OK
-import androidx.lifecycle.ViewModelProvider
-import com.khosravi.devin.present.MIME_APP_JSON
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.khosravi.devin.present.R
-import com.khosravi.devin.present.databinding.DialogLogExportBinding
-import com.khosravi.devin.present.di.ViewModelFactory
-import com.khosravi.devin.present.di.getAppComponent
-import com.khosravi.devin.present.gone
-import com.khosravi.devin.present.invisible
+import com.khosravi.devin.present.present.ExportViewModel.ExportEvent
 import com.khosravi.devin.present.sendOrShareFileIntent
-import com.khosravi.devin.present.toUriByFileProvider
-import com.khosravi.devin.present.arch.BaseDialog
-import com.khosravi.devin.present.visible
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
-import java.io.File
-import javax.inject.Inject
+import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.uikit.theme.spacing
 
-class LogExportDialog : BaseDialog(), CoroutineScope by MainScope() {
-    private var _binding: DialogLogExportBinding? = null
-    private val binding: DialogLogExportBinding
-        get() = _binding!!
+/**
+ * Export dialog content hosted by a navigation `dialog()` destination. Form state is saveable; the export flow
+ * (prepare, save picker, copy, share) lives in [viewModel] so it survives configuration changes.
+ */
+@Composable
+fun LogExportRoute(viewModel: ExportViewModel, onClose: () -> Unit) {
+    var isBuilder by rememberSaveable { mutableStateOf(false) }
+    var tagWhitelist by rememberSaveable { mutableStateOf("") }
+    var days by rememberSaveable { mutableStateOf("1") }
+    var separateTagFiles by rememberSaveable { mutableStateOf(false) }
+    val isExporting by viewModel.isExporting.collectAsState()
 
-    @Inject
-    lateinit var vmFactory: ViewModelFactory
-
-    private val viewModel by lazy {
-        ViewModelProvider(this, vmFactory)[ExportViewModel::class.java]
+    val context = LocalContext.current
+    val currentOnClose by rememberUpdatedState(onClose)
+    val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        viewModel.onSaveLocationPicked(if (result.resultCode == Activity.RESULT_OK) result.data?.data else null)
     }
-    private lateinit var saveIntentLauncher: ActivityResultLauncher<Intent>
 
-    private var exportJob: Job? = null
-    private var saveTmpFile: File? = null
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is ExportEvent.LaunchSavePicker -> saveLauncher.launch(
+                    Intent.createChooser(event.intent, context.getString(R.string.menu_export_logs))
+                )
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        getAppComponent().inject(this)
+                is ExportEvent.Share -> context.startActivity(
+                    Intent.createChooser(
+                        sendOrShareFileIntent(event.uri, event.mimeType),
+                        context.getString(R.string.title_of_share)
+                    )
+                )
 
-        saveIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            onSaveFileIntentResult(it)
+                is ExportEvent.Message -> Toast.makeText(context, event.textRes, Toast.LENGTH_LONG).show()
+                ExportEvent.Close -> currentOnClose()
+            }
         }
-
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        super.onCreateView(inflater, container, savedInstanceState)
-        _binding = DialogLogExportBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    fun currentOptions(): ExportOptions =
+        if (isBuilder) viewModel.buildExportCustom(tagWhitelist, days.toIntOrNull()?.takeIf { it >= 0 }, separateTagFiles)
+        else viewModel.getExportDefaultOption()
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    LogExportDialogContent(
+        isBuilder = isBuilder,
+        onBuilderChange = { isBuilder = it },
+        tagWhitelist = tagWhitelist,
+        onTagWhitelistChange = { tagWhitelist = it },
+        days = days,
+        onDaysChange = { days = it.filter(Char::isDigit) },
+        separateTagFiles = separateTagFiles,
+        onSeparateTagFilesChange = { separateTagFiles = it },
+        isExporting = isExporting,
+        onSave = { viewModel.startSave(currentOptions()) },
+        onShare = { viewModel.startShare(currentOptions()) },
+    )
+}
 
-        binding.run {
-            rdDefault.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) {
-                    tvDefaultOptionInfo.visible()
-                    cvgBuilder.invisible()
+/** Stateless export dialog UI: mode selection, builder options, and Save / Share actions. */
+@Composable
+fun LogExportDialogContent(
+    isBuilder: Boolean,
+    onBuilderChange: (Boolean) -> Unit,
+    tagWhitelist: String,
+    onTagWhitelistChange: (String) -> Unit,
+    days: String,
+    onDaysChange: (String) -> Unit,
+    separateTagFiles: Boolean,
+    onSeparateTagFilesChange: (Boolean) -> Unit,
+    isExporting: Boolean,
+    onSave: () -> Unit,
+    onShare: () -> Unit,
+) {
+    Surface(shape = MaterialTheme.shapes.extraLarge, tonalElevation = 6.dp) {
+        Box {
+            Column(modifier = Modifier.padding(MaterialTheme.spacing.small)) {
+                Row(modifier = Modifier.selectableGroup()) {
+                    ModeOption(label = "Default", selected = !isBuilder, onClick = { onBuilderChange(false) })
+                    ModeOption(label = "Builder", selected = isBuilder, onClick = { onBuilderChange(true) })
+                }
+
+                if (isBuilder) {
+                    Column {
+                        OutlinedTextField(
+                            value = tagWhitelist,
+                            onValueChange = onTagWhitelistChange,
+                            label = { Text(stringResource(R.string.field_whitelist_tag_filter)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(MaterialTheme.spacing.small))
+                        OutlinedTextField(
+                            value = days,
+                            onValueChange = onDaysChange,
+                            label = { Text(stringResource(R.string.field_day_filter)) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.toggleable(
+                                value = separateTagFiles,
+                                onValueChange = onSeparateTagFilesChange,
+                                role = Role.Checkbox
+                            )
+                        ) {
+                            Checkbox(checked = separateTagFiles, onCheckedChange = null)
+                            Text(
+                                text = stringResource(R.string.field_separate_tag_files),
+                                modifier = Modifier.padding(MaterialTheme.spacing.small)
+                            )
+                        }
+                    }
                 } else {
-                    cvgBuilder.visible()
-                    tvDefaultOptionInfo.invisible()
+                    Text(
+                        text = stringResource(R.string.msg_default_export_explain),
+                        modifier = Modifier.padding(MaterialTheme.spacing.small)
+                    )
+                }
+
+                Button(onClick = onSave, enabled = !isExporting, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.btn_save_logs))
+                }
+                Button(onClick = onShare, enabled = !isExporting, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.btn_share_logs))
                 }
             }
 
-            btnSaveLogs.setOnClickListener {
-                startExportProcess()
-                saveTmpFile?.delete()
-                saveTmpFile = null
-
-                exportJob = launch {
-                    viewModel.prepareLogsForExport(getCurrentExportOption())
-                        .flowOn(Dispatchers.Main)
-                        .collect {
-                            stopExportProcess()
-                            saveTmpFile = it
-
-                            val intent = viewModel.createIntentForSave(needZipFile())
-                            saveIntentLauncher.launch(Intent.createChooser(intent, getString(R.string.menu_export_logs)))
-                        }
-                }
-            }
-
-            btnShareLogs.setOnClickListener {
-                startExportProcess()
-                exportJob = viewModel.prepareLogsForExport(getCurrentExportOption())
-                    .flowOn(Dispatchers.Main)
-                    .onEach { exportFile ->
-                        stopExportProcess()
-                        context?.toUriByFileProvider(exportFile)?.let {
-                            val intent = sendOrShareFileIntent(it, MIME_APP_JSON)
-                            startActivity(Intent.createChooser(intent, getString(R.string.title_of_share)))
-                        }
-                        dismiss()
-
-                    }
-                    .launchIn(this@LogExportDialog)
+            if (isExporting) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
     }
+}
 
-    private fun onSaveFileIntentResult(activityResult: ActivityResult) {
-        val returnedIntent = activityResult.data
-        val uriData = returnedIntent?.data
-        val context = context ?: return
-
-        if (activityResult.resultCode == RESULT_OK && returnedIntent != null && uriData != null) {
-            startExportProcess()
-            saveTmpFile?.let {
-                exportJob = viewModel.copyFileToUri(uriData, it)
-                    .onEach {
-                        saveTmpFile?.delete()
-                        saveTmpFile = null
-                    }
-                    .flowOn(Dispatchers.Main)
-                    .onEach {
-                        stopExportProcess()
-                        val msg = if (it) getString(R.string.msg_save_done)
-                        else getString(R.string.error_msg_something_went_wrong)
-                        Toast.makeText(this@LogExportDialog.context, msg, Toast.LENGTH_LONG).show()
-                        dismiss()
-                    }.launchIn(this)
-            }
-        }
+@Composable
+private fun ModeOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .padding(end = MaterialTheme.spacing.small)
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(text = label, modifier = Modifier.padding(start = MaterialTheme.spacing.xs))
     }
+}
 
-    private fun stopExportProcess() {
-        _binding?.progressBar?.gone()
-    }
-
-    private fun startExportProcess() {
-        exportJob?.cancel()
-        binding.progressBar.visible()
-    }
-
-
-    private fun getWhitelistText() = binding.edFilterTag.text?.toString()
-
-    private fun needZipFile(): Boolean {
-        binding.run {
-            if (rdDefault.isChecked) {
-                return true
-            } else {
-                return chSeparateTagFiles.isChecked
-            }
-        }
-    }
-
-    private fun getCurrentExportOption(): ExportOptions = binding.run {
-        if (rdDefault.isChecked) {
-            viewModel.getExportDefaultOption()
-        } else {
-            viewModel.buildExportCustom(
-                getWhitelistText(),
-                edFilterDayNumber.text.toString().toIntOrNull(),
-                chSeparateTagFiles.isChecked
-            )
-        }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        exportJob?.cancel()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        exportJob?.cancel()
-    }
-
-    companion object {
-        const val TAG = "LogExportDialog"
-        fun newInstance() = LogExportDialog()
+@Preview
+@Composable
+private fun LogExportDialogContentPreview() {
+    DevinTheme {
+        LogExportDialogContent(
+            isBuilder = true,
+            onBuilderChange = {},
+            tagWhitelist = "network,ui",
+            onTagWhitelistChange = {},
+            days = "1",
+            onDaysChange = {},
+            separateTagFiles = false,
+            onSeparateTagFilesChange = {},
+            isExporting = false,
+            onSave = {},
+            onShare = {},
+        )
     }
 }
