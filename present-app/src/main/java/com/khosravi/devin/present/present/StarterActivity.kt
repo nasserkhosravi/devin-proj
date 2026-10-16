@@ -129,9 +129,14 @@ class StarterActivity : BaseActivity() {
         val prompt = optionalUpdatePrompt ?: return
         optionalUpdatePrompt = null
         updateChecker.markPrompted()
-        if (openPage) openReleasePage(prompt.pageUrl)
         val route = pendingRoute
         pendingRoute = null
+        if (openPage) {
+            // Leave the release page in front; routing on now would open the log list over the browser.
+            // The client list stays here for when the user comes back.
+            openReleasePage(prompt.pageUrl)
+            return
+        }
         route?.invoke()
     }
 

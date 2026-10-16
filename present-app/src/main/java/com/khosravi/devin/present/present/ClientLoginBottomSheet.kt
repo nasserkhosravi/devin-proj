@@ -75,7 +75,7 @@ fun ClientLoginSheet(
                 isError = errorText != null,
                 supportingText = errorText?.let { { Text(it) } },
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { submit() }),
                 trailingIcon = {
                     TextButton(onClick = { showPassword = !showPassword }) {
