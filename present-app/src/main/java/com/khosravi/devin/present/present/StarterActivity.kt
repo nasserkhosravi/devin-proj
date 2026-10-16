@@ -1,40 +1,29 @@
 package com.khosravi.devin.present.present
 
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
-import androidx.appcompat.app.AlertDialog
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.divider.MaterialDividerItemDecoration
 import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.client.ClientData
-import com.khosravi.devin.present.client.ClientItem
 import com.khosravi.devin.present.data.ClientLoadedState
-import com.khosravi.devin.present.databinding.ActivityStarterBinding
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.domain.ClientLoginInteractor
-import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.notification.LogNotificationLaunchCoordinator
+import com.khosravi.devin.present.uikit.theme.DevinTheme
 import com.khosravi.devin.present.update.GitHubReleaseSource
 import com.khosravi.devin.present.update.ReleaseInfo
 import com.khosravi.devin.present.update.UpdateChecker
 import com.khosravi.devin.present.update.openReleasePage
-import com.khosravi.devin.present.update.updateMessage
-import com.khosravi.devin.present.update.updateTitle
-import com.mikepenz.fastadapter.FastAdapter
-import com.mikepenz.fastadapter.adapters.ItemAdapter
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
@@ -57,47 +46,55 @@ class StarterActivity : BaseActivity() {
     lateinit var updateChecker: UpdateChecker
 
     private var updateJob: Job? = null
-    private var footerDefaultColors: ColorStateList? = null
-    private var forceUpdateDialog: AlertDialog? = null
-    private var optionalUpdateDialog: AlertDialog? = null
 
-    /** Auto-routing to logs held back while [optionalUpdateDialog] is open; runs when it closes. */
+    /** Auto-routing to logs held back while [optionalUpdatePrompt] is open; runs when it closes. */
     private var pendingRoute: (() -> Unit)? = null
+
+    /** The optional update prompt currently shown, or null. */
+    private var optionalUpdatePrompt by mutableStateOf<ReleaseInfo?>(null)
 
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
 
-    private var _binding: ActivityStarterBinding? = null
-
-    private val binding: ActivityStarterBinding
-        get() = _binding!!
-    private val itemAdapter = ItemAdapter<ClientItem>()
-    private val adapter = FastAdapter.with(itemAdapter)
+    private var message by mutableStateOf("")
+    private var clients by mutableStateOf(emptyList<ClientData>())
+    private var availableUpdate by mutableStateOf<ReleaseInfo?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
-        _binding = ActivityStarterBinding.inflate(LayoutInflater.from(this), null, false)
-        setContentView(binding.root)
-        setSupportActionBar(binding.toolbar)
         notificationLaunchCoordinator.readTarget(intent)
 
-        adapter.onClickListener = { _, _, item: ClientItem, _ ->
-            onSelectClient(item.data)
-            true
+        setContent {
+            DevinTheme {
+                StarterScreen(
+                    message = message,
+                    clients = clients,
+                    onClientClick = ::onSelectClient,
+                    onRefresh = ::refreshClients,
+                    footerText = footerText(availableUpdate),
+                    isUpdateAvailable = availableUpdate != null,
+                    onFooterClick = { openReleasePage(availableUpdate?.pageUrl ?: GitHubReleaseSource.RELEASES_PAGE_URL) },
+                    forceUpdate = availableUpdate?.takeIf { it.isForceUpdate },
+                    onForceUpdateDownload = { update -> openReleasePage(update.pageUrl) },
+                    // Back on the force-update dialog leaves the app; it can't be dismissed otherwise.
+                    onForceUpdateDismiss = ::finish,
+                    optionalUpdate = optionalUpdatePrompt,
+                    onOptionalUpdateDownload = { closeOptionalUpdatePrompt(openPage = true) },
+                    onOptionalUpdateClose = { closeOptionalUpdatePrompt(openPage = false) },
+                )
+            }
         }
 
         launchGettingClientList()
-
     }
 
     override fun onResume() {
         super.onResume()
         updateJob = launch {
             updateChecker.availableUpdate.collect {
-                bindFooter(it)
-                showForceUpdateDialogIfNeeded(it)
+                availableUpdate = it
                 showOptionalUpdateDialogIfNeeded(it)
             }
         }
@@ -110,74 +107,42 @@ class StarterActivity : BaseActivity() {
         updateJob = null
     }
 
-    private fun bindFooter(update: ReleaseInfo?) {
-        if (footerDefaultColors == null) footerDefaultColors = binding.tvFooter.textColors
-        if (update == null) {
-            footerDefaultColors?.let(binding.tvFooter::setTextColor)
-        } else {
-            binding.tvFooter.setTextColor(ContextCompat.getColor(this, R.color.update_available_text))
-        }
-        binding.tvFooter.text = if (update == null) {
-            getString(R.string.starter_footer, BuildConfig.VERSION_NAME, CONTRIBUTOR_NAME)
-        } else {
-            getString(R.string.starter_footer_update, BuildConfig.VERSION_NAME, CONTRIBUTOR_NAME, update.version.toString())
-        }
-        val url = update?.pageUrl ?: GitHubReleaseSource.RELEASES_PAGE_URL
-        binding.tvFooter.setOnClickListener {
-            openReleasePage(url)
-        }
+    private fun footerText(update: ReleaseInfo?): String = if (update == null) {
+        getString(R.string.starter_footer, BuildConfig.VERSION_NAME, CONTRIBUTOR_NAME)
+    } else {
+        getString(R.string.starter_footer_update, BuildConfig.VERSION_NAME, CONTRIBUTOR_NAME, update.version.toString())
     }
 
     /**
-     * A major-version update blocks the app: the dialog can't be dismissed (back finishes the
-     * activity) and is shown again on every resume, e.g. after returning from the release page.
+     * Shown up to 3 times a day until updated, checked on every resume; answering it ("Later", back,
+     * outside tap, "Download") counts one. An open prompt isn't counted, so after a configuration
+     * change the recreated activity shows it again from onResume.
+     * The force-update dialog needs no trigger: it's visible whenever [availableUpdate] is a force update.
      */
-    private fun showForceUpdateDialogIfNeeded(update: ReleaseInfo?) {
-        if (update?.isForceUpdate != true) {
-            forceUpdateDialog?.dismiss()
-            forceUpdateDialog = null
-            return
-        }
-        if (forceUpdateDialog?.isShowing == true) return
-        forceUpdateDialog = AlertDialog.Builder(this)
-            .setTitle(updateTitle(update))
-            .setMessage(updateMessage(update))
-            .setPositiveButton(R.string.update_action_download) { _, _ -> openReleasePage(update.pageUrl) }
-            .setOnCancelListener { finish() }
-            .create()
-            .apply {
-                setCanceledOnTouchOutside(false)
-                show()
-            }
-    }
-
-    /** Shown up to 3 times a day until updated; answering it ("Later", back, "Download") counts one. */
     private fun showOptionalUpdateDialogIfNeeded(update: ReleaseInfo?) {
         if (update == null || update.isForceUpdate) return
-        if (optionalUpdateDialog?.isShowing == true) return
-        val pending = updateChecker.pendingPrompt() ?: return
-        optionalUpdateDialog = AlertDialog.Builder(this)
-            .setTitle(updateTitle(pending))
-            .setMessage(updateMessage(pending))
-            .setPositiveButton(R.string.update_action_download) { _, _ ->
-                updateChecker.markPrompted()
-                openReleasePage(pending.pageUrl)
-            }
-            .setNegativeButton(R.string.update_action_later) { _, _ ->
-                updateChecker.markPrompted()
-            }
-            .setOnCancelListener { updateChecker.markPrompted() }
-            .setOnDismissListener {
-                val route = pendingRoute
-                pendingRoute = null
-                route?.invoke()
-            }
-            .show()
+        if (optionalUpdatePrompt != null) return
+        optionalUpdatePrompt = updateChecker.pendingPrompt() ?: return
     }
 
-    /** Runs [route] now, or once the optional update dialog is closed if it is showing. */
+    private fun closeOptionalUpdatePrompt(openPage: Boolean) {
+        val prompt = optionalUpdatePrompt ?: return
+        optionalUpdatePrompt = null
+        updateChecker.markPrompted()
+        val route = pendingRoute
+        pendingRoute = null
+        if (openPage) {
+            // Leave the release page in front; routing on now would open the log list over the browser.
+            // The client list stays here for when the user comes back.
+            openReleasePage(prompt.pageUrl)
+            return
+        }
+        route?.invoke()
+    }
+
+    /** Runs [route] now, or once the optional update prompt is closed if it is showing. */
     private fun routeAfterUpdatePrompt(route: () -> Unit) {
-        if (optionalUpdateDialog?.isShowing == true) {
+        if (optionalUpdatePrompt != null) {
             pendingRoute = route
         } else {
             route()
@@ -188,7 +153,7 @@ class StarterActivity : BaseActivity() {
     private fun isBlockedByForceUpdate(): Boolean {
         val update = updateChecker.availableUpdate.value
         if (update?.isForceUpdate != true) return false
-        showForceUpdateDialogIfNeeded(update)
+        availableUpdate = update
         return true
     }
 
@@ -201,7 +166,7 @@ class StarterActivity : BaseActivity() {
 
     private fun launchGettingClientList() {
         launch {
-            binding.tvMessage.text = getString(R.string.loading)
+            message = getString(R.string.loading)
             //delay to let user see loading text a
             delay(100.milliseconds)
             viewModel.getClientList()
@@ -237,37 +202,9 @@ class StarterActivity : BaseActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        forceUpdateDialog?.dismiss()
-        forceUpdateDialog = null
-        // Drop the held-back route so dismissing here doesn't navigate from a destroyed activity.
-        pendingRoute = null
-        optionalUpdateDialog?.dismiss()
-        optionalUpdateDialog = null
-        _binding = null
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.starter_menu, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_refresh -> {
-                refreshClients()
-                true
-            }
-
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
     private fun refreshClients() {
         launchGettingClientList()
     }
-
 
     private fun ClientLoadedState.toStateMessage(): String {
         return when (this) {
@@ -283,9 +220,8 @@ class StarterActivity : BaseActivity() {
         when (loadState) {
             is ClientLoadedState.Single -> {
                 val clientData = loadState.client
-                itemAdapter.set(listOf(ClientItem(clientData)))
-
-                binding.tvMessage.text = loadState.toStateMessage()
+                clients = listOf(clientData)
+                message = loadState.toStateMessage()
                 routeAfterUpdatePrompt {
                     if (notificationTarget != null) {
                         onSelectNotificationTarget(notificationTarget)
@@ -293,22 +229,17 @@ class StarterActivity : BaseActivity() {
                         onSelectClient(clientData)
                     }
                 }
-                binding.rvClients.adapter = adapter
             }
 
             is ClientLoadedState.Multi -> {
-                itemAdapter.set(loadState.clients.map { ClientItem(it) })
-                binding.tvMessage.text = loadState.toStateMessage()
-                binding.rvClients.run {
-                    val decorator = MaterialDividerItemDecoration(context, RecyclerView.VERTICAL)
-                    addItemDecoration(decorator)
-                    adapter = this@StarterActivity.adapter
-                }
+                clients = loadState.clients
+                message = loadState.toStateMessage()
                 notificationTarget?.let { routeAfterUpdatePrompt { onSelectNotificationTarget(it) } }
             }
 
             is ClientLoadedState.Zero -> {
-                binding.tvMessage.text = loadState.toStateMessage()
+                clients = emptyList()
+                message = loadState.toStateMessage()
             }
         }
     }
@@ -325,6 +256,12 @@ class StarterActivity : BaseActivity() {
 
     private fun openNextActivity(activity: AppCompatActivity) {
         activity.startActivity(Intent(activity, LogActivity::class.java))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Drop the held-back route so it never navigates from a destroyed activity.
+        pendingRoute = null
     }
 
     companion object {

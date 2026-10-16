@@ -2,6 +2,7 @@
 <resources>
     <!-- Material 3 Expressive Dark Theme Colors -->
     <color name="background">#1C1B1F</color>
+    <color name="on_background">#E6E1E5</color>
     <color name="surface">#1C1B1F</color>
     
     <!-- Primary colors (Dark) -->
@@ -16,6 +17,18 @@
     <color name="secondary_container">#4A4458</color>
     <color name="on_secondary_container">#E8DEF8</color>
     
+    <!-- Tertiary colors (Dark) -->
+    <color name="tertiary">#EFB8C8</color>
+    <color name="on_tertiary">#492532</color>
+    <color name="tertiary_container">#633B48</color>
+    <color name="on_tertiary_container">#FFD8E4</color>
+
+    <!-- Error colors (Dark) -->
+    <color name="error">#F2B8B5</color>
+    <color name="on_error">#601410</color>
+    <color name="error_container">#8C1D18</color>
+    <color name="on_error_container">#F9DEDC</color>
+
     <!-- Surface colors (Dark) -->
     <color name="surface_variant">#49454F</color>
     <color name="on_surface">#E6E1E5</color>
@@ -23,11 +36,6 @@
     <color name="outline">#938F99</color>
     <color name="outline_variant">#49454F</color>
 
-    <!-- Text colors (Dark) -->
-    <color name="text_primary">#E6E1E5</color>
-    <color name="text_secondary">#CAC4D0</color>
-    <color name="text_tertiary">#938F99</color>
-    
     <!-- Error level (Dark) -->
     <color name="log_error_container">#8C1D18</color>
     <color name="log_error_icon_bg">#F2B8B5</color>
@@ -65,14 +73,24 @@
     <color name="tag_okhttp_text_unselected">#80DEEA</color>
 
 
-    <color name="divider">@color/surface_variant</color>
-    <color name="status_error">#971F19</color>
+    <color name="status_error">#F2B8B5</color>
+    <color name="status_success">#7DDC9F</color>
     <color name="update_available_text">#F2B8B5</color>
 
     <color name="session_start_background">#5142B5</color>
     <color name="session_start_text">#FFFFFF</color>
     <color name="session_start_secondary_text">#DED8FF</color>
     <color name="session_start_dot">#ACA2E8</color>
+    <color name="session_start_pill">#1FFFFFFF</color>
+    <color name="session_start_pill_text">#FFFFFF</color>
+
+    <!-- HTTP body search (Dark) -->
+    <color name="search_match_background">#5D4300</color>
+    <color name="search_match_text">#FFF8E1</color>
+    <color name="search_current_match_background">#FFB74D</color>
+    <color name="search_current_match_text">#1C1B1F</color>
+    <color name="search_counter_background">#7DDC9F</color>
+    <color name="search_counter_text">#003919</color>
 
     <!-- Component colors (Dark) -->
     <!-- JSON syntax highlighting colors -->

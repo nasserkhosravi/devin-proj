@@ -1,7 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
 
-
     <!-- Material 3 Expressive Theme -->
     <style name="Theme.App" parent="Theme.Material3.Light.NoActionBar">
         <item name="materialAlertDialogTheme">@style/DialogTheme</item>
@@ -19,6 +18,14 @@
         <item name="colorOnSecondary">@color/on_secondary</item>
         <item name="colorSecondaryContainer">@color/secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/on_secondary_container</item>
+        <item name="colorTertiary">@color/tertiary</item>
+        <item name="colorOnTertiary">@color/on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/on_tertiary_container</item>
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/on_error</item>
+        <item name="colorErrorContainer">@color/error_container</item>
+        <item name="colorOnErrorContainer">@color/on_error_container</item>
 
         <!-- Surface colors -->
         <item name="colorSurface">@color/surface</item>
@@ -57,10 +64,6 @@
         <item name="android:windowIsFloating">true</item>
     </style>
 
-    <style name="BottomSheetDialogTheme" parent="ThemeOverlay.Material3.BottomSheetDialog">
-        <item name="android:windowIsFloating">true</item>
-    </style>
-
     <!-- Material 3 Expressive Shape Appearances -->
     <style name="ShapeAppearance.LoggerApp.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
         <item name="cornerFamily">rounded</item>
@@ -69,7 +72,7 @@
 
     <style name="ShapeAppearance.LoggerApp.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">26dp</item>
+        <item name="cornerSize">16dp</item>
     </style>
 
     <style name="ShapeAppearance.LoggerApp.LargeComponent" parent="ShapeAppearance.Material3.LargeComponent">
@@ -86,23 +89,5 @@
         <item name="chipMinHeight">30dp</item>
         <item name="android:elevation">2dp</item>
     </style>
-
-    <style name="Widget.LoggerApp.TabLayout" parent="Widget.Material3.TabLayout">
-        <item name="tabIndicatorColor">?attr/colorControlNormal</item>
-    </style>
-
-    <style name="AppTheme.TextAppearance.Label" parent="android:TextAppearance.Small">
-        <item name="android:textStyle">bold</item>
-    </style>
-
-    <style name="AppTheme.TextAppearance.Value" parent="android:TextAppearance.Small">
-        <item name="android:paddingLeft">?attr/spaceLarge</item>
-        <item name="android:textIsSelectable">true</item>
-    </style>
-
-    <style name="AppTheme.TextAppearance.Body" parent="TextAppearance.MaterialComponents.Body1">
-        <item name="android:textSize">16sp</item>
-    </style>
-
 
 </resources>
