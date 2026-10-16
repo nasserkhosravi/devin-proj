@@ -25,7 +25,6 @@
 
     <!-- Text colors (Dark) -->
     <color name="text_primary">#E6E1E5</color>
-    <color name="text_secondary">#CAC4D0</color>
     <color name="text_tertiary">#938F99</color>
     
     <!-- Error level (Dark) -->
@@ -65,7 +64,6 @@
     <color name="tag_okhttp_text_unselected">#80DEEA</color>
 
 
-    <color name="divider">@color/surface_variant</color>
     <color name="status_error">#971F19</color>
     <color name="update_available_text">#F2B8B5</color>
 

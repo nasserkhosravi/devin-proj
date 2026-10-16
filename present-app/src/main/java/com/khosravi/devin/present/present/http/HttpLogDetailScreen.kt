@@ -5,8 +5,11 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -72,7 +75,7 @@ fun HttpLogDetailScreen(
     val pagerState = rememberPagerState(pageCount = { HttpDetailTab.entries.size })
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         if (data == null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing), contentAlignment = Alignment.Center) {
                 if (isLoadFailed) {
                     Text(stringResource(R.string.error_msg_something_went_wrong))
                 } else {
@@ -81,7 +84,8 @@ fun HttpLogDetailScreen(
             }
             return@Surface
         }
-        Column(modifier = Modifier.fillMaxSize()) {
+        // No Scaffold here: keep the tabs and menu out of the status/navigation bars on edge-to-edge devices.
+        Column(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
             HttpDetailTopRow(pagerState = pagerState, onAction = onAction)
             HorizontalPager(
                 state = pagerState,

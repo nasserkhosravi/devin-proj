@@ -63,7 +63,6 @@ android {
         jvmTarget = "1.8"
     }
     buildFeatures {
-        viewBinding = true
         buildConfig = true
         compose = true
     }
@@ -95,11 +94,7 @@ dependencies {
     implementation(libs.dagger.android)
     kapt(libs.dagger.compiler)
 
-    implementation(libs.fastadapter)
-    implementation(libs.fastadapter.binding)
-    implementation(libs.fastadapter.expandable)
     implementation(libs.glide)
-    implementation(libs.android.spantastic)
     implementation(libs.gson)
     implementation(libs.appmetrica.analytics)
 

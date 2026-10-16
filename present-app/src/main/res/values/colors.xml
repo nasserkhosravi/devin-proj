@@ -30,7 +30,6 @@
 
     <!-- Text colors -->
     <color name="text_primary">#1C1B1F</color>
-    <color name="text_secondary">#49454F</color>
     <color name="text_tertiary">#79747E</color>
 
     <!--component color-->
@@ -77,7 +76,6 @@
     <color name="tag_okhttp_text_selected">#FFFFFF</color>
     <color name="tag_okhttp_text_unselected">#006064</color>
 
-    <color name="divider">@color/surface_variant</color>
     <color name="status_error">@color/persian_red</color>
     <color name="status_success">@color/green_dark_2</color>
     <color name="update_available_text">#B3261E</color>

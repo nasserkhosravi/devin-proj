@@ -3,7 +3,6 @@ package com.khosravi.devin.present.present
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,8 +22,6 @@ import com.khosravi.devin.present.update.GitHubReleaseSource
 import com.khosravi.devin.present.update.ReleaseInfo
 import com.khosravi.devin.present.update.UpdateChecker
 import com.khosravi.devin.present.update.openReleasePage
-import com.khosravi.devin.present.update.updateMessage
-import com.khosravi.devin.present.update.updateTitle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -49,11 +46,12 @@ class StarterActivity : BaseActivity() {
     lateinit var updateChecker: UpdateChecker
 
     private var updateJob: Job? = null
-    private var forceUpdateDialog: AlertDialog? = null
-    private var optionalUpdateDialog: AlertDialog? = null
 
-    /** Auto-routing to logs held back while [optionalUpdateDialog] is open; runs when it closes. */
+    /** Auto-routing to logs held back while [optionalUpdatePrompt] is open; runs when it closes. */
     private var pendingRoute: (() -> Unit)? = null
+
+    /** The optional update prompt currently shown, or null. */
+    private var optionalUpdatePrompt by mutableStateOf<ReleaseInfo?>(null)
 
     private val viewModel by lazy {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
@@ -78,6 +76,13 @@ class StarterActivity : BaseActivity() {
                     footerText = footerText(availableUpdate),
                     isUpdateAvailable = availableUpdate != null,
                     onFooterClick = { openReleasePage(availableUpdate?.pageUrl ?: GitHubReleaseSource.RELEASES_PAGE_URL) },
+                    forceUpdate = availableUpdate?.takeIf { it.isForceUpdate },
+                    onForceUpdateDownload = { update -> openReleasePage(update.pageUrl) },
+                    // Back on the force-update dialog leaves the app; it can't be dismissed otherwise.
+                    onForceUpdateDismiss = ::finish,
+                    optionalUpdate = optionalUpdatePrompt,
+                    onOptionalUpdateDownload = { closeOptionalUpdatePrompt(openPage = true) },
+                    onOptionalUpdateClose = { closeOptionalUpdatePrompt(openPage = false) },
                 )
             }
         }
@@ -90,7 +95,6 @@ class StarterActivity : BaseActivity() {
         updateJob = launch {
             updateChecker.availableUpdate.collect {
                 availableUpdate = it
-                showForceUpdateDialogIfNeeded(it)
                 showOptionalUpdateDialogIfNeeded(it)
             }
         }
@@ -110,55 +114,30 @@ class StarterActivity : BaseActivity() {
     }
 
     /**
-     * A major-version update blocks the app: the dialog can't be dismissed (back finishes the
-     * activity) and is shown again on every resume, e.g. after returning from the release page.
+     * Shown up to 3 times a day until updated, checked on every resume; answering it ("Later", back,
+     * outside tap, "Download") counts one. An open prompt isn't counted, so after a configuration
+     * change the recreated activity shows it again from onResume.
+     * The force-update dialog needs no trigger: it's visible whenever [availableUpdate] is a force update.
      */
-    private fun showForceUpdateDialogIfNeeded(update: ReleaseInfo?) {
-        if (update?.isForceUpdate != true) {
-            forceUpdateDialog?.dismiss()
-            forceUpdateDialog = null
-            return
-        }
-        if (forceUpdateDialog?.isShowing == true) return
-        forceUpdateDialog = AlertDialog.Builder(this)
-            .setTitle(updateTitle(update))
-            .setMessage(updateMessage(update))
-            .setPositiveButton(R.string.update_action_download) { _, _ -> openReleasePage(update.pageUrl) }
-            .setOnCancelListener { finish() }
-            .create()
-            .apply {
-                setCanceledOnTouchOutside(false)
-                show()
-            }
-    }
-
-    /** Shown up to 3 times a day until updated; answering it ("Later", back, "Download") counts one. */
     private fun showOptionalUpdateDialogIfNeeded(update: ReleaseInfo?) {
         if (update == null || update.isForceUpdate) return
-        if (optionalUpdateDialog?.isShowing == true) return
-        val pending = updateChecker.pendingPrompt() ?: return
-        optionalUpdateDialog = AlertDialog.Builder(this)
-            .setTitle(updateTitle(pending))
-            .setMessage(updateMessage(pending))
-            .setPositiveButton(R.string.update_action_download) { _, _ ->
-                updateChecker.markPrompted()
-                openReleasePage(pending.pageUrl)
-            }
-            .setNegativeButton(R.string.update_action_later) { _, _ ->
-                updateChecker.markPrompted()
-            }
-            .setOnCancelListener { updateChecker.markPrompted() }
-            .setOnDismissListener {
-                val route = pendingRoute
-                pendingRoute = null
-                route?.invoke()
-            }
-            .show()
+        if (optionalUpdatePrompt != null) return
+        optionalUpdatePrompt = updateChecker.pendingPrompt() ?: return
     }
 
-    /** Runs [route] now, or once the optional update dialog is closed if it is showing. */
+    private fun closeOptionalUpdatePrompt(openPage: Boolean) {
+        val prompt = optionalUpdatePrompt ?: return
+        optionalUpdatePrompt = null
+        updateChecker.markPrompted()
+        if (openPage) openReleasePage(prompt.pageUrl)
+        val route = pendingRoute
+        pendingRoute = null
+        route?.invoke()
+    }
+
+    /** Runs [route] now, or once the optional update prompt is closed if it is showing. */
     private fun routeAfterUpdatePrompt(route: () -> Unit) {
-        if (optionalUpdateDialog?.isShowing == true) {
+        if (optionalUpdatePrompt != null) {
             pendingRoute = route
         } else {
             route()
@@ -169,7 +148,7 @@ class StarterActivity : BaseActivity() {
     private fun isBlockedByForceUpdate(): Boolean {
         val update = updateChecker.availableUpdate.value
         if (update?.isForceUpdate != true) return false
-        showForceUpdateDialogIfNeeded(update)
+        availableUpdate = update
         return true
     }
 
@@ -276,12 +255,8 @@ class StarterActivity : BaseActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        forceUpdateDialog?.dismiss()
-        forceUpdateDialog = null
-        // Drop the held-back route so dismissing here doesn't navigate from a destroyed activity.
+        // Drop the held-back route so it never navigates from a destroyed activity.
         pendingRoute = null
-        optionalUpdateDialog?.dismiss()
-        optionalUpdateDialog = null
     }
 
     companion object {

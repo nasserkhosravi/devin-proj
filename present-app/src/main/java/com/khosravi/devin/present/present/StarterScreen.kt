@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -17,17 +18,23 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.window.DialogProperties
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.uikit.theme.spacing
+import com.khosravi.devin.present.update.ReleaseInfo
+import com.khosravi.devin.present.update.updateMessage
+import com.khosravi.devin.present.update.updateTitle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +46,12 @@ fun StarterScreen(
     footerText: String,
     isUpdateAvailable: Boolean,
     onFooterClick: () -> Unit,
+    forceUpdate: ReleaseInfo?,
+    onForceUpdateDownload: (ReleaseInfo) -> Unit,
+    onForceUpdateDismiss: () -> Unit,
+    optionalUpdate: ReleaseInfo?,
+    onOptionalUpdateDownload: () -> Unit,
+    onOptionalUpdateClose: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -85,4 +98,47 @@ fun StarterScreen(
             )
         }
     }
+
+    if (forceUpdate != null) {
+        // Not dismissable by an outside tap; back calls onForceUpdateDismiss.
+        UpdateDialog(
+            update = forceUpdate,
+            onDownload = { onForceUpdateDownload(forceUpdate) },
+            onDismissRequest = onForceUpdateDismiss,
+            onLater = null,
+            properties = DialogProperties(dismissOnClickOutside = false),
+        )
+    }
+    // A pending force update takes over; the optional prompt waits behind it (old code stacked the force dialog on top).
+    if (optionalUpdate != null && forceUpdate == null) {
+        UpdateDialog(
+            update = optionalUpdate,
+            onDownload = onOptionalUpdateDownload,
+            onDismissRequest = onOptionalUpdateClose,
+            onLater = onOptionalUpdateClose,
+        )
+    }
+}
+
+@Composable
+private fun UpdateDialog(
+    update: ReleaseInfo,
+    onDownload: () -> Unit,
+    onDismissRequest: () -> Unit,
+    onLater: (() -> Unit)?,
+    properties: DialogProperties = DialogProperties(),
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(context.updateTitle(update)) },
+        text = { Text(context.updateMessage(update)) },
+        confirmButton = {
+            TextButton(onClick = onDownload) { Text(stringResource(R.string.update_action_download)) }
+        },
+        dismissButton = onLater?.let { later ->
+            { TextButton(onClick = later) { Text(stringResource(R.string.update_action_later)) } }
+        },
+        properties = properties,
+    )
 }
