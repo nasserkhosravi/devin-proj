@@ -35,7 +35,9 @@ fun ClientLoginSheet(
     onWrongPassword: () -> Boolean,
     onDismissed: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    // Edge-to-edge: the sheet's window shrinks above the keyboard, which can make this short sheet taller than half of
+    // what is left; Material3 then settles it at the half-height anchor with Confirm under the keyboard. Always expand.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }

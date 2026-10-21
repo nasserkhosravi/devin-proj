@@ -40,8 +40,9 @@
         <!-- Background -->
         <item name="android:colorBackground">@color/background</item>
 
-        <!-- Status bar -->
-        <item name="android:statusBarColor">@color/surface</item>
+        <!-- System bars: activities draw edge-to-edge (arch/EdgeToEdge.kt), so the bars stay transparent and the
+             Compose content pads itself for the insets. Icon colours are set there too; these cover the first frame. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
 
         <!-- Material 3 shape system - more rounded for expressive -->
