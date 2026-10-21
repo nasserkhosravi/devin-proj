@@ -53,6 +53,7 @@ fun LogScreen(
     calendar: CalendarProxy,
     filters: List<FilterItem>,
     selectedFilterId: String?,
+    ignoreTagChip: Boolean,
     isFilterRowEnabled: Boolean,
     logItems: List<LogListRowItem>,
     isLoading: Boolean,
@@ -146,7 +147,7 @@ fun LogScreen(
                     // position+type marker — better than the implicit positional default, but not
                     // true content-identity diffing.
                     itemsIndexed(logItems, key = { index, rowItem -> "$index-${rowItem::class.simpleName}" }) { _, rowItem ->
-                        LogListRow(calendar, rowItem, onSearchTextChange, onTextLogClick, onHttpLogClick)
+                        LogListRow(calendar, rowItem, ignoreTagChip, onSearchTextChange, onTextLogClick, onHttpLogClick)
                     }
                 }
             }
@@ -161,27 +162,32 @@ fun LogScreen(
 private fun LogListRow(
     calendar: CalendarProxy,
     rowItem: LogListRowItem,
+    ignoreTagChip: Boolean,
     onSearchTextChange: (String?) -> Unit,
     onTextLogClick: (TextLogItemData) -> Unit,
     onHttpLogClick: (HttpLogItemData) -> Unit,
 ) {
     when (rowItem) {
         is LogListRowItem.Search -> SearchBarRow(sessionId = rowItem.sessionId, text = rowItem.text, hint = rowItem.hint, onTextChange = onSearchTextChange)
-        is LogListRowItem.Row -> LogItemDataRow(calendar, rowItem.data, onTextLogClick, onHttpLogClick)
+        is LogListRowItem.Row -> LogItemDataRow(calendar, rowItem.data, ignoreTagChip, onTextLogClick, onHttpLogClick)
     }
 }
 
-/** One log row for a [LogItemData]. Shared by [LogScreen] and [ImportLogScreen]. */
+/**
+ * One log row for a [LogItemData]. Shared by [LogScreen] and [ImportLogScreen].
+ * [ignoreTagChip] hides the tag chip on text rows; set it when every row has the same tag.
+ */
 @Composable
 internal fun LogItemDataRow(
     calendar: CalendarProxy,
     data: LogItemData,
+    ignoreTagChip: Boolean,
     onTextLogClick: (TextLogItemData) -> Unit,
     onHttpLogClick: (HttpLogItemData) -> Unit,
 ) {
     when (data) {
         is DateLogItemData -> DateHeaderRow(calendar, data)
-        is TextLogItemData -> TextLogRow(calendar, data, ignoreTagChip = false, onClick = { onTextLogClick(data) })
+        is TextLogItemData -> TextLogRow(calendar, data, ignoreTagChip = ignoreTagChip, onClick = { onTextLogClick(data) })
         is HttpLogItemData -> HttpLogRow(calendar, data, onClick = { onHttpLogClick(data) })
         is ImageLogItemData -> ImageLogRow(calendar, data)
         is SessionStartLogItemData -> SessionStartRow(calendar, data)

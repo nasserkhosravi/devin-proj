@@ -6,7 +6,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -52,7 +52,10 @@ fun FilterChipsRow(
     onAction: (FilterChipAction) -> Unit,
 ) {
     LazyRow(modifier = Modifier.padding(vertical = MaterialTheme.spacing.xs)) {
-        items(filters, key = { it.id }) { filter ->
+        // Ids are not unique: a custom filter may be titled like a tag, "okhttp", "Index" or another
+        // custom filter, and the list keeps such duplicates. Qualify the key with type and position
+        // so Compose never sees a duplicate key (which would throw).
+        itemsIndexed(filters, key = { index, filter -> "$index-${filter::class.simpleName}-${filter.id}" }) { _, filter ->
             FilterChipView(
                 filter = filter,
                 isSelected = filter.id == selectedId,

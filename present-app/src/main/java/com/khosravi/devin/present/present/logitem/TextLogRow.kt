@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.date.CalendarProxy
+import com.khosravi.devin.present.date.getFormattedWithMillis
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.uikit.theme.LogLevelColors
 import com.khosravi.devin.present.uikit.theme.devinColors
@@ -56,7 +57,7 @@ fun TextLogRow(
     ignoreTagChip: Boolean,
     onClick: () -> Unit,
 ) {
-    val dateText = calendar.initIfNeed(data.timePresent).getFormatted()
+    val dateText = calendar.getFormattedWithMillis(data.timePresent)
     val style = logLevelStyle(data.logLevel)
     val previewText = remember(data.text) { data.text.toRowPreview() }
 
