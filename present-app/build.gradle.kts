@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("kotlin-kapt")
 }
 
@@ -24,10 +25,11 @@ android {
     defaultConfig {
         minSdk = libs.versions.project.minSdk.get().toInt()
         targetSdk = libs.versions.project.targetSdk.get().toInt()
-        versionCode = 5
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        versionCode = 6
+        // Stamps the update-check time before Application.onCreate so the e2e suite never hits GitHub.
+        testInstrumentationRunner = "com.khosravi.devin.present.e2e.E2eTestRunner"
     }
-    val versionName = "\"4.6.0\""
+    val versionName = "\"4.7.0\""
 
     // Only set on CI (see .github/workflows/release-presenter.yml); local release builds stay as before.
     val releaseKeystorePath: String? = System.getenv("PRESENTER_KEYSTORE_PATH")
@@ -63,10 +65,11 @@ android {
         jvmTarget = "1.8"
     }
     buildFeatures {
-        viewBinding = true
         buildConfig = true
+        compose = true
     }
     testOptions {
+        animationsDisabled = true
         unitTests {
             isReturnDefaultValues = true
             // Robolectric tests read app resources (strings) and the merged manifest.
@@ -77,7 +80,7 @@ android {
 
 dependencies {
     implementation(project(mapOf("path" to ":lib-calendar")))
-    implementation(project(mapOf("path" to ":devin")))
+    implementation(project(mapOf("path" to ":devin-write")))
     implementation(project(mapOf("path" to ":devin-write-okhttp")))
     implementation(project(mapOf("path" to ":lib-har")))
 
@@ -91,17 +94,27 @@ dependencies {
     implementation(libs.dagger.android)
     kapt(libs.dagger.compiler)
 
-    implementation(libs.fastadapter)
-    implementation(libs.fastadapter.binding)
-    implementation(libs.fastadapter.expandable)
     implementation(libs.glide)
-    implementation(libs.android.spantastic)
     implementation(libs.gson)
     implementation(libs.appmetrica.analytics)
+
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    debugImplementation(libs.compose.ui.tooling)
+    implementation(libs.activity.compose)
+    implementation(libs.compose.material.icons.core)
+    implementation(libs.navigation.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.json)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.gson)
 
 }

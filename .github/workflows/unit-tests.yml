@@ -1,0 +1,54 @@
+# Runs every module's unit tests on pull requests into main and into release branches, so feature/fix PRs and
+# release PRs are both checked. Make the `unit-tests` job a required status check on main (Settings → Branches)
+# to block merging until it passes (#131).
+name: Unit tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - '*-release-*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unit-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: unit-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      # Gradle fails on JDKs newer than 17 with this project's Gradle/AGP versions.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # local.properties is git-ignored, but the library modules read it, and their Maven Central signing keys,
+      # at configuration time. Tests never publish, and PRs from forks get no secrets, so placeholders are enough.
+      - name: Create local.properties
+        run: |
+          printf '%s\n' \
+            'signingKeyId=unused-on-ci' \
+            'signingKey=unused-on-ci' \
+            'signingKeyPassword=unused-on-ci' > local.properties
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest --continue
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-reports
+          path: '**/build/reports/tests/'
+          if-no-files-found: ignore

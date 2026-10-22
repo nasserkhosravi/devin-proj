@@ -34,8 +34,10 @@ android {
 }
 
 dependencies {
-    api(project(mapOf("path" to ":devin-no-op")))
+    api(project(mapOf("path" to ":devin-write-no-op")))
     api(libs.okhttp)
+
+    testImplementation(libs.junit)
 }
 
 

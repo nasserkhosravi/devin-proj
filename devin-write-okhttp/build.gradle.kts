@@ -31,15 +31,24 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    testOptions {
+        // InternalLogger calls android.util.Log, which the unit-test stub jar would otherwise throw on.
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
 
-    implementation(project(mapOf("path" to ":devin")))
+    implementation(project(mapOf("path" to ":devin-write")))
     implementation(libs.gson)
 
     api(libs.okhttp)
 
+    testImplementation(libs.junit)
+    // The real org.json, since HarMapper uses it and Android's stub throws in JVM tests.
+    testImplementation(libs.json)
+    // A real android.net.Uri, which the logger needs to update a stored call after its response or failure.
+    testImplementation(libs.robolectric)
 }
 
 val projProps: MutableMap<String, *> = project.properties

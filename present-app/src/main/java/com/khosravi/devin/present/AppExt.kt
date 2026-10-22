@@ -10,27 +10,11 @@ import androidx.activity.result.ActivityResult
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
-import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.DatePresent
 import com.khosravi.devin.present.date.DumbDate
 import com.khosravi.devin.present.date.DumbTime
 import com.khosravi.devin.present.date.TimePresent
 import com.khosravi.devin.present.formatter.TextualReport
-import com.khosravi.devin.present.log.DateLogItemData
-import com.khosravi.devin.present.log.HeaderLogDateItem
-import com.khosravi.devin.present.log.HttpLogItemData
-import com.khosravi.devin.present.log.HttpLogItemView
-import com.khosravi.devin.present.log.ImageLogItem
-import com.khosravi.devin.present.log.ImageLogItemData
-import com.khosravi.devin.present.log.LogItemData
-import com.khosravi.devin.present.log.ReplicatedTextLogItem
-import com.khosravi.devin.present.log.ReplicatedTextLogItemData
-import com.khosravi.devin.present.log.SessionStartLogItem
-import com.khosravi.devin.present.log.SessionStartLogItemData
-import com.khosravi.devin.present.log.TextLogItem
-import com.khosravi.devin.present.log.TextLogItemData
-import com.khosravi.devin.present.log.TextLogSubItem
-import com.mikepenz.fastadapter.GenericItem
 import io.github.nasserkhosravi.calendar.iranian.PersianCalendar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -63,23 +47,6 @@ fun getPersianDateTimeFormatted(timestamp: Long): String {
     val dumbDate = DumbDate(persianCalendar.getYear(), persianCalendar.getMonth() + 1, persianCalendar.getDay())
     return "${DatePresent.getFormatted(dumbDate)} ${TimePresent.getFormatted(dumbTime)}"
 }
-
-fun List<LogItemData>.toItemViewHolder(calendar: CalendarProxy, ignoreShowingTag: Boolean?): List<GenericItem> {
-    return map { item ->
-        when (item) {
-            is DateLogItemData -> HeaderLogDateItem(calendar, item)
-            is TextLogItemData -> TextLogItem(calendar, item, ignoreShowingTag)
-            is HttpLogItemData -> HttpLogItemView(calendar, item)
-            is ImageLogItemData -> ImageLogItem(calendar, item)
-            is SessionStartLogItemData -> SessionStartLogItem(calendar, item)
-            is ReplicatedTextLogItemData -> ReplicatedTextLogItem(calendar, item).apply {
-                subItems = data.list.map { TextLogSubItem(calendar, it, this) }.toMutableList()
-            }
-
-        }
-    }
-}
-
 
 @SuppressLint("Recycle")
 fun ContentResolver.writeTextToUri(uri: Uri, text: String): Boolean {

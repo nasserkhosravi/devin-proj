@@ -1,7 +1,9 @@
 package com.khosravi.devin.present.present
 
 import android.app.Application
+import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.AndroidViewModel
@@ -34,6 +36,7 @@ import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.SessionStartLogItemData
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.optInt
+import com.khosravi.devin.present.readTextAndClose
 import com.khosravi.devin.read.DevinImageFlagsApi
 import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.read.DevinUriHelper
@@ -42,7 +45,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -51,6 +56,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class ReaderViewModel constructor(
@@ -66,6 +72,11 @@ class ReaderViewModel constructor(
     private val _uiStateFlow = MutableStateFlow(ResultUiState(null, null, ResultUiState.UpdateInfo(), pageInfo = pageInfo))
     private var lastDayHeaderDate: Int? = null
 
+    private val _importedLogs = MutableStateFlow<ImportResult?>(null)
+    /** Result of [loadImportedLogs]; null while loading. */
+    val importedLogs: StateFlow<ImportResult?> = _importedLogs.asStateFlow()
+    private var importStarted = false
+
     val uiState = _uiStateFlow.asStateFlow()
     val nextPageFlow = MutableSharedFlow<ResultNextPage>(replay = 1)
 
@@ -76,10 +87,43 @@ class ReaderViewModel constructor(
         }.flowOn(Dispatchers.Default)
     }
 
-    fun convertImportedLogsToPresentableLogItems(content: String): Flow<List<LogItemData>> {
+    /**
+     * Reads and converts the imported file at [uri] once per ViewModel; later calls (e.g. after a
+     * configuration change) are no-ops and the cached result stays in [importedLogs].
+     */
+    fun loadImportedLogs(uri: Uri?) {
+        if (importStarted) return
+        importStarted = true
+        viewModelScope.launch {
+            val content = uri?.let { readImportedText(it) }
+            _importedLogs.value = when {
+                content == null -> ImportResult.ReadFailed
+                content.isEmpty() -> ImportResult.Empty
+                else -> {
+                    // Malformed JSON converts to an empty list too.
+                    val logs = convertImportedLogsToPresentableLogItems(content).first()
+                    if (logs.isEmpty()) ImportResult.Empty else ImportResult.Loaded(logs)
+                }
+            }
+        }
+    }
+
+    /** Null on any failure, e.g. FileNotFoundException/SecurityException when the read grant is gone. */
+    @SuppressLint("Recycle") // readTextAndClose closes the stream
+    private suspend fun readImportedText(uri: Uri): String? = withContext(Dispatchers.IO) {
+        runCatching {
+            getApplication<Application>().contentResolver.openInputStream(uri)?.readTextAndClose()
+        }.getOrNull()
+    }
+
+    private fun convertImportedLogsToPresentableLogItems(content: String): Flow<List<LogItemData>> {
         return flow {
             emit(InterAppJsonConverter.import(content))
         }.map {
+            // An import is a fresh, self-contained list: don't let a previous run's (or the paging
+            // path's) last header suppress its first date header. This ViewModel instance belongs to
+            // ImportLogActivity, so LogActivity's paging state is unaffected.
+            lastDayHeaderDate = null
             val logsWithHeaders = addDateHeadersByDay(it, calendar)
             //TODO: temporary disabled, use a setting flag
 //            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
@@ -473,6 +517,12 @@ class ReaderViewModel constructor(
         }
         appPref.theme = newNightMode
         AppCompatDelegate.setDefaultNightMode(newNightMode)
+    }
+
+    sealed interface ImportResult {
+        object ReadFailed : ImportResult
+        object Empty : ImportResult
+        class Loaded(val logs: List<LogItemData>) : ImportResult
     }
 
     data class ResultUiState(

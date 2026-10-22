@@ -78,6 +78,14 @@ data class HttpLogDetailData(
     val responseBodyMimeType: String?
         get() = harEntry.response?.content?.mimeType
 
+    /** Why the stored request body differs from what was sent (e.g. cut to the client's size limit), if it does. */
+    val requestBodyNote: String?
+        get() = harEntry.request.postData?.comment?.takeIf { it.isNotBlank() }
+
+    /** Why the stored response body differs from what was received (cut, or a note for a binary body), if it does. */
+    val responseBodyNote: String?
+        get() = harEntry.response?.content?.comment?.takeIf { it.isNotBlank() }
+
 
     fun statusString(): String {
         return when (transactionStatus) {

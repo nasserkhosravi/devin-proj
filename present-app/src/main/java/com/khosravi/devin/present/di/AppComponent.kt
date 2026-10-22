@@ -7,8 +7,6 @@ import dagger.Component
 import com.khosravi.devin.present.present.LogActivity
 import com.khosravi.devin.present.PresentApplication
 import com.khosravi.devin.present.arch.BaseActivity
-import com.khosravi.devin.present.present.LogExportDialog
-import com.khosravi.devin.present.present.LogItemDetailActivity
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.ImportLogActivity
 import com.khosravi.devin.present.present.StarterActivity
@@ -34,11 +32,7 @@ interface AppComponent {
 
     fun inject(activity: HttpLogDetailActivity)
 
-    fun inject(activity: LogItemDetailActivity)
-
     fun inject(activity: SettingsActivity)
-
-    fun inject(dialog: LogExportDialog)
 
     fun updateChecker(): UpdateChecker
 

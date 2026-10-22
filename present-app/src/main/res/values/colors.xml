@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--old color palate-->
-    <color name="green_dark_2">#22A958</color>
-    <color name="white_light_1">#ffffff</color>
-    <color name="persian_red">#d32f2f</color>
+    <!-- Single colour source for the XML Theme.App and the Compose DevinTheme (uikit/theme/Theme.kt). -->
 
     <!-- Material 3 Expressive Theme Colors -->
     <color name="background">#FEF7FF</color>
-    <color name="surface">#FFFFFF</color>
+    <color name="on_background">#1C1B1F</color>
+    <color name="surface">#FEF7FF</color>
 
     <!-- Primary colors -->
     <color name="primary">#6750A4</color>
@@ -21,6 +19,18 @@
     <color name="secondary_container">#E8DEF8</color>
     <color name="on_secondary_container">#1D192B</color>
 
+    <!-- Tertiary colors -->
+    <color name="tertiary">#7D5260</color>
+    <color name="on_tertiary">#FFFFFF</color>
+    <color name="tertiary_container">#FFD8E4</color>
+    <color name="on_tertiary_container">#31111D</color>
+
+    <!-- Error colors -->
+    <color name="error">#B3261E</color>
+    <color name="on_error">#FFFFFF</color>
+    <color name="error_container">#F9DEDC</color>
+    <color name="on_error_container">#410E0B</color>
+
     <!-- Surface colors -->
     <color name="surface_variant">#E7E0EC</color>
     <color name="on_surface">#1C1B1F</color>
@@ -28,18 +38,13 @@
     <color name="outline">#79747E</color>
     <color name="outline_variant">#CAC4D0</color>
 
-    <!-- Text colors -->
-    <color name="text_primary">#1C1B1F</color>
-    <color name="text_secondary">#49454F</color>
-    <color name="text_tertiary">#79747E</color>
-
     <!--component color-->
 
     <color name="colorHttpJsonKey">#8B0057</color>
     <color name="colorHttpJsonValue">#2F00FF</color>
-    <color name="colorHttpJsonDigit_null_value">#E84B31</color>
+    <color name="colorHttpJsonDigit_null_value">#BF360C</color>
     <color name="colorHttpJsonElements">#474747</color>
-    <color name="colorHttpJsonBoolean">#2F99AA</color>
+    <color name="colorHttpJsonBoolean">#00796B</color>
 
     <!-- Error level (Material 3) -->
     <color name="log_error_container">#F9DEDC</color>
@@ -74,17 +79,27 @@
     <!-- OkHttp tag filter chip (attention-grabbing) -->
     <color name="tag_okhttp_container_selected">#00ACC1</color>
     <color name="tag_okhttp_container_unselected">#B2EBF2</color>
-    <color name="tag_okhttp_text_selected">#FFFFFF</color>
+    <color name="tag_okhttp_text_selected">#00363D</color>
     <color name="tag_okhttp_text_unselected">#006064</color>
 
-    <color name="divider">@color/surface_variant</color>
-    <color name="status_error">@color/persian_red</color>
-    <color name="status_success">@color/green_dark_2</color>
+    <color name="status_error">#B3261E</color>
+    <color name="status_success">#146C3A</color>
     <color name="update_available_text">#B3261E</color>
 
     <color name="session_start_background">#5142B5</color>
     <color name="session_start_text">#FFFFFF</color>
     <color name="session_start_secondary_text">#DED8FF</color>
     <color name="session_start_dot">#ACA2E8</color>
+    <!-- White 12% overlay behind the version/date pills, and the text on it. -->
+    <color name="session_start_pill">#1FFFFFFF</color>
+    <color name="session_start_pill_text">#FFFFFF</color>
+
+    <!-- HTTP body search -->
+    <color name="search_match_background">#FFE082</color>
+    <color name="search_match_text">#1C1B1F</color>
+    <color name="search_current_match_background">#FFB74D</color>
+    <color name="search_current_match_text">#1C1B1F</color>
+    <color name="search_counter_background">#146C3A</color>
+    <color name="search_counter_text">#FFFFFF</color>
 
 </resources>

@@ -1,0 +1,198 @@
+package com.khosravi.devin.write
+
+import android.content.Context
+import android.util.Log
+import com.khosravi.devin.api.DevinLogger
+import com.khosravi.devin.read.DevinLogFlagsApi
+import com.khosravi.devin.write.ext.InternalExt.getAppVersionNameAndCode
+import com.khosravi.devin.write.ext.InternalExt.getSessionStartPayload
+import org.json.JSONObject
+
+internal class LoggerImpl(
+    private val logCore: LogCore,
+) : DevinLogger {
+
+    private val devinExceptionLogger: DevinExceptionLogger by lazy { DevinExceptionLogger(logCore) }
+
+    override fun doIfEnable(action: (DevinLogger) -> Unit) {
+        if (logCore.isEnable()) {
+            action(this)
+        }
+    }
+
+    override fun debug(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.DEBUG, payload, throwable)
+    }
+
+    override fun info(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.INFO, payload, throwable)
+    }
+
+    override fun error(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.ERROR, payload, throwable)
+    }
+
+    override fun warning(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.WARN, payload, throwable)
+    }
+
+    override fun verbose(tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.VERBOSE, payload, throwable)
+    }
+
+    override fun send(logLevel: Int, tag: String?, message: String, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, logLevel, payload, throwable)
+    }
+
+    override fun debug(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.DEBUG, payload, throwable, meta)
+    }
+
+    override fun info(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.INFO, payload, throwable, meta)
+    }
+
+    override fun warning(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.WARN, payload, throwable, meta)
+    }
+
+    override fun error(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.ERROR, payload, throwable, meta)
+    }
+
+    override fun verbose(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.VERBOSE, payload, throwable, meta)
+    }
+
+    override fun send(logLevel: Int, tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, logLevel, payload, throwable, meta)
+    }
+
+    override fun logCallerFunc() {
+        if (!logCore.isEnable()) {
+            return
+        }
+        // One for logCallerFunc parent
+        // And add another one if [logCallerFunc] has default parameter
+        val result = TraceLogger.callerFuncInfo(1, true)
+        if (result.isSuccess) {
+            val analysed = result.getOrThrow()
+            val parenName = analysed.parenName
+            if (parenName.isNullOrEmpty()) {
+                sendLog(LOG_TAG_FUNC_TRACE, analysed.methodName, null)
+                return
+            }
+            val fParentName: String = returnSimplifiedParentName(analysed)
+            sendLog(LOG_TAG_FUNC_TRACE, "$fParentName ${analysed.methodName}", analysed.toJsonString())
+        } else {
+            sendLog(LOG_TAG_FUNC_TRACE, result.exceptionOrNull()!!.message!!, null)
+        }
+    }
+
+    override fun logSessionStart(
+        context: Context,
+        message: String?,
+        payload: String?,
+    ) {
+        val packageInfo = try {
+            val packageManager = context.packageManager
+            val packageName = context.packageName
+            packageManager.getPackageInfo(packageName, 0)
+        } catch (_: Exception) {
+            Log.e("Devin", "Can't get package-info for session start")
+            null
+        } ?: return
+
+        try {
+            val (appVersionName, appVersionCode) = getAppVersionNameAndCode(packageInfo)
+            val fPayload = payload ?: getSessionStartPayload(context, packageInfo)
+            val fMessage = message ?: "----Session Started: ${appVersionName}($appVersionCode) ---- "
+            info(tag = DevinLogFlagsApi.TAG_SESSION_START, fMessage, payload = fPayload)
+        } catch (e: Exception) {
+            Log.e("Devin", "Can't log session start")
+        }
+    }
+
+    override fun generalUncaughtExceptionLogging(isEnable: Boolean) {
+        devinExceptionLogger.generalUncaughtExceptionLogging(isEnable)
+    }
+
+    private fun sendLog(tag: String?, value: String, meta: JSONObject? = null) {
+        logCore.insertLogAsync(tag, value, typeId = null, meta = meta.toString())
+    }
+
+    /**
+     * @return simplified version of parent name because stacktrace classname is full package
+     * For example: the function get com.example.abc.HelloWord.kt then return HelloWord.kt
+     */
+    private fun returnSimplifiedParentName(analysed: TraceLogger.AnalysedStacktrace): String {
+        val parenName = analysed.parenName
+        require(!parenName.isNullOrEmpty())
+        return if (analysed.isClassName) {
+            //remove package to simplify returned class name because
+            parenName.substring(parenName.lastIndexOf(".") + 1)
+        } else parenName
+    }
+
+    private fun sendUserLog(
+        tag: String?,
+        value: String,
+        logLevel: Int,
+        payload: String?,
+        throwable: Throwable? = null,
+        fields: Map<String, Any?>? = null,
+    ) {
+        if (logCore.isEnable().not()) return
+        val meta = createMetaFromUserPayload(logLevel, payload, throwable)
+        if (!fields.isNullOrEmpty()) {
+            meta.put(DevinLogFlagsApi.KEY_LOG_FIELDS, LogFields.toJson(fields))
+        }
+        sendLog(tag, value, meta)
+    }
+
+    private fun TraceLogger.AnalysedStacktrace.toJsonString() = JSONObject()
+        .put(KEY_META_TYPE, LOG_TAG_FUNC_TRACE)
+        .put(KEY_LOG_FUNC_TRACE_METHOD_NAME, methodName)
+        .put(KEY_LOG_FUNC_TRACE_PARENT_NAME, parenName)
+        .put(KEY_LOG_FUNC_TRACE_CLASS_NAME, isClassName)
+
+    private fun createMetaFromUserPayload(logLevel: Int, payload: String?, throwable: Throwable?) = JSONObject()
+        .put(KEY_META_TYPE, VALUE_LOG_META_TYPE)
+        .commonMeta(logLevel, payload, throwable)
+
+    companion object {
+
+        const val LOG_TAG_UNTAG = "untag"
+        const val KEY_META_TYPE = "meta_type"
+
+        //log
+        const val VALUE_LOG_META_TYPE = "user_log"
+        const val KEY_LOG_PAYLOAD = "payload"
+        const val KEY_LOG_THROWABLE = "throwable"
+
+        //log trace
+        const val LOG_TAG_FUNC_TRACE = "devin_trace"
+        private const val KEY_LOG_FUNC_TRACE_METHOD_NAME = "method_name"
+        private const val KEY_LOG_FUNC_TRACE_PARENT_NAME = "parent_name"
+        private const val KEY_LOG_FUNC_TRACE_CLASS_NAME = "is_class_name"
+
+        /**
+         * the logs that their source are devin components.
+         */
+        fun createMetaForComponentLogs(metaTypeId: String, logLevel: Int, payload: String?, throwable: Throwable?) = JSONObject()
+            .put(KEY_META_TYPE, metaTypeId)
+            .commonMeta(logLevel, payload, throwable)
+
+        private fun JSONObject.commonMeta(logLevel: Int, payload: String?, throwable: Throwable?): JSONObject {
+            return put(DevinLogFlagsApi.KEY_LOG_LEVEL, logLevel)
+                .apply {
+                    if (payload != null) {
+                        put(KEY_LOG_PAYLOAD, payload)
+                    }
+                    if (throwable != null) {
+                        put(KEY_LOG_THROWABLE, Log.getStackTraceString(throwable))
+                    }
+                }
+        }
+    }
+}

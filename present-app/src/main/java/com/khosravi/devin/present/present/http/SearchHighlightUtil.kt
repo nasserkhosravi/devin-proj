@@ -27,6 +27,23 @@ internal fun CharSequence.indicesOf(input: String): List<Int> =
         .map { it.range.first }
         .toCollection(mutableListOf())
 
+/**
+ * Start indices of the literal (not regex), case-insensitive, non-overlapping occurrences of [query].
+ * An empty [query] has no occurrences.
+ */
+internal fun CharSequence.literalIndicesOf(query: String): List<Int> {
+    if (query.isEmpty()) return emptyList()
+    val result = mutableListOf<Int>()
+    var from = 0
+    while (true) {
+        val index = indexOf(query, from, ignoreCase = true)
+        if (index < 0) break
+        result += index
+        from = index + query.length
+    }
+    return result
+}
+
 internal fun SpannableStringBuilder.highlightWithDefinedColorsSubstring(
     search: String,
     startIndex: Int,
