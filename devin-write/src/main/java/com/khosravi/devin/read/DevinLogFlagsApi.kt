@@ -22,4 +22,7 @@ object DevinLogFlagsApi {
     const val KEY_META_TYPE = "meta_type"
     const val KEY_LOG_THROWABLE = "throwable"
 
+    /** Structured fields of a log (a JSON object), from the `meta` overloads of [com.khosravi.devin.api.DevinLogger]. */
+    const val KEY_LOG_FIELDS = "fields"
+
 }
