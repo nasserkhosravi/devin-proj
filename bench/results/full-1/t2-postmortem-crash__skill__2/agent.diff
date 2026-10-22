@@ -1,0 +1,24 @@
+diff --git a/app/src/main/java/com/khosravi/devin/bench/ProductMapper.kt b/app/src/main/java/com/khosravi/devin/bench/ProductMapper.kt
+index 5beb09a..0258bf3 100644
+--- a/app/src/main/java/com/khosravi/devin/bench/ProductMapper.kt
++++ b/app/src/main/java/com/khosravi/devin/bench/ProductMapper.kt
+@@ -13,8 +13,18 @@ object ProductMapper {
+         )
+     }
+ 
++    /** Returns null for items with missing/null/invalid fields (e.g. `"price": null`). */
++    fun mapOrNull(json: JSONObject?): Product? {
++        if (json == null || json.isNull("price") || json.isNull("name") || json.isNull("id")) return null
++        return try {
++            map(json)
++        } catch (e: org.json.JSONException) {
++            null
++        }
++    }
++
+     fun mapList(body: String): List<Product> {
+         val array = JSONArray(body)
+-        return (0 until array.length()).map { index -> map(array.getJSONObject(index)) }
++        return (0 until array.length()).mapNotNull { index -> mapOrNull(array.optJSONObject(index)) }
+     }
+ }

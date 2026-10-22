@@ -1,0 +1,17 @@
+diff --git a/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt b/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt
+index a4edc7e..78be7de 100644
+--- a/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt
++++ b/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt
+@@ -7,6 +7,12 @@ object CheckoutParser {
+     fun parse(httpCode: Int, body: String): CheckoutResult {
+         if (httpCode !in 200..299) return CheckoutResult.Failure("HTTP_$httpCode", "Server error")
+         val json = JSONObject(body)
++        if (json.optString("status") == "error" || json.has("code") || json.optString("orderId").isEmpty()) {
++            return CheckoutResult.Failure(
++                json.optString("code", "INVALID_RESPONSE"),
++                json.optString("message", "Checkout failed")
++            )
++        }
+         return CheckoutResult.Success(json.optString("orderId"))
+     }
+ }

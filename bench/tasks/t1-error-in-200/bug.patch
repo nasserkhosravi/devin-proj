@@ -1,0 +1,14 @@
+--- a/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt	2026-10-22 12:53:40
++++ b/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt	2026-10-22 12:56:46
+@@ -7,10 +7,6 @@
+     fun parse(httpCode: Int, body: String): CheckoutResult {
+         if (httpCode !in 200..299) return CheckoutResult.Failure("HTTP_$httpCode", "Server error")
+         val json = JSONObject(body)
+-        // The backend reports business errors with HTTP 200 and status "error".
+-        if (json.optString("status") == "error") {
+-            return CheckoutResult.Failure(json.optString("code"), json.optString("message"))
+-        }
+-        return CheckoutResult.Success(json.getString("orderId"))
++        return CheckoutResult.Success(json.optString("orderId"))
+     }
+ }

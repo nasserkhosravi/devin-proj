@@ -1,0 +1,31 @@
+{
+  "task": "t2-postmortem-crash",
+  "condition": "baseline",
+  "repeat": 2,
+  "model": "sonnet",
+  "models_used": [
+    "claude-haiku-5-5",
+    "claude-sonnet-5-5"
+  ],
+  "non_claude_model": false,
+  "success": true,
+  "rootcause_pass": true,
+  "test_pass": true,
+  "root_cause": "Root cause: The backend returned a product with `\"price\": null`, and `ProductMapper.map` called `getLong(\"price\")`, which throws an uncaught `JSONException` on the background thread and crashes the app.",
+  "cost_usd": 0.19478630000000002,
+  "num_turns": 20,
+  "duration_s": 91.6,
+  "input_tokens": 34,
+  "cache_read_tokens": 440138,
+  "cache_creation_tokens": 26797,
+  "output_tokens": 4336,
+  "tool_calls": 19,
+  "bash_calls": 16,
+  "logcat_calls": 4,
+  "devin_calls": 7,
+  "skill_loaded": false,
+  "peeked": false,
+  "stop_reason": "success",
+  "timed_out": false,
+  "dropbox_calls": 0
+}

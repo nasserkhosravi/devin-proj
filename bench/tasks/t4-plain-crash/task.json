@@ -1,0 +1,5 @@
+{
+  "kind": "live crash",
+  "expected": "tie",
+  "grade_test": "CartCalculatorGradeTest"
+}
