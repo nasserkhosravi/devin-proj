@@ -30,6 +30,13 @@ interface DevinOkHttpLogger {
     /** Turns the default rules on or off. Rules added with the methods above always apply. */
     fun setDefaultRedactionEnabled(enabled: Boolean)
 
+    /**
+     * Request and response bodies larger than [bytes] are stored cut to their first [bytes] (default 32 KB), and
+     * the HAR entry's `comment` says so. Binary bodies (images, protobuf, ...) are never stored; a short note like
+     * `[binary body, 1.2 MB, image/png]` takes their place. Pass 0 or less to store bodies whole.
+     */
+    fun setMaxBodySize(bytes: Long)
+
     fun addBodyDecoder(decoder: DevinOkHttpBodyDecoder)
 }
 

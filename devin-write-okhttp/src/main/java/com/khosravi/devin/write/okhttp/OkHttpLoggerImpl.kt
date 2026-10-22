@@ -26,6 +26,9 @@ internal class OkHttpLoggerImpl internal constructor(
     private var logSkipper: ((Request) -> Boolean)? = null
 
     internal val redactor = Redactor()
+
+    @Volatile
+    internal var maxBodyBytes: Long = DEFAULT_MAX_BODY_BYTES
     internal var bodyDecoders = ArrayList<DevinOkHttpBodyDecoder>().apply {
         add(DefaultTextDecoder)
     }
@@ -62,6 +65,11 @@ internal class OkHttpLoggerImpl internal constructor(
     override fun setDefaultRedactionEnabled(enabled: Boolean) {
         if (isEnable.not()) return
         redactor.defaultsEnabled = enabled
+    }
+
+    override fun setMaxBodySize(bytes: Long) {
+        if (isEnable.not()) return
+        maxBodyBytes = bytes
     }
 
     override fun addBodyDecoder(decoder: DevinOkHttpBodyDecoder) {
@@ -144,5 +152,6 @@ internal class OkHttpLoggerImpl internal constructor(
 
     companion object {
         private const val KEY_INDEX_URL = "url"
+        private const val DEFAULT_MAX_BODY_BYTES = 32L * 1024
     }
 }

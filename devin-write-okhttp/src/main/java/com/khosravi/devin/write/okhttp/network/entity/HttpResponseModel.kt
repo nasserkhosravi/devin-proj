@@ -19,6 +19,10 @@ internal data class HttpResponseModel(
 
     val connection: String?,
     val serverIpAddress: String?,
+    /** The stored body is only the first part of the original, see [bodyNote]. */
+    val isBodyTruncated: Boolean = false,
+    /** Why the stored body differs from the original (cut, or binary), for the HAR `comment`. */
+    val bodyNote: String? = null,
 ) {
     fun getHeadersAsList(): List<HttpHeaderModel> {
         return responseHeaders.let { JsonConverter.deserializeAsHttpHeaderList(it) } ?: emptyList()

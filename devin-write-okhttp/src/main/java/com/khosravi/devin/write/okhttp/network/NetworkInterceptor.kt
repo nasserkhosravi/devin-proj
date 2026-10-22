@@ -10,7 +10,7 @@ import java.io.IOException
 
 internal class NetworkInterceptor(private val logger: OkHttpLoggerImpl) : Interceptor {
 
-    private val logProcessor = HttpLogProcessor(logger.redactor, logger.bodyDecoders)
+    private val logProcessor = HttpLogProcessor(logger.redactor, logger.bodyDecoders) { logger.maxBodyBytes }
 
     @Throws(IOException::class)
     override fun intercept(chain: Interceptor.Chain): Response {

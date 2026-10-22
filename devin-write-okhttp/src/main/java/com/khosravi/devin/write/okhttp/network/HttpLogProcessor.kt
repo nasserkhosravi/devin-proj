@@ -18,7 +18,12 @@ import java.io.IOException
 internal class HttpLogProcessor(
     private val redactor: Redactor,
     private val bodyDecoders: Iterable<DevinOkHttpBodyDecoder>,
+    /** Bodies larger than this many bytes are cut to this size. 0 or less: no limit. */
+    private val maxBodyBytes: () -> Long,
 ) {
+
+    /** A body as stored: its text (or a note for binary bodies), and whether it was cut. */
+    private class CapturedBody(val text: String?, val isTruncated: Boolean, val note: String?)
 
     internal fun processRequest(request: Request): HttpRequestModel {
         val requestDate = System.currentTimeMillis()
@@ -28,31 +33,33 @@ internal class HttpLogProcessor(
         val requestContentType = request.body?.contentType()?.toString()
         val requestPayloadSize = request.body?.contentLength()
 
-        val decodedContent = decodeRequestPayload(request)
-        val isRequestBodyEncoded = decodedContent == null
+        val captured = captureRequestBody(request)
+        val isRequestBodyEncoded = captured.text == null
         val headerSize = request.headers.byteCount()
         return HttpRequestModel(
             requestHeadersSize = headerSize,
             requestHeaders = headers,
             requestContentSize = requestPayloadSize,
-            requestBody = decodedContent,
+            requestBody = captured.text,
             requestContentType = requestContentType,
             isRequestBodyEncoded = isRequestBodyEncoded,
             method = request.method,
-            requestDate = requestDate
+            requestDate = requestDate,
+            isRequestBodyTruncated = captured.isTruncated,
+            requestBodyNote = captured.note,
         )
     }
 
 
-    private fun decodeRequestPayload(request: Request): String? {
-        val body = request.body ?: return null
+    private fun captureRequestBody(request: Request): CapturedBody {
+        val body = request.body ?: return NO_BODY
         if (body.isOneShot()) {
             InternalLogger.info("Skipping one shot request body")
-            return null
+            return NO_BODY
         }
         if (body.isDuplex()) {
             InternalLogger.info("Skipping duplex request body")
-            return null
+            return NO_BODY
         }
 
         val requestSource =
@@ -60,9 +67,19 @@ internal class HttpLogProcessor(
                 Buffer().apply { body.writeTo(this) }
             } catch (e: IOException) {
                 InternalLogger.error("Failed to read request payload", e)
-                return null
+                return NO_BODY
             }
-        return decodeRequestPayload(request, requestSource.readByteString())
+        // The request is already in memory; only the part kept is decoded and stored.
+        val size = requestSource.size
+        val limit = maxBodyBytes()
+        val kept = if (limit in 1 until size) limit else size
+        val text = decodeRequestPayload(request, requestSource.readByteString(kept))
+        val contentType = body.contentType()?.toString()
+        return when {
+            text == null && size > 0 -> binaryBody(size, contentType)
+            kept < size -> CapturedBody(text, isTruncated = true, cutNote(kept, size))
+            else -> CapturedBody(text, isTruncated = false, note = null)
+        }
     }
 
     private fun decodeRequestPayload(
@@ -123,12 +140,11 @@ internal class HttpLogProcessor(
             )
         }
 
-        val responseBodyString: String? = try {
-            //TODO: maybe we need to a better out of memory exception handing
-            decodePayload(response)
+        val captured: CapturedBody = try {
+            captureResponseBody(response)
         } catch (e: Exception) {
             InternalLogger.error("Failed to read response", e)
-            null
+            NO_BODY
         }
 
         return HttpResponseModel(
@@ -142,15 +158,48 @@ internal class HttpLogProcessor(
             responseCipherSuite,
             responseContentType,
             tookMs,
-            decodedBody = responseBodyString,
+            decodedBody = captured.text,
             responseBody.contentLength(),
             connection,
-            serverIpAddress
+            serverIpAddress,
+            isBodyTruncated = captured.isTruncated,
+            bodyNote = captured.note,
         )
     }
 
-    private fun decodePayload(response: Response): String? {
-        val byteString = response.peekBody(Long.MAX_VALUE).byteString()
+    /**
+     * Reads the response body without consuming it. A plain (not compressed) body is only read up to the limit,
+     * which saves memory and CPU on large responses. A compressed body (gzip, br) is read whole, because a cut
+     * compressed body can't be decompressed by a body decoder; its decoded text is cut instead.
+     */
+    private fun captureResponseBody(response: Response): CapturedBody {
+        val limit = maxBodyBytes()
+        val contentType = response.body?.contentType()?.toString()
+        val declaredSize = response.body?.contentLength()?.takeIf { it >= 0 }
+        val isCompressed = response.header("Content-Encoding")?.let { !it.equals("identity", ignoreCase = true) } ?: false
+
+        if (!isCompressed && limit > 0) {
+            val peeked = response.peekBody(limit + 1).byteString()
+            val isCut = peeked.size > limit
+            val text = decodePayload(response, if (isCut) peeked.substring(0, limit.toInt()) else peeked)
+            return when {
+                text == null && peeked.size > 0 -> binaryBody(declaredSize ?: peeked.size.toLong(), contentType, sizeAtLeast = isCut && declaredSize == null)
+                isCut -> CapturedBody(text, isTruncated = true, cutNote(limit, declaredSize))
+                else -> CapturedBody(text, isTruncated = false, note = null)
+            }
+        }
+
+        val whole = response.peekBody(Long.MAX_VALUE).byteString()
+        val text = decodePayload(response, whole)
+        return when {
+            text == null && whole.size > 0 -> binaryBody(declaredSize ?: whole.size.toLong(), contentType)
+            text != null && limit > 0 && text.length > limit ->
+                CapturedBody(text.take(limit.toInt()), isTruncated = true, "Devin kept the first $limit characters of the decoded body (${text.length} characters).")
+            else -> CapturedBody(text, isTruncated = false, note = null)
+        }
+    }
+
+    private fun decodePayload(response: Response, byteString: ByteString): String? {
         return bodyDecoders.asSequence()
             .mapNotNull { decoder ->
                 try {
@@ -163,4 +212,23 @@ internal class HttpLogProcessor(
     }
 
     //end region
+
+    private companion object {
+        val NO_BODY = CapturedBody(null, isTruncated = false, note = null)
+
+        /** Binary bodies (images, protobuf, ...) aren't stored; a short note says what was there. */
+        fun binaryBody(size: Long, contentType: String?, sizeAtLeast: Boolean = false): CapturedBody {
+            val note = "[binary body, ${if (sizeAtLeast) "over " else ""}${formatSize(size)}${contentType?.let { ", $it" } ?: ""}]"
+            return CapturedBody(note, isTruncated = false, note = note)
+        }
+
+        fun cutNote(kept: Long, original: Long?): String =
+            "Devin kept the first ${formatSize(kept)} of " + (original?.let { formatSize(it) } ?: "a larger body") + "."
+
+        fun formatSize(bytes: Long): String = when {
+            bytes >= 1024 * 1024 -> String.format(java.util.Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0))
+            bytes >= 1024 -> "${bytes / 1024} KB"
+            else -> "$bytes B"
+        }
+    }
 }
