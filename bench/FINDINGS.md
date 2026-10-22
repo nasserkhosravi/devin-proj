@@ -7,7 +7,7 @@
 ## Setup
 
 - 4 seeded bugs in `bench-app` (see `docs/superpowers/specs/2026-10-22-devin-agent-benchmark-design.md`), 2 conditions, 2 repeats = 16 runs.
-- **baseline:** the app writes to Devin and present-app is installed, but the agent gets no Devin instructions. **skill:** the same, plus `skill/devin-logs/SKILL.md`.
+- **baseline:** the app writes to Devin and present-app is installed, but the agent gets no Devin instructions. **skill:** the same, plus the first version of the skill (`bench/skill/devin-logs/SKILL.md` at commit 9ae03d1, hand-written queries). The current skill lives in `devin-skill/` and hasn't been benchmarked yet.
 - Every run: Claude Code 2.1.118 headless, **Claude Sonnet 5.5** (`claude-sonnet-5-5`; Haiku 5.5 for Claude Code's small internal calls), Pixel_9a emulator, same prompt and tool allowlist, fresh copy of the app.
 - Graded automatically: the root-cause line must match the task's patterns, and a hidden unit test must pass.
 - Total spend: $1.42 ($0.81 baseline, $0.62 skill).

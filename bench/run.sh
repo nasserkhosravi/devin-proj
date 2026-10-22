@@ -51,7 +51,7 @@ prepare() {
   cp "$BENCH_DIR/repro.sh" "$dir/repro.sh"
   if [ "$condition" = "skill" ]; then
     mkdir -p "$dir/.claude/skills"
-    cp -R "$BENCH_DIR/skill/devin-logs" "$dir/.claude/skills/devin-logs"
+    cp -R "$BENCH_DIR/../devin-skill/devin-logs" "$dir/.claude/skills/devin-logs"
   fi
   # A baseline commit, so the agent's changes can be diffed afterwards.
   (cd "$dir" && git init -q && git add -A && git -c user.name=bench -c user.email=bench@local commit -qm start)
