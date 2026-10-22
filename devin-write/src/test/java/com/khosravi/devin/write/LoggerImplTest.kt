@@ -7,6 +7,7 @@ import com.khosravi.devin.api.DevinLogger
 import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.read.DevinUriHelper
 import com.khosravi.devin.write.testing.DevinTestFixture
+import com.khosravi.devin.write.testing.DevinTestFixture.WRITE_TIMEOUT_MS
 import com.khosravi.devin.write.testing.DevinTestFixture.onWorker
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -22,7 +23,8 @@ import org.robolectric.RobolectricTestRunner
 class LoggerImplTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val logger = LoggerImpl(LogCore(context, isEnable = true))
+    private val logCore = LogCore(context, isEnable = true)
+    private val logger = LoggerImpl(logCore)
 
     @Before
     fun setUp() {
@@ -35,7 +37,11 @@ class LoggerImplTest {
         DevinTestFixture.resetSingletons()
     }
 
-    private fun singleLog() = DevinTestFixture.logs(context).single()
+    /** Logs are written in batches off the caller's thread, so wait for them before reading. */
+    private fun singleLog(): DevinTestFixture.LogRow {
+        logCore.awaitPendingWrites(WRITE_TIMEOUT_MS)
+        return DevinTestFixture.logs(context).single()
+    }
 
     private fun clearLogs() = onWorker {
         context.contentResolver.delete(DevinUriHelper.getLogListUri(context.packageName), null, null)
@@ -103,7 +109,8 @@ class LoggerImplTest {
 
     @Test
     fun `disabled logger writes nothing and skips doIfEnable`() {
-        val disabled = LoggerImpl(LogCore(context, isEnable = false))
+        val disabledCore = LogCore(context, isEnable = false)
+        val disabled = LoggerImpl(disabledCore)
         var called = false
 
         onWorker {
@@ -114,6 +121,7 @@ class LoggerImplTest {
         }
 
         assertFalse(called)
+        disabledCore.awaitPendingWrites(WRITE_TIMEOUT_MS)
         assertEquals(0, DevinTestFixture.logs(context).size)
     }
 
