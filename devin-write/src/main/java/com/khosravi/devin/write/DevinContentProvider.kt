@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.sqlite.db.SimpleSQLiteQuery
@@ -156,6 +157,52 @@ class DevinContentProvider : ContentProvider() {
 
         Log.d(TAG, "unknown insert() operation with uri: $uri, values:$values")
         return null
+    }
+
+    /**
+     * Inserts a batch of logs in one transaction. Batches from different clients run on different binder threads;
+     * SQLite serializes their transactions, so a batch is never interleaved with another and is all-or-nothing.
+     * Observers get one change per (client, tag) in the batch, for its latest log, instead of one per log.
+     */
+    override fun bulkInsert(uri: Uri, values: Array<out ContentValues>): Int {
+        val context = context ?: return 0
+        if (!uri.isDevinScope() || !uri.isLogPath()) return super.bulkInsert(uri, values)
+        if (values.isEmpty()) return 0
+
+        val instance = DevinDB.getInstance(context)
+        val inserted = ArrayList<Pair<Long, LogTable>>(values.size)
+        instance.runInTransaction {
+            for (value in values) {
+                val logTable = value.readAsNewLogTable()
+                val id = instance.logDao().insert(logTable)
+                value.readMetaIndexPair()?.let {
+                    instance.metaIndexDao().put(MetaIndexTable(id, it.first, it.second))
+                }
+                inserted.add(id to logTable)
+            }
+        }
+        // After commit, so a rolled-back batch leaves no orphan files.
+        inserted.forEachIndexed { index, (id, logTable) ->
+            writeContentFileIfItsPossible(values[index], context, logTable.clientId, id)
+        }
+        notifyLatestLogPerTag(context, inserted)
+        return inserted.size
+    }
+
+    private fun notifyLatestLogPerTag(context: Context, inserted: List<Pair<Long, LogTable>>) {
+        val latestPerTag = LinkedHashMap<Pair<String, String>, Long>()
+        for ((id, logTable) in inserted) {
+            latestPerTag[logTable.clientId to logTable.tag] = id
+        }
+        // Ascending id, so observers that keep the last change per group end on the newest log.
+        val changeUris = latestPerTag.entries
+            .sortedBy { it.value }
+            .map { (key, id) -> DevinUriHelper.getLogChangeUri(id, key.first, key.second) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            context.contentResolver.notifyChange(changeUris, null, 0)
+        } else {
+            changeUris.forEach { context.contentResolver.notifyChange(it, null) }
+        }
     }
 
     private fun writeContentFileIfItsPossible(

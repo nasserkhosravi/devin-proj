@@ -54,7 +54,7 @@ class DevinTool private constructor(
     /**
      * Builds the [JSONObject] passed as `presenterConfig` to [DevinTool.init], without hand-nesting
      * [JSONObject]/[JSONArray] calls. Keep this class's public API (method names/signatures)
-     * identical to the `devin-no-op` module's version so call sites compile unchanged across
+     * identical to the `devin-write-no-op` module's version so call sites compile unchanged across
      * build variants - the no-op module's bodies are empty, like every other method there.
      */
     class PresenterConfigBuilder {

@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("kotlin-kapt")
 }
 
@@ -67,9 +68,6 @@ android {
         buildConfig = true
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    }
     testOptions {
         animationsDisabled = true
         unitTests {
@@ -82,7 +80,7 @@ android {
 
 dependencies {
     implementation(project(mapOf("path" to ":lib-calendar")))
-    implementation(project(mapOf("path" to ":devin")))
+    implementation(project(mapOf("path" to ":devin-write")))
     implementation(project(mapOf("path" to ":devin-write-okhttp")))
     implementation(project(mapOf("path" to ":lib-har")))
 

@@ -1,6 +1,13 @@
 # Changelog
 **Write module:**
 
+## 4.5.0
+- Fix ANRs when logging from the main thread. Logs are now queued and sent to the presenter in batches off the caller's thread, so a log call no longer blocks on IPC or on starting the presenter process.
+- If the queue fills up (2,000 waiting logs), new logs are dropped and a `devin_dropped_logs` warning records how many.
+- Before writing an uncaught-exception log, wait up to 500 ms for queued logs, so the logs leading up to a crash are kept.
+- Built with Kotlin 2.1.20 (was 1.9.0). Apps using Devin need Kotlin 2.0 or newer.
+- Adds `kotlinx-coroutines-android` 1.7.3 as a dependency.
+
 ## 4.4.1
 - Fix `generalUncaughtExceptionLogging(false)` clearing the app's own uncaught-exception handler when Devin's handler was never enabled.
 - Fix `generalUncaughtExceptionLogging(true)` called twice logging every crash twice.

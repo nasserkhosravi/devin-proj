@@ -45,8 +45,8 @@ dependencies {
     implementation(libs.coil)
 
     implementation(libs.fragmentKtx)
-    debugImplementation(project(mapOf("path" to ":devin")))
-    releaseImplementation(project(mapOf("path" to ":devin-no-op")))
+    debugImplementation(project(mapOf("path" to ":devin-write")))
+    releaseImplementation(project(mapOf("path" to ":devin-write-no-op")))
 
     debugImplementation(project(mapOf("path" to ":devin-write-okhttp")))
     releaseImplementation(project(mapOf("path" to ":devin-write-okhttp-no-op")))
