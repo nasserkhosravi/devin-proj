@@ -1,5 +1,7 @@
 package com.khosravi.devin.present.present
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -18,6 +20,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
@@ -51,7 +54,7 @@ import com.khosravi.devin.present.present.logitem.SearchBarRow
 import com.khosravi.devin.present.present.logitem.SessionStartRow
 import com.khosravi.devin.present.present.logitem.TextLogRow
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LogScreen(
     calendar: CalendarProxy,
@@ -147,13 +150,29 @@ fun LogScreen(
                     onSelect = onSelectFilter,
                     onAction = onFilterAction,
                 )
+                // The search field (always first when present) is a sticky header, so it stays reachable while scrolling.
+                val searchItem = logItems.firstOrNull() as? LogListRowItem.Search
+                val rowItems = remember(logItems) { logItems.filterIsInstance<LogListRowItem.Row>() }
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                    if (searchItem != null) {
+                        stickyHeader(key = "search") {
+                            // Opaque, so rows scrolling underneath don't show through.
+                            Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                                SearchBarRow(
+                                    sessionId = searchItem.sessionId,
+                                    text = searchItem.text,
+                                    hint = searchItem.hint,
+                                    onTextChange = onSearchTextChange,
+                                )
+                            }
+                        }
+                    }
                     // No stable content id exists across all LogItemData subtypes (some carry one,
                     // e.g. HttpLogItemData.logId, others don't), so this key is only a synthetic
                     // position+type marker — better than the implicit positional default, but not
                     // true content-identity diffing.
-                    itemsIndexed(logItems, key = { index, rowItem -> "$index-${rowItem::class.simpleName}" }) { _, rowItem ->
-                        LogListRow(calendar, rowItem, ignoreTagChip, onSearchTextChange, onTextLogClick, onHttpLogClick)
+                    itemsIndexed(rowItems, key = { index, rowItem -> "$index-${rowItem.data::class.simpleName}" }) { _, rowItem ->
+                        LogItemDataRow(calendar, rowItem.data, ignoreTagChip, onTextLogClick, onHttpLogClick)
                     }
                 }
             }
@@ -161,21 +180,6 @@ fun LogScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
-    }
-}
-
-@Composable
-private fun LogListRow(
-    calendar: CalendarProxy,
-    rowItem: LogListRowItem,
-    ignoreTagChip: Boolean,
-    onSearchTextChange: (String?) -> Unit,
-    onTextLogClick: (TextLogItemData) -> Unit,
-    onHttpLogClick: (HttpLogItemData) -> Unit,
-) {
-    when (rowItem) {
-        is LogListRowItem.Search -> SearchBarRow(sessionId = rowItem.sessionId, text = rowItem.text, hint = rowItem.hint, onTextChange = onSearchTextChange)
-        is LogListRowItem.Row -> LogItemDataRow(calendar, rowItem.data, ignoreTagChip, onTextLogClick, onHttpLogClick)
     }
 }
 
