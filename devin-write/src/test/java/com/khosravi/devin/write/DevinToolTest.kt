@@ -11,6 +11,7 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import com.khosravi.devin.write.api.DevinLogCore
 import com.khosravi.devin.write.testing.DevinTestFixture
+import com.khosravi.devin.write.testing.DevinTestFixture.WRITE_TIMEOUT_MS
 import com.khosravi.devin.write.testing.DevinTestFixture.onWorker
 import org.json.JSONObject
 import org.junit.After
@@ -76,6 +77,8 @@ class DevinToolTest {
         onWorker { DevinTool.init(context, isEnable = true) }
 
         onWorker { DevinTool.get()!!.logger!!.info("tag", "hello") }
+        // The logger writes in batches off the caller's thread.
+        DevinTool.get()!!.connectPlugin { (it as LogCore).awaitPendingWrites(WRITE_TIMEOUT_MS) }
 
         assertEquals(listOf("hello"), DevinTestFixture.logs(context).map { it.value })
     }

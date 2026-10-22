@@ -13,7 +13,7 @@ Each component is released on its own. Its name is used in its release branch an
 | Component | Modules | Version lives in | CHANGELOG | Tag | Release workflow |
 |---|---|---|---|---|---|
 | `presenter` | `present-app` | `versionName` (and `versionCode`) in `present-app/build.gradle.kts` | `present-app/CHANGELOG.md` | `presenter_X.Y.Z` | `release-presenter.yml` |
-| `write` | `devin`, `devin-no-op` | `POM_VERSION_NAME` in both modules' `gradle.properties` (must match) | `devin/CHANGELOG.md` | `write_X.Y.Z` | `release-library.yml` → `write` |
+| `write` | `devin-write`, `devin-write-no-op` | `POM_VERSION_NAME` in both modules' `gradle.properties` (must match) | `devin-write/CHANGELOG.md` | `write_X.Y.Z` | `release-library.yml` → `write` |
 | `write-okhttp` | `devin-write-okhttp`, `devin-write-okhttp-no-op` | `POM_VERSION_NAME` in both modules' `gradle.properties` (must match) | `devin-write-okhttp/CHANGELOG.md` | `write-okhttp_X.Y.Z` | `release-library.yml` → `write-okhttp` |
 | `lib-har` | `lib-har` | `POM_VERSION_NAME` in `lib-har/gradle.properties` | `lib-har/CHANGELOG.md` | `lib-har_X.Y.Z` | `release-library.yml` → `lib-har` |
 
@@ -25,13 +25,13 @@ Each component is released on its own. Its name is used in its release branch an
   - It covers exactly one component. Never create a branch that releases two components (e.g. write + presenter).
   - Its own commits only edit that component's CHANGELOG and version. All code reaches it through feature/fix branches merged into it.
 - **Feature / fix branch**: a descriptive kebab-case name, hyphens not underscores (e.g. `data-retention`). Create it from the release branch it targets, and merge it back into that release branch, never into `main`.
-  - Its changes stay inside the target component's modules. If work needs changes in two components (e.g. a `devin` provider change used by `present-app`), split it into one branch per component, each targeting its own release branch.
+  - Its changes stay inside the target component's modules. If work needs changes in two components (e.g. a `devin-write` provider change used by `present-app`), split it into one branch per component, each targeting its own release branch.
 
 ## Releasing
 
 1. On the release branch, add a `## X.Y.Z` section at the top of the component's CHANGELOG with one bullet per user-visible change, and set the version (see the table).
    - `presenter`: also increment `versionCode` by 1 (it must be exactly the latest `presenter_*` tag's `versionCode` + 1). Android uses it to decide whether an APK is an upgrade. Then run `scripts/check-presenter-release.sh`; it checks the tag is new, the `versionCode` step, and the CHANGELOG section. `release-presenter.yml` runs the same script and refuses to release if it fails.
-   - Libraries released as a pair (`devin` + `devin-no-op`, `devin-write-okhttp` + `devin-write-okhttp-no-op`) must have the same `POM_VERSION_NAME`.
+   - Libraries released as a pair (`devin-write` + `devin-write-no-op`, `devin-write-okhttp` + `devin-write-okhttp-no-op`) must have the same `POM_VERSION_NAME`.
 2. Merge the release branch into `main` via a pull request.
 3. Run the component's release workflow from the Actions tab, **on `main`**. It reads the version, refuses an existing tag (presenter: also checks `versionCode`), takes the release notes from the `## X.Y.Z` CHANGELOG section, publishes, and creates the tag and GitHub Release.
 4. Merge `main` into every other open release branch, so they build on what was just released.
@@ -39,7 +39,7 @@ Each component is released on its own. Its name is used in its release branch an
 ## Ordering between components
 
 - A component that depends on another releases after it. `write-okhttp` depends on `write`, so the `write` version it uses must already be on Maven Central (the workflow checks this). Release `write` first, then merge `main` into the `write-okhttp` release branch.
-- `present-app` builds `devin` from source (`project(":devin")`), so a presenter release ships whatever `devin` code is on `main`. A presenter feature that needs a `devin` change waits until that change has been released as `write` and merged into `main`, then merge `main` into the presenter release branch.
+- `present-app` builds `devin-write` from source (`project(":devin-write")`), so a presenter release ships whatever `devin-write` code is on `main`. A presenter feature that needs a `devin-write` change waits until that change has been released as `write` and merged into `main`, then merge `main` into the presenter release branch.
 
 # Project Map
 
@@ -47,8 +47,8 @@ Devin: Android logging framework. Write-side library apps embed to produce logs,
 
 | Module | Type | Purpose |
 |---|---|---|
-| `devin` | Android library | Core write module (Room DB, `DevinContentProvider`, logging APIs). Published to Maven Central. |
-| `devin-no-op` | Android library | No-op stub of `devin`, same API, empty bodies. Used in release builds for zero overhead. |
+| `devin-write` | Android library | Core write module (Room DB, `DevinContentProvider`, logging APIs). Published to Maven Central as `io.github.nasserkhosravi.devin:write`. |
+| `devin-write-no-op` | Android library | No-op stub of `devin-write`, same API, empty bodies. Used in release builds for zero overhead. |
 | `devin-write-okhttp` | Android library | OkHttp interceptor, captures HTTP traffic as HAR-format logs. |
 | `devin-write-okhttp-no-op` | Android library | No-op stub of the above. |
 | `present-app` | Android app | The "Devin" viewer app — reads/displays/exports logs from all registered clients. |

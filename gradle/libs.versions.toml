@@ -7,7 +7,7 @@ project-targetSdk = "35"
 #build
 agpVersion = "8.10.0"
 agpLibraryVersion = "8.3.2"
-kotlinVersion = "1.9.0"
+kotlinVersion = "2.1.20"
 
 #library
 coreKtx = "1.9.0"
@@ -16,6 +16,8 @@ material = "1.9.0"
 fragmentKtx = "1.4.0"
 constraintlayout = "2.1.4"
 room = "2.5.1"
+# Aligned with the lowest version used by Devin's consumers, so Devin never upgrades theirs.
+coroutines = "1.7.3"
 dagger = "2.24"
 glide = "4.16.0"
 gson = "2.11.0"
@@ -24,7 +26,6 @@ coil = "2.7.0"
 junit = "4.13.2"
 json = "20231013"
 composeBom = "2023.09.02"
-composeCompiler = "1.5.2"
 activityCompose = "1.7.2"
 # 2.8+ needs Compose 1.7; keep on 2.7.x while Compose is pinned to 1.5.2
 navigationCompose = "2.7.7"
@@ -44,6 +45,7 @@ room-common = { module = "androidx.room:room-common", version.ref = "room" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 dagger-android = { module = "com.google.dagger:dagger-android", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
@@ -70,3 +72,4 @@ androidApplication = { id = "com.android.tools.build:gradle", version.ref = "agp
 androidLibrary = { id = "com.android.tools.build:gradle", version.ref = "agpLibraryVersion" }
 kotlinAndroid = { id = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinVersion" }
 kotlinJvm = { id = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlinVersion" }
+composeCompiler = { id = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlinVersion" }

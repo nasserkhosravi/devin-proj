@@ -27,6 +27,7 @@ buildscript {
     dependencies {
         classpath(libs.plugins.androidApplication.get().toString())
         classpath(libs.plugins.kotlinAndroid.get().toString())
+        classpath(libs.plugins.composeCompiler.get().toString())
     }
 }
 
