@@ -15,6 +15,8 @@ import java.security.MessageDigest
 internal class PresenterVerifier(
     private val context: Context,
     private val trusted: List<TrustedPresenter>,
+    /** Whether a package is signed with a certificate whose SHA-256 is the given bytes. Replaceable in tests. */
+    private val isSignedWith: (PackageManager, packageName: String, sha256: ByteArray) -> Boolean = ::platformIsSignedWith,
 ) {
 
     @Volatile
@@ -29,7 +31,7 @@ internal class PresenterVerifier(
         val pm = context.packageManager
         val presenterPackage = pm.resolveContentProvider(AUTHORITY, 0)?.packageName ?: return true
         val entry = trusted.firstOrNull { it.packageName == presenterPackage }
-        val allowed = entry != null && entry.sha256CertDigests.any { isSignedWith(pm, presenterPackage, it) }
+        val allowed = entry != null && entry.sha256CertDigests.any { isSignedWith(pm, presenterPackage, hexToBytes(it)) }
         if (!allowed && !warned) {
             warned = true
             Log.w(TAG, "Devin logs are not sent: '$presenterPackage' holds the Devin provider but isn't a trusted presenter " +
@@ -38,24 +40,24 @@ internal class PresenterVerifier(
         return allowed
     }
 
-    private fun isSignedWith(pm: PackageManager, packageName: String, sha256Hex: String): Boolean = try {
-        val digest = hexToBytes(sha256Hex)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            // Handles key rotation (APK signature scheme v3).
-            pm.hasSigningCertificate(packageName, digest, PackageManager.CERT_INPUT_SHA256)
-        } else {
-            @Suppress("DEPRECATION")
-            val signatures = pm.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures.orEmpty()
-            signatures.any { MessageDigest.getInstance("SHA-256").digest(it.toByteArray()).contentEquals(digest) }
-        }
-    } catch (e: PackageManager.NameNotFoundException) {
-        false
-    }
-
     private fun hexToBytes(hex: String) = ByteArray(hex.length / 2) { hex.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
 
     companion object {
         private const val TAG = "DevinTool"
         private val AUTHORITY: String = android.net.Uri.parse(DevinContentProvider.URI_ALL_LOG).authority!!
     }
+}
+
+/** Real signature check: the platform's on API 28+ (handles key rotation), SHA-256 of `GET_SIGNATURES` below. */
+private fun platformIsSignedWith(pm: PackageManager, packageName: String, digest: ByteArray): Boolean = try {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        // Handles key rotation (APK signature scheme v3).
+        pm.hasSigningCertificate(packageName, digest, PackageManager.CERT_INPUT_SHA256)
+    } else {
+        @Suppress("DEPRECATION")
+        val signatures = pm.getPackageInfo(packageName, PackageManager.GET_SIGNATURES).signatures.orEmpty()
+        signatures.any { MessageDigest.getInstance("SHA-256").digest(it.toByteArray()).contentEquals(digest) }
+    }
+} catch (e: PackageManager.NameNotFoundException) {
+    false
 }
