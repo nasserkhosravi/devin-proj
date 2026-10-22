@@ -14,6 +14,8 @@ import java.util.Date
 internal class LogCore(
     private val appContext: Context,
     private val isEnable: Boolean,
+    /** When set, logs are only sent to a trusted presenter; checked each time a provider client is acquired. */
+    private val presenterVerifier: PresenterVerifier? = null,
 ) : DevinLogCore {
 
     private val appId = appContext.packageName
@@ -109,15 +111,16 @@ internal class LogCore(
     /**
      * Runs [action] on the cached provider client. If the presenter process died, the client is recreated and
      * [action] is retried once. Like [android.content.ContentResolver], a remote failure returns [onFailure].
+     * An untrusted presenter also returns [onFailure]: nothing is sent to it.
      */
     private fun <T> withProviderClient(uri: Uri, onFailure: T, action: (ContentProviderClient) -> T): T {
-        val client = obtainProviderClient(uri)
+        val client = obtainProviderClient(uri) ?: return onFailure
         return try {
             action(client)
         } catch (e: DeadObjectException) {
             discardProviderClient(client)
             try {
-                action(obtainProviderClient(uri))
+                action(obtainProviderClient(uri) ?: return onFailure)
             } catch (e: RemoteException) {
                 Log.e(TAG, "Presenter provider is not reachable", e)
                 onFailure
@@ -128,13 +131,19 @@ internal class LogCore(
         }
     }
 
-    private fun obtainProviderClient(uri: Uri): ContentProviderClient {
+    /** `null` when the presenter isn't trusted. Throws, like ContentResolver, when no presenter is installed. */
+    private fun obtainProviderClient(uri: Uri): ContentProviderClient? {
         providerClient?.let { return it }
         synchronized(providerClientLock) {
             providerClient?.let { return it }
             // Same failure as ContentResolver.insert/update when no presenter provider is installed.
             val client = appContext.contentResolver.acquireUnstableContentProviderClient(uri)
                 ?: throw IllegalArgumentException("Unknown URL $uri")
+            // Checked per new client, so a presenter replaced while the app runs is checked again.
+            if (presenterVerifier != null && !presenterVerifier.isAllowed()) {
+                client.close()
+                return null
+            }
             providerClient = client
             return client
         }
