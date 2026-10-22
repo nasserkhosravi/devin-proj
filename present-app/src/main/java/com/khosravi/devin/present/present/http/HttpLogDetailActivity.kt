@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.arch.applyEdgeToEdge
 import com.khosravi.devin.present.createCacheShareFile
 import com.khosravi.devin.present.createFlowForExportFileIntentResult
 import com.khosravi.devin.present.createJsonFileNameForExport
@@ -61,6 +62,7 @@ class HttpLogDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyEdgeToEdge()
         getAppComponent().inject(this)
 
         val logId = LogId(intent.getLongExtraOrFail(KEY_LOG_ID))

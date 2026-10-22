@@ -2,15 +2,19 @@ package com.khosravi.devin.present.present
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,7 +48,10 @@ fun ImportLogScreen(
     var query by rememberSaveable { mutableStateOf("") }
     val visibleItems = remember(items, query) { items?.filterByText(query) }
 
-    Scaffold { padding ->
+    Scaffold(
+        // Edge-to-edge: the window no longer resizes for the keyboard, so keep the content above it too.
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -67,7 +74,7 @@ fun ImportLogScreen(
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     // Same synthetic position+type key as LogScreen: LogItemData has no common stable id.
                     itemsIndexed(visibleItems, key = { index, item -> "$index-${item::class.simpleName}" }) { _, item ->
-                        LogItemDataRow(calendar, item, onTextLogClick, onHttpLogClick)
+                        LogItemDataRow(calendar, item, ignoreTagChip = false, onTextLogClick, onHttpLogClick)
                     }
                 }
             }

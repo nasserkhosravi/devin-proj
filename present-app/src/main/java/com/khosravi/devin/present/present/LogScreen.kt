@@ -1,9 +1,14 @@
 package com.khosravi.devin.present.present
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -15,7 +20,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -47,12 +54,13 @@ import com.khosravi.devin.present.present.logitem.SearchBarRow
 import com.khosravi.devin.present.present.logitem.SessionStartRow
 import com.khosravi.devin.present.present.logitem.TextLogRow
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun LogScreen(
     calendar: CalendarProxy,
     filters: List<FilterItem>,
     selectedFilterId: String?,
+    ignoreTagChip: Boolean,
     isFilterRowEnabled: Boolean,
     logItems: List<LogListRowItem>,
     isLoading: Boolean,
@@ -88,6 +96,8 @@ fun LogScreen(
     }
 
     Scaffold(
+        // Edge-to-edge: the window no longer resizes for the keyboard, so keep the content above it too.
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
@@ -140,13 +150,29 @@ fun LogScreen(
                     onSelect = onSelectFilter,
                     onAction = onFilterAction,
                 )
+                // The search field (always first when present) is a sticky header, so it stays reachable while scrolling.
+                val searchItem = logItems.firstOrNull() as? LogListRowItem.Search
+                val rowItems = remember(logItems) { logItems.filterIsInstance<LogListRowItem.Row>() }
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                    if (searchItem != null) {
+                        stickyHeader(key = "search") {
+                            // Opaque, so rows scrolling underneath don't show through.
+                            Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                                SearchBarRow(
+                                    sessionId = searchItem.sessionId,
+                                    text = searchItem.text,
+                                    hint = searchItem.hint,
+                                    onTextChange = onSearchTextChange,
+                                )
+                            }
+                        }
+                    }
                     // No stable content id exists across all LogItemData subtypes (some carry one,
                     // e.g. HttpLogItemData.logId, others don't), so this key is only a synthetic
                     // position+type marker — better than the implicit positional default, but not
                     // true content-identity diffing.
-                    itemsIndexed(logItems, key = { index, rowItem -> "$index-${rowItem::class.simpleName}" }) { _, rowItem ->
-                        LogListRow(calendar, rowItem, onSearchTextChange, onTextLogClick, onHttpLogClick)
+                    itemsIndexed(rowItems, key = { index, rowItem -> "$index-${rowItem.data::class.simpleName}" }) { _, rowItem ->
+                        LogItemDataRow(calendar, rowItem.data, ignoreTagChip, onTextLogClick, onHttpLogClick)
                     }
                 }
             }
@@ -157,31 +183,21 @@ fun LogScreen(
     }
 }
 
-@Composable
-private fun LogListRow(
-    calendar: CalendarProxy,
-    rowItem: LogListRowItem,
-    onSearchTextChange: (String?) -> Unit,
-    onTextLogClick: (TextLogItemData) -> Unit,
-    onHttpLogClick: (HttpLogItemData) -> Unit,
-) {
-    when (rowItem) {
-        is LogListRowItem.Search -> SearchBarRow(sessionId = rowItem.sessionId, text = rowItem.text, hint = rowItem.hint, onTextChange = onSearchTextChange)
-        is LogListRowItem.Row -> LogItemDataRow(calendar, rowItem.data, onTextLogClick, onHttpLogClick)
-    }
-}
-
-/** One log row for a [LogItemData]. Shared by [LogScreen] and [ImportLogScreen]. */
+/**
+ * One log row for a [LogItemData]. Shared by [LogScreen] and [ImportLogScreen].
+ * [ignoreTagChip] hides the tag chip on text rows; set it when every row has the same tag.
+ */
 @Composable
 internal fun LogItemDataRow(
     calendar: CalendarProxy,
     data: LogItemData,
+    ignoreTagChip: Boolean,
     onTextLogClick: (TextLogItemData) -> Unit,
     onHttpLogClick: (HttpLogItemData) -> Unit,
 ) {
     when (data) {
         is DateLogItemData -> DateHeaderRow(calendar, data)
-        is TextLogItemData -> TextLogRow(calendar, data, ignoreTagChip = false, onClick = { onTextLogClick(data) })
+        is TextLogItemData -> TextLogRow(calendar, data, ignoreTagChip = ignoreTagChip, onClick = { onTextLogClick(data) })
         is HttpLogItemData -> HttpLogRow(calendar, data, onClick = { onHttpLogClick(data) })
         is ImageLogItemData -> ImageLogRow(calendar, data)
         is SessionStartLogItemData -> SessionStartRow(calendar, data)

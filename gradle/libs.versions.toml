@@ -33,6 +33,10 @@ navigationCompose = "2.7.7"
 lifecycleViewmodelCompose = "2.6.2"
 robolectric = "4.12.2"
 androidxTestCore = "1.5.0"
+# Instrumented e2e suite (present-app/src/androidTest/.../e2e): drives the UI through the platform
+# accessibility API (UiAutomation), so it only needs the runner and AndroidJUnit4. Kotlin 1.9-compatible.
+androidxTestRunner = "1.6.1"
+androidxTestExtJunit = "1.2.1"
 appmetrica = "8.5.1"
 
 [libraries]
@@ -65,6 +69,8 @@ navigation-compose = { module = "androidx.navigation:navigation-compose", versio
 lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
+androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExtJunit" }
 appmetrica-analytics = { module = "io.appmetrica.analytics:analytics", version.ref = "appmetrica" }
 
 [plugins]

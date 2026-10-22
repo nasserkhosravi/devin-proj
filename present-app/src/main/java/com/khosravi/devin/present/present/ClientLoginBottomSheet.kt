@@ -35,7 +35,9 @@ fun ClientLoginSheet(
     onWrongPassword: () -> Boolean,
     onDismissed: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    // Edge-to-edge: the sheet's window shrinks above the keyboard, which can make this short sheet taller than half of
+    // what is left; Material3 then settles it at the half-height anchor with Confirm under the keyboard. Always expand.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
@@ -75,7 +77,7 @@ fun ClientLoginSheet(
                 isError = errorText != null,
                 supportingText = errorText?.let { { Text(it) } },
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { submit() }),
                 trailingIcon = {
                     TextButton(onClick = { showPassword = !showPassword }) {

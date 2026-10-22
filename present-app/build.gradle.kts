@@ -26,7 +26,8 @@ android {
         minSdk = libs.versions.project.minSdk.get().toInt()
         targetSdk = libs.versions.project.targetSdk.get().toInt()
         versionCode = 5
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Stamps the update-check time before Application.onCreate so the e2e suite never hits GitHub.
+        testInstrumentationRunner = "com.khosravi.devin.present.e2e.E2eTestRunner"
     }
     val versionName = "\"4.6.0\""
 
@@ -68,6 +69,7 @@ android {
         compose = true
     }
     testOptions {
+        animationsDisabled = true
         unitTests {
             isReturnDefaultValues = true
             // Robolectric tests read app resources (strings) and the merged manifest.
@@ -110,5 +112,9 @@ dependencies {
     testImplementation(libs.json)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
+
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.gson)
 
 }

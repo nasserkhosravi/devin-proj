@@ -132,6 +132,8 @@ class LogActivity : BaseActivity() {
             calendar = calendar,
             filters = filterList,
             selectedFilterId = selectedFilterId,
+            // A tag chip filters to one tag, so every row would repeat it; "All" and custom filters show it.
+            ignoreTagChip = optCurrentFilterItem() is TagFilterItem,
             isFilterRowEnabled = isFilterRowEnabled,
             logItems = items,
             isLoading = isLoading,
