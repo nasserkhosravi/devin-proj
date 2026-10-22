@@ -5,7 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.khosravi.devin.present.MIME_APP_JSON
+import com.khosravi.devin.present.MIME_APP_ZIP
+import com.khosravi.devin.present.R
 import com.khosravi.devin.present.copyFileToOutputStream
 import com.khosravi.devin.present.createJsonFileNameForExport
 import com.khosravi.devin.present.createZipFileNameForExport
@@ -20,16 +25,26 @@ import com.khosravi.devin.present.formatter.InterAppJsonConverter.writeLogsSepar
 import com.khosravi.devin.present.requestJsonFileUriToSave
 import com.khosravi.devin.present.requestZipFileUriToSave
 import com.khosravi.devin.present.tmpFileForCache
+import com.khosravi.devin.present.toUriByFileProvider
 import com.khosravi.devin.present.tool.PositiveNumber
 import com.khosravi.devin.read.DevinUriHelper
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 import java.io.BufferedOutputStream
 import java.io.BufferedWriter
 import java.io.File
@@ -45,6 +60,100 @@ class ExportViewModel(
     private val cacheRepo: CacheRepository,
     private val calendarProxy: CalendarProxy
 ) : AndroidViewModel(application) {
+
+    private val _isExporting = MutableStateFlow(false)
+    val isExporting: StateFlow<Boolean> = _isExporting.asStateFlow()
+
+    private val _events = Channel<ExportEvent>(Channel.BUFFERED)
+
+    /** One-shot UI events; each is delivered to a single collector exactly once. */
+    val events: Flow<ExportEvent> = _events.receiveAsFlow()
+
+    private var job: Job? = null
+
+    /** Prepared export file waiting for the user to pick a save location. */
+    private var saveTmpFile: File? = null
+
+    sealed interface ExportEvent {
+        data class LaunchSavePicker(val intent: Intent) : ExportEvent
+        data class Share(val uri: Uri, val mimeType: String) : ExportEvent
+        data class Message(@StringRes val textRes: Int) : ExportEvent
+        data object Close : ExportEvent
+    }
+
+    /** Prepares the export file and asks the UI to open the "create document" picker. */
+    fun startSave(options: ExportOptions) {
+        deleteSaveTmpFile()
+        launchExportJob {
+            val file = prepareLogsForExport(options).first()
+            saveTmpFile = file
+            // Progress stays on until the picker result arrives (onSaveLocationPicked), so Share can't delete
+            // the pending file. Known gap: if this event is lost (collector cancelled in between) the spinner stays on.
+            _events.send(ExportEvent.LaunchSavePicker(createIntentForSave(options.withSeparationTagFiles)))
+        }
+    }
+
+    /** [uri] is null when the picker was cancelled: drop the prepared file and keep the dialog open. */
+    fun onSaveLocationPicked(uri: Uri?) {
+        if (uri == null) {
+            job?.cancel()
+            deleteSaveTmpFile()
+            _isExporting.value = false
+            return
+        }
+        val file = saveTmpFile
+        saveTmpFile = null
+        launchExportJob {
+            val isSaved = try {
+                file != null && copyFileToUri(uri, file).first()
+            } finally {
+                file?.delete()
+            }
+            _isExporting.value = false
+            _events.send(ExportEvent.Message(if (isSaved) R.string.msg_save_done else R.string.error_msg_something_went_wrong))
+            _events.send(ExportEvent.Close)
+        }
+    }
+
+    /** Prepares the export file and asks the UI to show the share chooser, then close. */
+    fun startShare(options: ExportOptions) {
+        deleteSaveTmpFile()
+        launchExportJob {
+            val file = prepareLogsForExport(options).first()
+            val uri = getContext().toUriByFileProvider(file)
+            val mimeType = if (options.withSeparationTagFiles) MIME_APP_ZIP else MIME_APP_JSON
+            _isExporting.value = false
+            _events.send(ExportEvent.Share(uri, mimeType))
+            _events.send(ExportEvent.Close)
+        }
+    }
+
+    private fun launchExportJob(block: suspend () -> Unit) {
+        job?.cancel()
+        _isExporting.value = true
+        job = viewModelScope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _isExporting.value = false
+                _events.send(ExportEvent.Message(R.string.error_msg_something_went_wrong))
+            }
+        }
+    }
+
+    private fun deleteSaveTmpFile() {
+        saveTmpFile?.delete()
+        saveTmpFile = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        job?.cancel()
+        deleteSaveTmpFile()
+    }
 
     fun getExportDefaultOption() = ExportOptions("Default option", null, true, null)
 

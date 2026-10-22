@@ -17,6 +17,7 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope by MainScope()
         // Must be called before super.onCreate()
         applyTheme()
         super.onCreate(savedInstanceState)
+        applyEdgeToEdge()
     }
 
     private fun applyTheme() {

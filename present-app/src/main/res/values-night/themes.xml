@@ -16,6 +16,14 @@
         <item name="colorOnSecondary">@color/on_secondary</item>
         <item name="colorSecondaryContainer">@color/secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/on_secondary_container</item>
+        <item name="colorTertiary">@color/tertiary</item>
+        <item name="colorOnTertiary">@color/on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/on_tertiary_container</item>
+        <item name="colorError">@color/error</item>
+        <item name="colorOnError">@color/on_error</item>
+        <item name="colorErrorContainer">@color/error_container</item>
+        <item name="colorOnErrorContainer">@color/on_error_container</item>
         
         <!-- Surface colors -->
         <item name="colorSurface">@color/surface</item>
@@ -30,8 +38,9 @@
         <!-- Background -->
         <item name="android:colorBackground">@color/background</item>
         
-        <!-- Status bar -->
-        <item name="android:statusBarColor">@color/surface</item>
+        <!-- System bars: activities draw edge-to-edge (arch/EdgeToEdge.kt), so the bars stay transparent and the
+             Compose content pads itself for the insets. Icon colours are set there too; these cover the first frame. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         
         <!-- Material 3 shape system - more rounded for expressive -->

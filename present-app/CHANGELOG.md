@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.7.0
+- Migrate all screens to Jetpack Compose
+- Draw screens edge-to-edge
+- Make log list search sticky
+- Improve contrast in light and dark themes
+- Fix Verbose logs labelled as Info
+- Keep release page open after Download in update prompt
+- Support batched log writes from write 4.5.0
+
 ## 4.6.0
 - Automatically delete old logs: logs older than N days or beyond the newest N per client (defaults: 7 days, 10,000 logs), configurable from a new Settings screen that also shows storage used.
 - Pin filter tags from Settings, including tags no client has logged yet; `okhttp` is pinned by default.
