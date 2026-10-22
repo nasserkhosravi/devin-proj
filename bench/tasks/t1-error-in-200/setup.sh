@@ -1,0 +1,2 @@
+start_server checkout-error
+run_scenario checkout

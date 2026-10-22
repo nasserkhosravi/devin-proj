@@ -1,0 +1,2 @@
+start_server default
+run_scenario search

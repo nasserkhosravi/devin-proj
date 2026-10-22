@@ -1,0 +1,31 @@
+{
+  "task": "t4-plain-crash",
+  "condition": "baseline",
+  "repeat": 2,
+  "model": "sonnet",
+  "models_used": [
+    "claude-haiku-5-5",
+    "claude-sonnet-5-5"
+  ],
+  "non_claude_model": false,
+  "success": true,
+  "rootcause_pass": true,
+  "test_pass": true,
+  "root_cause": "Root cause: CartCalculator.total force-unwrapped (`!!`) the optional `CartItem.discount`, which is null for items without a discount, causing a NullPointerException when opening the cart.",
+  "cost_usd": 0.0625544,
+  "num_turns": 6,
+  "duration_s": 23.2,
+  "input_tokens": 10,
+  "cache_read_tokens": 95298,
+  "cache_creation_tokens": 10243,
+  "output_tokens": 1188,
+  "tool_calls": 5,
+  "bash_calls": 3,
+  "logcat_calls": 2,
+  "devin_calls": 0,
+  "skill_loaded": false,
+  "peeked": false,
+  "stop_reason": "success",
+  "timed_out": false,
+  "dropbox_calls": 0
+}

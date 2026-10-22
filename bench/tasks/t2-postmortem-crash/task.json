@@ -1,0 +1,5 @@
+{
+  "kind": "post-mortem",
+  "expected": "devin",
+  "grade_test": "ProductMapperGradeTest"
+}

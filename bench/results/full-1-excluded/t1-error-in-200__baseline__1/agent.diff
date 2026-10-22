@@ -1,0 +1,30 @@
+diff --git a/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt b/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt
+index a4edc7e..9cd6413 100644
+--- a/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt
++++ b/app/src/main/java/com/khosravi/devin/bench/CheckoutParser.kt
+@@ -7,6 +7,12 @@ object CheckoutParser {
+     fun parse(httpCode: Int, body: String): CheckoutResult {
+         if (httpCode !in 200..299) return CheckoutResult.Failure("HTTP_$httpCode", "Server error")
+         val json = JSONObject(body)
++        if (json.optString("status") == "error") {
++            return CheckoutResult.Failure(
++                json.optString("code", "UNKNOWN"),
++                json.optString("message", "Unknown error")
++            )
++        }
+         return CheckoutResult.Success(json.optString("orderId"))
+     }
+ }
+diff --git a/app/src/main/java/com/khosravi/devin/bench/MainActivity.kt b/app/src/main/java/com/khosravi/devin/bench/MainActivity.kt
+index 76a73bc..c042476 100644
+--- a/app/src/main/java/com/khosravi/devin/bench/MainActivity.kt
++++ b/app/src/main/java/com/khosravi/devin/bench/MainActivity.kt
+@@ -35,7 +35,7 @@ class MainActivity : Activity() {
+             }
+             "checkout" -> {
+                 val cart = sampleCart(repository.products())
+-                when (val result = repository.checkout(cart, coupon = "SUMMER")) {
++                when (val result = repository.checkout(cart, coupon = null)) {
+                     is CheckoutResult.Success -> "Order placed: ${result.orderId}".also { AppLog.i(TAG, it) }
+                     is CheckoutResult.Failure -> "Checkout failed: ${result.message}".also { AppLog.w(TAG, "${result.code}: ${result.message}") }
+                 }

@@ -1,0 +1,31 @@
+{
+  "task": "t2-postmortem-crash",
+  "condition": "skill",
+  "repeat": 2,
+  "model": "sonnet",
+  "models_used": [
+    "claude-haiku-5-5",
+    "claude-sonnet-5-5"
+  ],
+  "non_claude_model": false,
+  "success": true,
+  "rootcause_pass": true,
+  "test_pass": true,
+  "root_cause": "Root cause: The backend returned a product with `\"price\": null`, and `ProductMapper.map` called `JSONObject.getLong(\"price\")`, which throws an uncaught `JSONException` on the background thread and crashes the app when the product list loads.",
+  "cost_usd": 0.0801348,
+  "num_turns": 10,
+  "duration_s": 22.4,
+  "input_tokens": 14,
+  "cache_read_tokens": 143298,
+  "cache_creation_tokens": 11718,
+  "output_tokens": 1875,
+  "tool_calls": 8,
+  "bash_calls": 2,
+  "logcat_calls": 0,
+  "devin_calls": 1,
+  "skill_loaded": true,
+  "peeked": false,
+  "stop_reason": "success",
+  "timed_out": false,
+  "dropbox_calls": 0
+}

@@ -1,0 +1,31 @@
+{
+  "task": "t3-wrong-query",
+  "condition": "baseline",
+  "repeat": 1,
+  "model": "sonnet",
+  "models_used": [
+    "claude-haiku-5-5",
+    "claude-sonnet-5-5"
+  ],
+  "non_claude_model": false,
+  "success": true,
+  "rootcause_pass": true,
+  "test_pass": true,
+  "root_cause": "Root cause: The `Sort.PRICE_DESC` enum value sent the misspelled API parameter `price_dsc`, which the backend doesn't recognize, so it fell back to the default order.",
+  "cost_usd": 0.0491243,
+  "num_turns": 6,
+  "duration_s": 19.0,
+  "input_tokens": 10,
+  "cache_read_tokens": 95012,
+  "cache_creation_tokens": 6985,
+  "output_tokens": 1151,
+  "tool_calls": 5,
+  "bash_calls": 2,
+  "logcat_calls": 0,
+  "devin_calls": 0,
+  "skill_loaded": false,
+  "peeked": false,
+  "stop_reason": "success",
+  "timed_out": false,
+  "dropbox_calls": 0
+}

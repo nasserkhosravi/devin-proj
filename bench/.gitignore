@@ -1,0 +1,9 @@
+# Raw run output: large, and re-creatable by rerunning. Kept: result.json, ANSWER.md, agent.diff, report.md.
+results/*/*/transcript.jsonl
+results/*/*/agent.stderr
+results/*/*/agent.status
+results/*/*/grade-test.log
+results/*/*/timeout
+results/*.log
+# Superseded smoke test (old grading).
+results/smoke-t2/
