@@ -7,7 +7,8 @@
 #   tags                      each tag: count and last message
 #   search <keyword> [n]      logs and request URLs containing <keyword>
 #   http [path] [n]           HTTP calls, newest first (optionally only URLs containing <path>)
-#   call <id>                 one HTTP call: request, status, response (bodies cut to 4000 chars)
+#   call <id>                 one HTTP call: request, status, response (bodies cut to 4000 chars), and notes
+#                             when the stored body was cut or was binary
 #   field <id> <json-path>    one field of a response body, e.g. '$.data.cards[0].visible'
 #   headers <id>              header names a request sent (never values)
 #   crash [n]                 latest crash with stack trace, then the n entries before it (default 30)
@@ -31,7 +32,7 @@ cmd="${1:-}"; shift || true
 
 URI="content://com.khosravi.devin.provider"
 LATEST="_id >= (SELECT max(_id) FROM log WHERE _clientId='APP' AND _tag='SessionStart')"
-ROW="'id',_id,'time',time(_date/1000,'unixepoch','localtime'),'tag',_tag,'lvl',json_extract(_meta,'\$.log_level'),'msg',substr(_value,1,160),'type',_typeId"
+ROW="'id',_id,'time',time(_date/1000,'unixepoch','localtime'),'tag',_tag,'lvl',json_extract(_meta,'\$.log_level'),'msg',substr(_value,1,160),'type',_typeId,'fields',json_extract(_meta,'\$.fields')"
 HAR="json_extract(_meta,'\$.HAR.log.entries[0]"
 
 die() { echo "devin.sh: $*" >&2; exit 1; }
@@ -101,7 +102,7 @@ case "$cmd" in
       "$(app_where) AND _typeId='dvn_okhttp' AND json_extract(_meta,'\$.url') LIKE '%$path%'" "_id DESC" "$n" ;;
   call)
     id="${1:?usage: devin.sh call <id>}"; num "$id"
-    q "json_object('url',json_extract(_meta,'\$.url'),'request',substr($HAR.request.postData.text'),1,4000),'status',$HAR.response.status'),'response',substr($HAR.response.content.text'),1,4000),'error',json_extract(_meta,'\$.error_summery'))" \
+    q "json_object('url',json_extract(_meta,'\$.url'),'request',substr($HAR.request.postData.text'),1,4000),'requestNote',$HAR.request.postData.comment'),'status',$HAR.response.status'),'response',substr($HAR.response.content.text'),1,4000),'responseNote',$HAR.response.content.comment'),'error',json_extract(_meta,'\$.error_summery'))" \
       "_id=$id" "_id" ;;
   field)
     id="${1:?usage: devin.sh field <id> <json-path>}"; path="${2:?usage: devin.sh field <id> <json-path>}"; num "$id"

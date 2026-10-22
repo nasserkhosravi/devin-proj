@@ -9,6 +9,11 @@ Devin keeps each app's logs, crashes (with stack traces) and HTTP calls (with bo
 
 Read Devin with `devin.sh` from this skill's folder. It prints one JSON object per line and masks secrets.
 
+What the data looks like:
+- Logs can carry structured `fields` (e.g. `{"orderId":"8812","errorCode":"E42"}`). Read the facts from them, not from the message text.
+- `[REDACTED#a3f9]` is a value the app masked before storing it (tokens, passwords, phone numbers, emails). The value is gone, but the same suffix means the same value, so you can still tell that two calls sent the same token, or that a field was filled.
+- `requestNote` / `responseNote` on a call say when the stored body isn't the whole body: cut to a size limit, or `[binary body, 1.2 MB, image/png]` in place of binary data. Don't draw conclusions from the missing part.
+
 ```
 devin.sh -a <applicationId> <command>     # or: export DEVIN_APP=<applicationId>
   apps                  apps that log to Devin
