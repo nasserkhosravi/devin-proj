@@ -1,5 +1,0 @@
-{
-  "kind": "network url",
-  "expected": "tie",
-  "grade_test": "SearchQueryGradeTest"
-}

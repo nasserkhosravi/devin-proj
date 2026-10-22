@@ -1,1 +1,0 @@
-price_dsc|dsc|typo|misspel|wrong sort|sort value|sort param
