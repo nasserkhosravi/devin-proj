@@ -26,8 +26,8 @@ dependencyResolutionManagement {
 rootProject.name = "DevinProj"
 include(":sample-app")
 include(":present-app")
-include(":devin")
-include(":devin-no-op")
+include(":devin-write")
+include(":devin-write-no-op")
 //include(":devin-api")
 include(":devin-write-okhttp")
 include(":devin-write-okhttp-no-op")
