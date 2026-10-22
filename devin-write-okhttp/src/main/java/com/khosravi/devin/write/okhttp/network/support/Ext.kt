@@ -57,16 +57,6 @@ internal val Headers.hasSupportedContentEncoding: Boolean
             ?.let { it.lowercase(Locale.ROOT) in supportedEncodings }
             ?: true
 
-internal fun Headers.exclude(blacklist: Iterable<String>): Headers {
-    val builder = newBuilder()
-    for (name in names()) {
-        if (blacklist.any { userHeader -> userHeader.equals(name, ignoreCase = true) }) {
-            builder[name] = "**"
-        }
-    }
-    return builder.build()
-}
-
 internal fun Headers.toMyHttpHeaderModelList(): List<HttpHeaderModel> {
     val size = size
     if (size == 0) return emptyList()

@@ -153,15 +153,24 @@ class DevinTool private constructor(
         private var instance: DevinTool? = null
 
 
-        private fun create(appContext: Context, isEnable: Boolean, presenterConfig: JSONObject?): DevinTool {
+        private fun create(
+            appContext: Context,
+            isEnable: Boolean,
+            presenterConfig: JSONObject?,
+            trustedPresenters: List<TrustedPresenter>,
+        ): DevinTool {
             val packageName = appContext.packageName
+            val verifier = trustedPresenters.takeIf { it.isNotEmpty() }?.let { PresenterVerifier(appContext, it) }
             val devinTool = if (isEnable) {
-                val logCore = LogCore(appContext, true)
+                val logCore = LogCore(appContext, true, verifier)
                 DevinTool(LoggerImpl(logCore), DevinImageLoggerImpl(logCore), logCore, true)
             } else DevinTool(null, null, null, null)
 
             if (!isEnable) {
                 disableComponent(appContext, packageName, DevinContentProvider::class.java.name)
+            } else if (verifier != null && !verifier.isAllowed()) {
+                // Not even registered: the presenter config can hold the log password.
+                return DevinTool(null, null, null, false)
             } else {
                 try {
                     devinTool.putClient(appContext, packageName, presenterConfig)
@@ -183,9 +192,22 @@ class DevinTool private constructor(
         }
 
         fun init(context: Context, isEnable: Boolean? = null, presenterConfig: JSONObject? = null) {
+            init(context, isEnable, presenterConfig, trustedPresenters = emptyList())
+        }
+
+        /**
+         * Like [init], but logs are only sent to one of [trustedPresenters]: the app holding Devin's provider must
+         * match one entry's package name and be signed with one of its certificates. Otherwise nothing is sent,
+         * not even this app's registration and [presenterConfig], [logger] and [imageLogger] are `null`,
+         * [isProviderInstalled] is `false`, and a warning is logged once. The check runs again whenever a new
+         * connection to the presenter is made, so a presenter replaced while the app runs is caught too.
+         *
+         * An empty list accepts any presenter, which is the behavior of the other [init] overloads.
+         */
+        fun init(context: Context, isEnable: Boolean?, presenterConfig: JSONObject?, trustedPresenters: List<TrustedPresenter>) {
             if (instance == null) {
                 val fIsEnable: Boolean = isEnable ?: context.isDebuggable()
-                instance = create(context, fIsEnable, presenterConfig)
+                instance = create(context, fIsEnable, presenterConfig, trustedPresenters)
             }
         }
 
