@@ -18,6 +18,9 @@ import java.util.concurrent.TimeUnit
 object DevinTestFixture {
 
     const val AUTHORITY = "com.khosravi.devin.provider"
+
+    /** How long a test waits for logs queued by the async writer to be sent. */
+    const val WRITE_TIMEOUT_MS = 5_000L
     private val worker = Executors.newSingleThreadExecutor()
 
     /**

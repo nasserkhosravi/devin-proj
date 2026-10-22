@@ -26,6 +26,9 @@ internal class DevinExceptionLogger(
     }
 
     fun exceptionHappened(e: Throwable) {
+        // Let queued logs land first, so they appear before the crash. The crash log itself stays synchronous
+        // because the process dies right after this returns.
+        logCore.awaitPendingWrites(PENDING_LOGS_FLUSH_TIMEOUT_MS)
         val meta = LoggerImpl.createMetaForComponentLogs(VALUE_ERROR_REPORT_META_TYPE, Log.ERROR, null, e)
         logCore.insertLog(tag = DevinLogFlagsApi.TAG_UNCAUGHT_EXCEPTION, "General uncaught exception", typeId = TYPE_ID, meta = meta.toString())
     }
@@ -33,6 +36,7 @@ internal class DevinExceptionLogger(
     companion object {
         //error-report
         const val TYPE_ID = "exception"
+        private const val PENDING_LOGS_FLUSH_TIMEOUT_MS = 500L
         const val VALUE_ERROR_REPORT_META_TYPE = "general_uncaught_exception"
     }
 }

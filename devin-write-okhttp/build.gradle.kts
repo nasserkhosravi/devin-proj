@@ -35,7 +35,7 @@ android {
 
 dependencies {
 
-    implementation(project(mapOf("path" to ":devin")))
+    implementation(project(mapOf("path" to ":devin-write")))
     implementation(libs.gson)
 
     api(libs.okhttp)

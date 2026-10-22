@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.khosravi.devin.read.DevinImageFlagsApi
 import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.write.testing.DevinTestFixture
+import com.khosravi.devin.write.testing.DevinTestFixture.WRITE_TIMEOUT_MS
 import com.khosravi.devin.write.testing.DevinTestFixture.onWorker
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -20,7 +21,8 @@ import org.robolectric.RobolectricTestRunner
 class DevinImageLoggerImplTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
-    private val imageLogger = DevinImageLoggerImpl(LogCore(context, isEnable = true))
+    private val logCore = LogCore(context, isEnable = true)
+    private val imageLogger = DevinImageLoggerImpl(logCore)
 
     @Before
     fun setUp() {
@@ -33,7 +35,11 @@ class DevinImageLoggerImplTest {
         DevinTestFixture.resetSingletons()
     }
 
-    private fun singleLog() = DevinTestFixture.logs(context).single()
+    /** Logs are written in batches off the caller's thread, so wait for them before reading. */
+    private fun singleLog(): DevinTestFixture.LogRow {
+        logCore.awaitPendingWrites(WRITE_TIMEOUT_MS)
+        return DevinTestFixture.logs(context).single()
+    }
 
     @Test
     fun `downloading without a name uses the url path`() {
@@ -91,7 +97,8 @@ class DevinImageLoggerImplTest {
 
     @Test
     fun `disabled image logger writes nothing`() {
-        val disabled = DevinImageLoggerImpl(LogCore(context, isEnable = false))
+        val disabledCore = LogCore(context, isEnable = false)
+        val disabled = DevinImageLoggerImpl(disabledCore)
 
         onWorker {
             disabled.downloading("https://cdn.example.com/a.png")
@@ -99,6 +106,7 @@ class DevinImageLoggerImplTest {
             disabled.succeed("https://cdn.example.com/a.png")
         }
 
+        disabledCore.awaitPendingWrites(WRITE_TIMEOUT_MS)
         assertEquals(0, DevinTestFixture.logs(context).size)
     }
 }
