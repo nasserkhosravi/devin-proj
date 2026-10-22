@@ -256,12 +256,16 @@ internal class Redactor {
                 val boundary = end || !name[i].isLetterOrDigit() ||
                     (name[i].isUpperCase() && (name[i - 1].isLowerCase() || name[i - 1].isDigit()))
                 if (boundary) {
-                    if (i > start && name.substring(start, i).lowercase() in DEFAULT_FIELD_WORDS) return true
+                    if (i > start && isSensitiveWord(name.substring(start, i).lowercase())) return true
                     start = if (!end && !name[i].isLetterOrDigit()) i + 1 else i
                 }
             }
             return false
         }
+
+        /** A default word, or its plural (`tokens`, `phones`, `emails`). */
+        private fun isSensitiveWord(word: String): Boolean =
+            word in DEFAULT_FIELD_WORDS || (word.length > 1 && word.endsWith('s') && word.dropLast(1) in DEFAULT_FIELD_WORDS)
 
         private fun normalize(name: String): String = name.lowercase().filter { it.isLetterOrDigit() }
 
