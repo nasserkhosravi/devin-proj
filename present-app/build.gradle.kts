@@ -25,11 +25,11 @@ android {
     defaultConfig {
         minSdk = libs.versions.project.minSdk.get().toInt()
         targetSdk = libs.versions.project.targetSdk.get().toInt()
-        versionCode = 5
+        versionCode = 6
         // Stamps the update-check time before Application.onCreate so the e2e suite never hits GitHub.
         testInstrumentationRunner = "com.khosravi.devin.present.e2e.E2eTestRunner"
     }
-    val versionName = "\"4.6.0\""
+    val versionName = "\"4.7.0\""
 
     // Only set on CI (see .github/workflows/release-presenter.yml); local release builds stay as before.
     val releaseKeystorePath: String? = System.getenv("PRESENTER_KEYSTORE_PATH")
