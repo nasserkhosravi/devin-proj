@@ -90,5 +90,9 @@ class DevinTool private constructor(
             //no impl
         }
 
+        fun init(context: Context, isEnable: Boolean?, presenterConfig: JSONObject?, trustedPresenters: List<TrustedPresenter>) {
+            //no impl
+        }
+
     }
 }
