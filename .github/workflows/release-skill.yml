@@ -1,0 +1,59 @@
+# Publishes a Devin agent skill release: tag `skill_X.Y.Z` + GitHub Release with `devin-logs-X.Y.Z.zip`
+# (the devin-skill/devin-logs folder) and the `## X.Y.Z` section of devin-skill/CHANGELOG.md as notes.
+# Never marked "Latest": that is reserved for presenter releases, which the presenter's update check reads.
+#
+# Run it from the Actions tab ("Run workflow") on main, after setting devin-skill/VERSION and adding its
+# CHANGELOG section (scripts/check-skill-release.sh checks both).
+name: Release skill
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-skill
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Reads devin-skill/VERSION, refuses an existing tag, requires the CHANGELOG section.
+      - name: Check release
+        run: scripts/check-skill-release.sh
+
+      - name: Extract changelog section
+        run: |
+          awk -v header="## $VERSION" '
+            $0 == header { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' devin-skill/CHANGELOG.md | sed '/./,$!d' > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"; then
+            echo "::error::devin-skill/CHANGELOG.md has no '## $VERSION' section, or it is empty."
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/release-notes.md"
+
+      - name: Package skill
+        run: |
+          zip_path="$RUNNER_TEMP/devin-logs-$VERSION.zip"
+          (cd devin-skill && zip -r "$zip_path" devin-logs)
+          unzip -l "$zip_path"
+          echo "ZIP=$zip_path" >> "$GITHUB_ENV"
+
+      - name: Create tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" "$ZIP" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes-file "$RUNNER_TEMP/release-notes.md" \
+            --latest=false
