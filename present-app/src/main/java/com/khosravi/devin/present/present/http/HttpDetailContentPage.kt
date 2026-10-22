@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -251,6 +252,17 @@ private fun HttpContentList(
                     onCopyCurl = onCopyCurl,
                     modifier = Modifier.padding(horizontal = horizontalPadding),
                 )
+            }
+            model.bodyNote?.let { note ->
+                item(key = "note") {
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontStyle = FontStyle.Italic,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = horizontalPadding, vertical = MaterialTheme.spacing.small),
+                    )
+                }
             }
             items(count = body.items.size) { index ->
                 val item = body.items[index]

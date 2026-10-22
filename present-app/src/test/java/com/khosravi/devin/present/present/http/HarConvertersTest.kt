@@ -29,9 +29,9 @@ class HarConvertersTest {
     }
 
     @Test
-    fun `content with non-json mime keeps text as its json string form`() {
+    fun `content with non-json mime keeps text as plain text`() {
         val content = gson.fromJson("""{"size":2,"mimeType":"text/plain","text":"hi"}""", HarContent::class.java)
-        assertEquals("\"hi\"", content.text)
+        assertEquals("hi", content.text)
     }
 
     @Test
@@ -67,12 +67,12 @@ class HarConvertersTest {
     }
 
     @Test
-    fun `post data with form mime keeps text as its json string form`() {
+    fun `post data with form mime keeps text as plain text`() {
         val postData = gson.fromJson(
             """{"mimeType":"application/x-www-form-urlencoded","text":"a=1"}""",
             HarPostData::class.java,
         )
-        assertEquals("\"a=1\"", postData.text)
+        assertEquals("a=1", postData.text)
     }
 
     @Test

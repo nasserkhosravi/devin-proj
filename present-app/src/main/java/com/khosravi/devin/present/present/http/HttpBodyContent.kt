@@ -19,10 +19,12 @@ internal class HttpContentModel(
     val headers: List<AnnotatedString>,
     /** Null when the body is missing or empty: the tab then shows `msg_body_empty` and no search. */
     val body: HttpBodyModel?,
+    /** Shown above the body when the stored body isn't what was sent, e.g. "Devin kept the first 32 KB of 210 KB." */
+    val bodyNote: String? = null,
 ) {
-    /** List index of the first body item: the header chunks and the copy-actions row come before it. */
+    /** List index of the first body item: the header chunks, the copy-actions row and the note come before it. */
     val bodyItemsOffset: Int
-        get() = headers.size + 1
+        get() = headers.size + 1 + if (body != null && bodyNote != null) 1 else 0
 }
 
 internal class HttpBodyModel(
@@ -69,9 +71,12 @@ internal fun buildHttpContentModel(
     val headers = HttpFormatUtils.formatHeaders(context, if (isRequest) data.requestHeaders else data.responseHeaders)
     val bodyContent = if (isRequest) data.requestBody else data.responseBody
     val bodyMimeType = if (isRequest) data.requestBodyMimeType else data.responseBodyMimeType
+    // A binary body is stored as its note, so the note would only repeat the body.
+    val bodyNote = (if (isRequest) data.requestBodyNote else data.responseBodyNote)?.takeIf { it != bodyContent }
     return HttpContentModel(
         headers = headers.toAnnotatedString().chunkedForDisplay(),
         body = buildBodyModel(context, bodyContent, bodyMimeType, jsonConfigColor),
+        bodyNote = bodyNote,
     )
 }
 
