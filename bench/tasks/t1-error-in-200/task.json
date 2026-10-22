@@ -1,5 +1,0 @@
-{
-  "kind": "network body",
-  "expected": "devin",
-  "grade_test": "CheckoutParserGradeTest"
-}
