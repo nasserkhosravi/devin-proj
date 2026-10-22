@@ -1,6 +1,10 @@
 # Changelog
 **Write module:**
 
+## 4.6.0
+- Add structured log fields (`meta: Map` overloads)
+- Add `TrustedPresenter` to restrict which presenter receives an app's logs
+
 ## 4.5.0
 - Fix ANRs when logging from the main thread. Logs are now queued and sent to the presenter in batches off the caller's thread, so a log call no longer blocks on IPC or on starting the presenter process.
 - If the queue fills up (2,000 waiting logs), new logs are dropped and a `devin_dropped_logs` warning records how many.

@@ -44,6 +44,30 @@ internal class LoggerImpl(
         sendUserLog(tag, message, logLevel, payload, throwable)
     }
 
+    override fun debug(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.DEBUG, payload, throwable, meta)
+    }
+
+    override fun info(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.INFO, payload, throwable, meta)
+    }
+
+    override fun warning(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.WARN, payload, throwable, meta)
+    }
+
+    override fun error(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.ERROR, payload, throwable, meta)
+    }
+
+    override fun verbose(tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, Log.VERBOSE, payload, throwable, meta)
+    }
+
+    override fun send(logLevel: Int, tag: String?, message: String, meta: Map<String, Any?>, payload: String?, throwable: Throwable?) {
+        sendUserLog(tag, message, logLevel, payload, throwable, meta)
+    }
+
     override fun logCallerFunc() {
         if (!logCore.isEnable()) {
             return
@@ -110,9 +134,20 @@ internal class LoggerImpl(
         } else parenName
     }
 
-    private fun sendUserLog(tag: String?, value: String, logLevel: Int, payload: String?, throwable: Throwable? = null) {
+    private fun sendUserLog(
+        tag: String?,
+        value: String,
+        logLevel: Int,
+        payload: String?,
+        throwable: Throwable? = null,
+        fields: Map<String, Any?>? = null,
+    ) {
         if (logCore.isEnable().not()) return
-        sendLog(tag, value, createMetaFromUserPayload(logLevel, payload, throwable))
+        val meta = createMetaFromUserPayload(logLevel, payload, throwable)
+        if (!fields.isNullOrEmpty()) {
+            meta.put(DevinLogFlagsApi.KEY_LOG_FIELDS, LogFields.toJson(fields))
+        }
+        sendLog(tag, value, meta)
     }
 
     private fun TraceLogger.AnalysedStacktrace.toJsonString() = JSONObject()

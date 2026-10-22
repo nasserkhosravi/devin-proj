@@ -16,11 +16,12 @@ Each component is released on its own. Its name is used in its release branch an
 | `write` | `devin-write`, `devin-write-no-op` | `POM_VERSION_NAME` in both modules' `gradle.properties` (must match) | `devin-write/CHANGELOG.md` | `write_X.Y.Z` | `release-library.yml` → `write` |
 | `write-okhttp` | `devin-write-okhttp`, `devin-write-okhttp-no-op` | `POM_VERSION_NAME` in both modules' `gradle.properties` (must match) | `devin-write-okhttp/CHANGELOG.md` | `write-okhttp_X.Y.Z` | `release-library.yml` → `write-okhttp` |
 | `lib-har` | `lib-har` | `POM_VERSION_NAME` in `lib-har/gradle.properties` | `lib-har/CHANGELOG.md` | `lib-har_X.Y.Z` | `release-library.yml` → `lib-har` |
+| `skill` | `devin-skill` | `devin-skill/VERSION` | `devin-skill/CHANGELOG.md` | `skill_X.Y.Z` | `release-skill.yml` |
 
 ## Branches
 
 - **`main`**: the released code. Only release branches are merged into it. Never merge or commit a feature, fix, or any other branch into `main` directly.
-- **Release branch**: `<component>-release-X.Y.Z`, e.g. `presenter-release-4.6.0`, `write-release-4.5.0`, `write-okhttp-release-1.0.3`, `lib-har-release-1.0.1`.
+- **Release branch**: `<component>-release-X.Y.Z`, e.g. `presenter-release-4.6.0`, `write-release-4.5.0`, `write-okhttp-release-1.0.3`, `lib-har-release-1.0.1`, `skill-release-0.1.0`.
   - Create it from the latest `main`.
   - It covers exactly one component. Never create a branch that releases two components (e.g. write + presenter).
   - Its own commits only edit that component's CHANGELOG and version. All code reaches it through feature/fix branches merged into it.
@@ -32,6 +33,7 @@ Each component is released on its own. Its name is used in its release branch an
 1. On the release branch, add a `## X.Y.Z` section at the top of the component's CHANGELOG with one bullet per user-visible change, and set the version (see the table).
    - `presenter`: also increment `versionCode` by 1 (it must be exactly the latest `presenter_*` tag's `versionCode` + 1). Android uses it to decide whether an APK is an upgrade. Then run `scripts/check-presenter-release.sh`; it checks the tag is new, the `versionCode` step, and the CHANGELOG section. `release-presenter.yml` runs the same script and refuses to release if it fails.
    - Libraries released as a pair (`devin-write` + `devin-write-no-op`, `devin-write-okhttp` + `devin-write-okhttp-no-op`) must have the same `POM_VERSION_NAME`.
+   - `skill`: run `scripts/check-skill-release.sh`; it checks `devin-skill/VERSION`, that the tag is new, and the CHANGELOG section. `release-skill.yml` runs the same script.
 2. Merge the release branch into `main` via a pull request.
 3. Run the component's release workflow from the Actions tab, **on `main`**. It reads the version, refuses an existing tag (presenter: also checks `versionCode`), takes the release notes from the `## X.Y.Z` CHANGELOG section, publishes, and creates the tag and GitHub Release.
 4. Merge `main` into every other open release branch, so they build on what was just released.
@@ -40,6 +42,7 @@ Each component is released on its own. Its name is used in its release branch an
 
 - A component that depends on another releases after it. `write-okhttp` depends on `write`, so the `write` version it uses must already be on Maven Central (the workflow checks this). Release `write` first, then merge `main` into the `write-okhttp` release branch.
 - `present-app` builds `devin-write` from source (`project(":devin-write")`), so a presenter release ships whatever `devin-write` code is on `main`. A presenter feature that needs a `devin-write` change waits until that change has been released as `write` and merged into `main`, then merge `main` into the presenter release branch.
+- `skill` reads Devin's database through the provider, so a `write` release that changes the stored format (columns, `_meta`, HAR layout) needs a matching `skill` release.
 
 # Project Map
 
@@ -54,7 +57,8 @@ Devin: Android logging framework. Write-side library apps embed to produce logs,
 | `present-app` | Android app | The "Devin" viewer app — reads/displays/exports logs from all registered clients. |
 | `sample-app` | Android app | Demo/integration-test app for the write + OkHttp libraries. |
 | `lib-calendar` | Android library | Gregorian + Persian (Jalali) calendar support. |
-| `lib-har` | Kotlin/JVM library | HAR 1.2 spec models + JSON converter. |
+| `lib-har` | Android library | HAR 1.2 spec models + JSON converter (uses Android's `org.json`, so it can't be used from plain JVM tools). |
+| `devin-skill` | Agent skill | `devin-logs`: lets AI coding agents read what an app did at runtime from Devin on a connected device (`SKILL.md` + `devin.sh`, adb only). Released as a zip. |
 
 `docs/superpowers/specs/` and `docs/superpowers/plans/` hold design docs and implementation plans for past/ongoing features — check there before re-deriving design intent from scratch.
 
