@@ -16,7 +16,7 @@ Each component is released on its own. Its name is used in its release branch an
 | `write` | `devin-write`, `devin-write-no-op` | `POM_VERSION_NAME` in both modules' `gradle.properties` (must match) | `devin-write/CHANGELOG.md` | `write_X.Y.Z` | `release-library.yml` → `write` |
 | `write-okhttp` | `devin-write-okhttp`, `devin-write-okhttp-no-op` | `POM_VERSION_NAME` in both modules' `gradle.properties` (must match) | `devin-write-okhttp/CHANGELOG.md` | `write-okhttp_X.Y.Z` | `release-library.yml` → `write-okhttp` |
 | `lib-har` | `lib-har` | `POM_VERSION_NAME` in `lib-har/gradle.properties` | `lib-har/CHANGELOG.md` | `lib-har_X.Y.Z` | `release-library.yml` → `lib-har` |
-| `skill` | `devin-skill`, `bench` (test tooling, not shipped) | `devin-skill/VERSION` | `devin-skill/CHANGELOG.md` | `skill_X.Y.Z` | `release-skill.yml` |
+| `skill` | `devin-skill` | `devin-skill/VERSION` | `devin-skill/CHANGELOG.md` | `skill_X.Y.Z` | `release-skill.yml` |
 
 ## Branches
 
@@ -59,7 +59,6 @@ Devin: Android logging framework. Write-side library apps embed to produce logs,
 | `lib-calendar` | Android library | Gregorian + Persian (Jalali) calendar support. |
 | `lib-har` | Android library | HAR 1.2 spec models + JSON converter (uses Android's `org.json`, so it can't be used from plain JVM tools). |
 | `devin-skill` | Agent skill | `devin-logs`: lets AI coding agents read what an app did at runtime from Devin on a connected device (`SKILL.md` + `devin.sh`, adb only). Released as a zip. |
-| `bench` | Test tooling | Agent benchmark for the skill: seeded-bug app, tasks, headless Claude Code runner, results (`bench/FINDINGS.md`). |
 
 `docs/superpowers/specs/` and `docs/superpowers/plans/` hold design docs and implementation plans for past/ongoing features — check there before re-deriving design intent from scratch.
 
