@@ -42,9 +42,8 @@ jobs:
             'signingKey=unused-on-ci' \
             'signingKeyPassword=unused-on-ci' > local.properties
 
-      # TODO: remove the -x once #149 (devin-write-okhttp-no-op missing its JUnit test dependency) is on main.
       - name: Run unit tests
-        run: ./gradlew testDebugUnitTest --continue -x :devin-write-okhttp-no-op:testDebugUnitTest
+        run: ./gradlew testDebugUnitTest --continue
 
       - name: Upload test reports
         if: failure()
