@@ -47,6 +47,8 @@ dependencies {
     testImplementation(libs.junit)
     // The real org.json, since HarMapper uses it and Android's stub throws in JVM tests.
     testImplementation(libs.json)
+    // A real android.net.Uri, which the logger needs to update a stored call after its response or failure.
+    testImplementation(libs.robolectric)
 }
 
 val projProps: MutableMap<String, *> = project.properties
