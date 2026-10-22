@@ -1,13 +1,13 @@
 # Changelog
 
 ## 4.7.0
-- Rebuild every screen with Jetpack Compose. Screens and behaviour stay the same.
-- Draw screens edge-to-edge. The log list and import screens keep their content above the keyboard, and the login sheet opens fully expanded so Confirm stays visible.
-- Keep the log list search field pinned under the filter chips while scrolling.
-- Improve contrast in light and dark themes (HTTP status, okhttp chip, secondary text, search highlights, JSON values), with one consistent set of shapes and text sizes.
-- Fix Verbose logs being labelled "Info".
-- After Download in the optional update prompt, keep the release page in front instead of returning to the log list.
-- Accept batched log writes from `write` 4.5.0 clients: a batch is stored in one transaction, with one change notification per tag instead of one per log.
+- Migrate all screens to Jetpack Compose
+- Draw screens edge-to-edge
+- Make log list search sticky
+- Improve contrast in light and dark themes
+- Fix Verbose logs labelled as Info
+- Keep release page open after Download in update prompt
+- Support batched log writes from write 4.5.0
 
 ## 4.6.0
 - Automatically delete old logs: logs older than N days or beyond the newest N per client (defaults: 7 days, 10,000 logs), configurable from a new Settings screen that also shows storage used.
