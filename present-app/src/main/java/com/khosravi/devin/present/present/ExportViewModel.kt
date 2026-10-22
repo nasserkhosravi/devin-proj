@@ -11,6 +11,8 @@ import androidx.lifecycle.viewModelScope
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.MIME_APP_ZIP
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
+import com.khosravi.devin.present.analytics.Analytics.ExportDestination
 import com.khosravi.devin.present.copyFileToOutputStream
 import com.khosravi.devin.present.createJsonFileNameForExport
 import com.khosravi.devin.present.createZipFileNameForExport
@@ -74,6 +76,9 @@ class ExportViewModel(
     /** Prepared export file waiting for the user to pick a save location. */
     private var saveTmpFile: File? = null
 
+    /** Whether the pending save uses the default option, for analytics once the save finishes. */
+    private var isSaveDefaultOption = true
+
     sealed interface ExportEvent {
         data class LaunchSavePicker(val intent: Intent) : ExportEvent
         data class Share(val uri: Uri, val mimeType: String) : ExportEvent
@@ -84,7 +89,8 @@ class ExportViewModel(
     /** Prepares the export file and asks the UI to open the "create document" picker. */
     fun startSave(options: ExportOptions) {
         deleteSaveTmpFile()
-        launchExportJob {
+        isSaveDefaultOption = isDefaultOption(options)
+        launchExportJob(onFailed = { reportExported(isSaveDefaultOption, ExportDestination.SAVE, isSuccessful = false) }) {
             val file = prepareLogsForExport(options).first()
             saveTmpFile = file
             // Progress stays on until the picker result arrives (onSaveLocationPicked), so Share can't delete
@@ -103,13 +109,14 @@ class ExportViewModel(
         }
         val file = saveTmpFile
         saveTmpFile = null
-        launchExportJob {
+        launchExportJob(onFailed = { reportExported(isSaveDefaultOption, ExportDestination.SAVE, isSuccessful = false) }) {
             val isSaved = try {
                 file != null && copyFileToUri(uri, file).first()
             } finally {
                 file?.delete()
             }
             _isExporting.value = false
+            reportExported(isSaveDefaultOption, ExportDestination.SAVE, isSaved)
             _events.send(ExportEvent.Message(if (isSaved) R.string.msg_save_done else R.string.error_msg_something_went_wrong))
             _events.send(ExportEvent.Close)
         }
@@ -118,17 +125,20 @@ class ExportViewModel(
     /** Prepares the export file and asks the UI to show the share chooser, then close. */
     fun startShare(options: ExportOptions) {
         deleteSaveTmpFile()
-        launchExportJob {
+        val isDefault = isDefaultOption(options)
+        launchExportJob(onFailed = { reportExported(isDefault, ExportDestination.SHARE, isSuccessful = false) }) {
             val file = prepareLogsForExport(options).first()
             val uri = getContext().toUriByFileProvider(file)
             val mimeType = if (options.withSeparationTagFiles) MIME_APP_ZIP else MIME_APP_JSON
             _isExporting.value = false
+            // Success means the share sheet opened, not that the file was sent.
+            reportExported(isDefault, ExportDestination.SHARE, isSuccessful = true)
             _events.send(ExportEvent.Share(uri, mimeType))
             _events.send(ExportEvent.Close)
         }
     }
 
-    private fun launchExportJob(block: suspend () -> Unit) {
+    private fun launchExportJob(onFailed: () -> Unit, block: suspend () -> Unit) {
         job?.cancel()
         _isExporting.value = true
         job = viewModelScope.launch {
@@ -139,9 +149,16 @@ class ExportViewModel(
             } catch (e: Exception) {
                 e.printStackTrace()
                 _isExporting.value = false
+                onFailed()
                 _events.send(ExportEvent.Message(R.string.error_msg_something_went_wrong))
             }
         }
+    }
+
+    private fun isDefaultOption(options: ExportOptions) = options == getExportDefaultOption()
+
+    private fun reportExported(isDefaultOption: Boolean, destination: ExportDestination, isSuccessful: Boolean) {
+        Analytics.logsExported(isDefaultOption, destination, isSuccessful)
     }
 
     private fun deleteSaveTmpFile() {

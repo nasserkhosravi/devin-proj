@@ -18,6 +18,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.khosravi.devin.present.KEY_DATA
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
@@ -43,9 +44,13 @@ class ImportLogActivity : BaseActivity() {
     /** Null until the imported file has been read and converted. */
     private var items by mutableStateOf<List<LogItemData>?>(null)
 
+    /** The import result is reported once, not again when it is replayed after a configuration change. */
+    private var isImportResultReported = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
+        isImportResultReported = savedInstanceState != null
 
         setContent {
             DevinTheme { ImportLogNavHost() }
@@ -66,6 +71,7 @@ class ImportLogActivity : BaseActivity() {
                     onTextLogClick = {
                         // Ignore a second tap that lands while the detail transition is already running.
                         if (navController.isCurrentEntryResumed()) {
+                            Analytics.logDetailOpened(Analytics.LogType.TEXT, Analytics.LogSource.IMPORTED)
                             LogDetailArgs.navigate(navController, it)
                         }
                     },
@@ -82,6 +88,10 @@ class ImportLogActivity : BaseActivity() {
     private fun observeImportedLogs() {
         lifecycleScope.launch {
             viewModel.importedLogs.collect { result ->
+                if (result != null && !isImportResultReported) {
+                    isImportResultReported = true
+                    Analytics.logsImported(isSuccessful = result is ReaderViewModel.ImportResult.Loaded)
+                }
                 when (result) {
                     null -> Unit // still loading
                     is ReaderViewModel.ImportResult.Loaded -> items = result.logs
