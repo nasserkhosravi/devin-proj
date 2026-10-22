@@ -12,6 +12,7 @@
 #   PRESENTER_KEYSTORE_PASSWORD
 #   PRESENTER_KEY_ALIAS
 #   PRESENTER_KEY_PASSWORD
+#   APPMETRICA_API_KEY          AppMetrica key for crash reporting and analytics; without it the APK reports nothing
 name: Release presenter
 
 on:
@@ -82,7 +83,15 @@ jobs:
           PRESENTER_KEYSTORE_PASSWORD: ${{ secrets.PRESENTER_KEYSTORE_PASSWORD }}
           PRESENTER_KEY_ALIAS: ${{ secrets.PRESENTER_KEY_ALIAS }}
           PRESENTER_KEY_PASSWORD: ${{ secrets.PRESENTER_KEY_PASSWORD }}
-        run: ./gradlew :present-app:assembleRelease
+          # present-app/build.gradle.kts reads it into BuildConfig.APPMETRICA_API_KEY for release builds.
+          APPMETRICA_API_KEY: ${{ secrets.APPMETRICA_API_KEY }}
+        run: |
+          # An empty key builds fine but silently turns off crash reporting and analytics, as in 4.5.0–4.7.0.
+          if [ -z "$APPMETRICA_API_KEY" ]; then
+            echo "::error::Secret APPMETRICA_API_KEY is not set."
+            exit 1
+          fi
+          ./gradlew :present-app:assembleRelease
 
       - name: Verify signature
         run: |
