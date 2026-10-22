@@ -71,6 +71,13 @@ agent() {
   report="$(cat "$BENCH_DIR/tasks/$task/prompt.md")"
   prompt="$(python3 -c 'import sys; print(open(sys.argv[1]).read().replace("{{BUG_REPORT}}", sys.argv[2]))' "$BENCH_DIR/agent-prompt.md" "$report")"
 
+  # The skill's helper script, by relative or absolute path (/tmp is /private/tmp on macOS).
+  local skill_tools=()
+  local script=".claude/skills/devin-logs/devin.sh"
+  for p in "$script" "$dir/$script" "/private$dir/$script"; do
+    skill_tools+=("Bash($p *)" "Bash(bash $p *)")
+  done
+
   (
     cd "$dir"
     # claude-env.py drops the variables of any Claude Code session this script runs inside, so the agent
@@ -81,7 +88,7 @@ agent() {
       --setting-sources project \
       --strict-mcp-config --mcp-config '{"mcpServers":{}}' \
       --permission-mode dontAsk \
-      --allowedTools "${ALLOWED_TOOLS[@]}" \
+      --allowedTools "${ALLOWED_TOOLS[@]}" "${skill_tools[@]}" \
       --max-budget-usd "$BUDGET" \
       --no-session-persistence \
       < /dev/null > "$out/transcript.jsonl" 2> "$out/agent.stderr" &
