@@ -4,6 +4,7 @@ import com.khosravi.devin.write.BuildConfig
 import com.khosravi.devin.write.okhttp.network.entity.HttpRequestModel
 import com.khosravi.devin.write.okhttp.network.entity.HttpResponseModel
 import com.khosravi.devin.write.okhttp.network.support.JsonConverter
+import com.khosravi.devin.write.okhttp.network.support.Redactor
 import com.khosravi.devin.write.okhttp.network.support.getQueryParameters
 import org.json.JSONObject
 import java.net.URL
@@ -21,7 +22,7 @@ internal object HarMapper {
 
     private const val CONTENT_TYPE_JSON = "application/json"
 
-    fun from(url: URL, request: HttpRequestModel, responseModel: HttpResponseModel?, tookMSFallback: Long = -1): HarFile {
+    fun from(url: URL, request: HttpRequestModel, responseModel: HttpResponseModel?, redactor: Redactor, tookMSFallback: Long = -1): HarFile {
         val harRequest = HarRequest(
             method = request.method,
             url = url.toString(),
@@ -31,7 +32,7 @@ internal object HarMapper {
             queryString = url.getQueryParameters().map {
                 HarQueryString(it.first, it.second, null)
             },
-            postData = capturePostData(request.requestBody, request.requestContentType),
+            postData = capturePostData(request.requestBody, request.requestContentType, redactor),
             headersSize = request.requestHeadersSize ?: -1,
             bodySize = request.requestContentSize ?: -1,
             comment = null
@@ -45,10 +46,7 @@ internal object HarMapper {
                 )
             }
             val decodedBody = responseModel.decodedBody
-            val fContent =
-                if (!decodedBody.isNullOrEmpty() && responseModel.responseContentType?.contains(CONTENT_TYPE_JSON) == true) {
-                    JsonConverter.parseJsonStringSafe(decodedBody)
-                } else null
+            val fContent: Any? = redactContent(decodedBody, responseModel.responseContentType, redactor)
 
             // Capture Response Data
             HarResponse(
@@ -97,12 +95,21 @@ internal object HarMapper {
         }.format(Date(dateValue))
     }
 
-    private fun capturePostData(data: String?, contentType: String?): HarPostData {
-        val fData: Any? = if (!data.isNullOrEmpty() && contentType?.contains("application/json") == true) {
-            JsonConverter.parseJsonStringSafe(data)
-        } else {
-            data
+    /**
+     * A JSON body is stored as parsed JSON with sensitive fields masked; any other body as masked text.
+     * JSON is parsed once, here, and redacted on the parsed tree.
+     */
+    private fun redactContent(body: String?, contentType: String?, redactor: Redactor): Any? {
+        if (body.isNullOrEmpty()) return body
+        if (contentType?.contains(CONTENT_TYPE_JSON) == true) {
+            val json = JsonConverter.parseJsonStringSafe(body)
+            if (json != null) return redactor.redactJson(json)
         }
+        return redactor.redactBody(body, contentType)
+    }
+
+    private fun capturePostData(data: String?, contentType: String?, redactor: Redactor): HarPostData {
+        val fData: Any? = redactContent(data, contentType, redactor)
         return HarPostData(
             mimeType = contentType ?: "application/octet-stream",
             params = emptyList(),

@@ -11,7 +11,24 @@ interface DevinOkHttpLogger {
 
     fun setRequestsSkipper(action: (Request) -> Boolean)
 
+    /**
+     * Redaction masks sensitive values before a call is stored, as `[REDACTED#a3f9]` (a short fingerprint, so
+     * calls that sent the same value can be matched). It is on by default for credential headers
+     * (`Authorization`, `Cookie`, `Set-Cookie`, `X-Api-Key`, ...), fields whose name contains a word like token,
+     * password, secret, phone, mobile, email or otp (in JSON bodies, form bodies and query parameters), and
+     * email addresses, phone numbers and bearer tokens in any text. Use the methods below to add rules or turn
+     * the defaults off.
+     */
     fun addHeadersRedactor(headers: List<String>)
+
+    /** Also masks JSON fields, form fields and query parameters with these names (case and `_`/`-` ignored). */
+    fun addFieldsRedactor(fields: List<String>)
+
+    /** Also masks text matching these patterns, in bodies and error messages. */
+    fun addPatternsRedactor(patterns: List<Regex>)
+
+    /** Turns the default rules on or off. Rules added with the methods above always apply. */
+    fun setDefaultRedactionEnabled(enabled: Boolean)
 
     fun addBodyDecoder(decoder: DevinOkHttpBodyDecoder)
 }

@@ -11,6 +11,7 @@ import com.khosravi.devin.write.okhttp.network.entity.HttpTransactionStateModel
 import com.khosravi.devin.write.okhttp.network.support.DefaultTextDecoder
 import com.khosravi.devin.write.okhttp.network.support.DevinOkHttpBodyDecoder
 import com.khosravi.devin.write.okhttp.network.support.JsonConverter
+import com.khosravi.devin.write.okhttp.network.support.Redactor
 import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -24,7 +25,7 @@ internal class OkHttpLoggerImpl internal constructor(
     private var interceptor: NetworkInterceptor? = null
     private var logSkipper: ((Request) -> Boolean)? = null
 
-    internal var redactHeaderName: HashSet<String> = HashSet()
+    internal val redactor = Redactor()
     internal var bodyDecoders = ArrayList<DevinOkHttpBodyDecoder>().apply {
         add(DefaultTextDecoder)
     }
@@ -45,7 +46,22 @@ internal class OkHttpLoggerImpl internal constructor(
 
     override fun addHeadersRedactor(headers: List<String>) {
         if (isEnable.not()) return
-        redactHeaderName.addAll(headers)
+        redactor.addHeaders(headers)
+    }
+
+    override fun addFieldsRedactor(fields: List<String>) {
+        if (isEnable.not()) return
+        redactor.addFields(fields)
+    }
+
+    override fun addPatternsRedactor(patterns: List<Regex>) {
+        if (isEnable.not()) return
+        redactor.addPatterns(patterns)
+    }
+
+    override fun setDefaultRedactionEnabled(enabled: Boolean) {
+        if (isEnable.not()) return
+        redactor.defaultsEnabled = enabled
     }
 
     override fun addBodyDecoder(decoder: DevinOkHttpBodyDecoder) {
@@ -94,7 +110,8 @@ internal class OkHttpLoggerImpl internal constructor(
 
     internal fun onResponseFailed(model: HttpTransactionStateModel.Failed, har: HarFile) {
         val meta = createMetaJson(model, Log.ERROR, DevinHttpFlagsApi.Status.NETWORK_ERROR, har).apply {
-            addProperty(DevinHttpFlagsApi.KEY_SUMMERY_OF_ERROR, model.exception.toString())
+            // The message can hold the request URL, with its query parameters.
+            addProperty(DevinHttpFlagsApi.KEY_SUMMERY_OF_ERROR, redactor.redactText(model.exception.toString()))
         }
 
         val value = "!!!!!! ${model.request.method} ${model.url.path}"

@@ -5,8 +5,8 @@ import com.khosravi.devin.write.okhttp.network.entity.HttpRequestModel
 import com.khosravi.devin.write.okhttp.network.entity.HttpResponseModel
 import com.khosravi.devin.write.okhttp.network.support.DevinOkHttpBodyDecoder
 import com.khosravi.devin.write.okhttp.network.support.JsonConverter
+import com.khosravi.devin.write.okhttp.network.support.Redactor
 import com.khosravi.devin.write.okhttp.network.support.contentType
-import com.khosravi.devin.write.okhttp.network.support.exclude
 import com.khosravi.devin.write.okhttp.network.support.hasBody
 import com.khosravi.devin.write.okhttp.network.support.toMyHttpHeaderModelList
 import okhttp3.Request
@@ -16,13 +16,13 @@ import okio.ByteString
 import java.io.IOException
 
 internal class HttpLogProcessor(
-    private val headersToRedact: Set<String>,
+    private val redactor: Redactor,
     private val bodyDecoders: Iterable<DevinOkHttpBodyDecoder>,
 ) {
 
     internal fun processRequest(request: Request): HttpRequestModel {
         val requestDate = System.currentTimeMillis()
-        val headers = request.headers.exclude(headersToRedact).toMyHttpHeaderModelList().let {
+        val headers = redactor.redactHeaders(request.headers).toMyHttpHeaderModelList().let {
             JsonConverter.serialize(it)
         }
         val requestContentType = request.body?.contentType()?.toString()
@@ -89,13 +89,13 @@ internal class HttpLogProcessor(
 
         // includes headers added later in the chain
         requestModel.requestHeadersSize = response.request.headers.byteCount()
-        requestModel.requestHeaders = response.request.headers.exclude(headersToRedact).toMyHttpHeaderModelList().let {
+        requestModel.requestHeaders = redactor.redactHeaders(response.request.headers).toMyHttpHeaderModelList().let {
             JsonConverter.serialize(it)
         }
         requestModel.requestDate = response.sentRequestAtMillis
 
         val responseHeadersSize = response.headers.byteCount()
-        val responseHeaders = response.headers.exclude(headersToRedact).toMyHttpHeaderModelList().let { JsonConverter.serialize(it) }
+        val responseHeaders = redactor.redactHeaders(response.headers).toMyHttpHeaderModelList().let { JsonConverter.serialize(it) }
         val responseDate = response.receivedResponseAtMillis
         val protocol = response.protocol.toString()
         val responseCode = response.code
