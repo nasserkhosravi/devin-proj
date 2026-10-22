@@ -24,7 +24,3 @@ Or download `devin-logs-<version>.zip` from the `skill_<version>` GitHub Release
 devin-logs/devin.sh apps
 devin-logs/devin.sh -a <applicationId> timeline
 ```
-
-## Measured effect
-
-See `bench/FINDINGS.md`. On bugs whose evidence exists only at runtime, agents with the skill were about 1.7× cheaper and 2× faster, with the same success rate.
