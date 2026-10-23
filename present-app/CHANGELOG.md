@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.8.0
+- Order the tag row by use and recent activity
+- Mark tags with new errors with a red dot
+- Search tags from the tag row
+- Show the tag row in two rows when there are many tags
+- Show stored text bodies as plain text, with a note when truncated
+- Report usage analytics and crashes through AppMetrica in release builds
+
 ## 4.7.0
 - Migrate all screens to Jetpack Compose
 - Draw screens edge-to-edge
