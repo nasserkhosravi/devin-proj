@@ -264,7 +264,7 @@ class ReaderViewModel constructor(
         return action(clientId)
     }
 
-    private fun getSelectedClientId() = cacheRepo.getSelectedClientId()
+    fun getSelectedClientId() = cacheRepo.getSelectedClientId()
 
     private fun getSelectedClientIdOrError() = getSelectedClientId()!!
 

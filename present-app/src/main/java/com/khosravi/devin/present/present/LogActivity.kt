@@ -116,7 +116,7 @@ class LogActivity : BaseActivity() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ROUTE_LOGS) {
             composable(ROUTE_LOGS) { LogsDestination(navController) }
-            logDetailDestination(navController, calendar, startRoute = ROUTE_LOGS)
+            logDetailDestination(navController, calendar, startRoute = ROUTE_LOGS, appPackage = viewModel.getSelectedClientId())
             dialog(ROUTE_EXPORT) {
                 // Scoped to this back-stack entry: cleared (job cancelled, temp file deleted) when the dialog closes.
                 val exportViewModel: ExportViewModel = viewModel(factory = vmFactory)
