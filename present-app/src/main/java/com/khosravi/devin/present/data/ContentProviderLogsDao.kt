@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.database.getStringOrNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -19,6 +20,7 @@ import com.khosravi.devin.present.optString
 import com.khosravi.devin.present.present.http.GsonConverter
 import com.khosravi.devin.read.DevinUriHelper
 import com.khosravi.devin.read.DevinImageFlagsApi
+import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.read.DevinUriHelper.OpStringValue
 import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 import com.khosravi.devin.write.room.LogTable
@@ -130,6 +132,43 @@ object ContentProviderLogsDao {
         cursor.close()
         return result
     }
+
+    /**
+     * The newest log and the newest error-level log of each tag logged after [since], from at most
+     * [ACTIVITY_ROW_LIMIT] newest logs. The provider's raw query has no GROUP BY, so rows are folded here.
+     */
+    fun getRecentTagActivity(context: Context, clientId: String, since: Long): Map<String, TagActivity> {
+        val uri: Uri = DevinUriHelper.getLogListUri(clientId, pageIndex = 0, itemCount = ACTIVITY_ROW_LIMIT, isRawQuery = true)
+        // meta is written by JSONObject/Gson toString(), which never puts a space after the colon.
+        val isError = ERROR_LEVELS.joinToString(" OR ") { "${LogTable.COLUMN_META} LIKE '%\"${DevinLogFlagsApi.KEY_LOG_LEVEL}\":$it%'" }
+        val projection = arrayOf(LogTable.COLUMN_TAG, LogTable.COLUMN_DATE, "($isError)")
+        val where = "${LogTable.COLUMN_CLIENT_ID} = ? AND ${LogTable.COLUMN_DATE} > ?"
+        val cursor = context.contentResolver.query(
+            uri, projection, where, arrayOf(clientId, since.toString()), "${LogTable.COLUMN_DATE} DESC"
+        ) ?: return emptyMap()
+
+        val result = HashMap<String, TagActivity>()
+        cursor.use {
+            while (it.moveToNext()) {
+                val tag = it.getStringOrNull(0) ?: continue
+                val date = it.getLong(1)
+                val isErrorRow = it.getInt(2) == 1
+                // Rows come newest first, so the first row of a tag is its newest log.
+                val current = result[tag]
+                if (current == null) {
+                    result[tag] = TagActivity(lastLogAt = date, lastErrorAt = if (isErrorRow) date else null)
+                } else if (isErrorRow && current.lastErrorAt == null) {
+                    result[tag] = current.copy(lastErrorAt = date)
+                }
+            }
+        }
+        return result
+    }
+
+    data class TagActivity(val lastLogAt: Long, val lastErrorAt: Long?)
+
+    private const val ACTIVITY_ROW_LIMIT = 5000
+    private val ERROR_LEVELS = listOf(Log.ERROR, Log.ASSERT)
 
     fun mapToImageModel(it: LogData): ImageLogData {
         val imageMetaJson = it.meta!!

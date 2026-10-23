@@ -60,6 +60,8 @@ object Analytics {
 
     fun filterLogsShared() = report("filter_logs_shared")
 
+    fun tagSearchOpened() = report("tag_search_opened")
+
     fun logsSearched(type: FilterType) = report("logs_searched", "filter_type" to type.value)
 
     fun logsRefreshed() = report("logs_refreshed")

@@ -7,6 +7,7 @@ import com.khosravi.devin.present.data.CacheRepository
 import dagger.Module
 import dagger.Provides
 import com.khosravi.devin.present.data.FilterRepository
+import com.khosravi.devin.present.data.FilterUsageRepository
 import com.khosravi.devin.present.date.CalendarProxy
 
 
@@ -17,11 +18,12 @@ class ViewModelModule {
     fun viewModelFactory(
         application: Application,
         filterRepository: FilterRepository,
+        filterUsageRepository: FilterUsageRepository,
         calendar: CalendarProxy,
         cacheRepository: CacheRepository,
         userSettings: UserSettings,
         appPref: AppPref,
-    ) = ViewModelFactory(application, calendar, filterRepository, cacheRepository, userSettings, appPref)
+    ) = ViewModelFactory(application, calendar, filterRepository, filterUsageRepository, cacheRepository, userSettings, appPref)
 
 }
 
