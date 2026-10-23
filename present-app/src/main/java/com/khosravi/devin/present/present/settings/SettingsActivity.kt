@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.data.FilterRepository
 import com.khosravi.devin.present.di.getAppComponent
@@ -44,6 +45,7 @@ class SettingsActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) Analytics.settingsOpened()
 
         refreshRetentionValues()
         refreshPinnedTags()
@@ -80,16 +82,19 @@ class SettingsActivity : BaseActivity() {
 
     private fun onRetentionEnabledChange(isEnabled: Boolean) {
         appPref.retentionEnabled = isEnabled
+        Analytics.retentionToggled(isEnabled)
         onRetentionChanged()
     }
 
     private fun onKeepDaysPicked(index: Int) {
         appPref.retentionDays = RetentionPolicy.AGE_OPTIONS_DAYS[index]
+        Analytics.retentionDaysChanged(appPref.retentionDays)
         onRetentionChanged()
     }
 
     private fun onMaxCountPicked(index: Int) {
         appPref.retentionMaxCount = RetentionPolicy.COUNT_OPTIONS[index]
+        Analytics.retentionMaxCountChanged(appPref.retentionMaxCount)
         onRetentionChanged()
     }
 
@@ -106,11 +111,13 @@ class SettingsActivity : BaseActivity() {
 
     private fun onUnpinTag(tag: String) {
         filterRepository.unpinTag(tag)
+        Analytics.pinnedTagRemoved()
         refreshPinnedTags()
     }
 
     private fun onPinTag(text: String) {
         filterRepository.pinTag(text)
+        if (text.isNotBlank()) Analytics.pinnedTagAdded()
         refreshPinnedTags()
     }
 

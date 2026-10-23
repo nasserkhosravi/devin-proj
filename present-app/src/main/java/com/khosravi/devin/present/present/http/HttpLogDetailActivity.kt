@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.arch.applyEdgeToEdge
 import com.khosravi.devin.present.createCacheShareFile
 import com.khosravi.devin.present.createFlowForExportFileIntentResult
@@ -167,6 +168,7 @@ class HttpLogDetailActivity : AppCompatActivity() {
 
     private fun onAction(action: HttpDetailAction) {
         val detailData = viewModel.detailData.value ?: return
+        Analytics.httpDetailAction(actionName(action))
         when (action) {
             HttpDetailAction.ShareHarJson -> shareHarAsJsonFile(detailData)
             HttpDetailAction.ShareCurl -> buildAndShareCURL(detailData)
@@ -176,6 +178,16 @@ class HttpLogDetailActivity : AppCompatActivity() {
             HttpDetailAction.CopyRequestContent -> copyBodyToClipboard(detailData.requestBody)
             HttpDetailAction.SaveHarJson -> requestFileUriForHarSave(getString(R.string.menu_http_save_har_as_json))
         }
+    }
+
+    private fun actionName(action: HttpDetailAction): String = when (action) {
+        HttpDetailAction.ShareHarJson -> "share_har"
+        HttpDetailAction.ShareCurl -> "share_curl"
+        HttpDetailAction.CopyHar -> "copy_har"
+        HttpDetailAction.CopyCurl -> "copy_curl"
+        HttpDetailAction.CopyResponseContent -> "copy_response_body"
+        HttpDetailAction.CopyRequestContent -> "copy_request_body"
+        HttpDetailAction.SaveHarJson -> "save_har"
     }
 
     private fun copyBodyToClipboard(text: String?) {

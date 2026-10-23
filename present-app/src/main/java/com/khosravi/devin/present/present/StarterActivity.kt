@@ -10,8 +10,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModelProvider
 import com.khosravi.devin.present.BuildConfig
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
+import com.khosravi.devin.present.analytics.Analytics.ClientOpenSource
+import com.khosravi.devin.present.analytics.Analytics.UpdatePromptAction
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.client.ClientData
+import com.khosravi.devin.present.client.getLogPassword
 import com.khosravi.devin.present.data.ClientLoadedState
 import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
@@ -61,6 +65,9 @@ class StarterActivity : BaseActivity() {
     private var clients by mutableStateOf(emptyList<ClientData>())
     private var availableUpdate by mutableStateOf<ReleaseInfo?>(null)
 
+    /** The force update already reported as shown, so it is reported once per activity, not on every resume. */
+    private var reportedForceUpdate: ReleaseInfo? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
@@ -71,18 +78,28 @@ class StarterActivity : BaseActivity() {
                 StarterScreen(
                     message = message,
                     clients = clients,
-                    onClientClick = ::onSelectClient,
+                    onClientClick = { onSelectClient(it, ClientOpenSource.LIST) },
                     onRefresh = ::refreshClients,
                     footerText = footerText(availableUpdate),
                     isUpdateAvailable = availableUpdate != null,
-                    onFooterClick = { openReleasePage(availableUpdate?.pageUrl ?: GitHubReleaseSource.RELEASES_PAGE_URL) },
+                    onFooterClick = {
+                        Analytics.updateFooterClicked(hasUpdate = availableUpdate != null)
+                        openReleasePage(availableUpdate?.pageUrl ?: GitHubReleaseSource.RELEASES_PAGE_URL)
+                    },
                     forceUpdate = availableUpdate?.takeIf { it.isForceUpdate },
-                    onForceUpdateDownload = { update -> openReleasePage(update.pageUrl) },
+                    onForceUpdateDownload = { update ->
+                        Analytics.updatePromptAction(isForceUpdate = true, UpdatePromptAction.DOWNLOAD)
+                        openReleasePage(update.pageUrl)
+                    },
                     // Back on the force-update dialog leaves the app; it can't be dismissed otherwise.
-                    onForceUpdateDismiss = ::finish,
+                    onForceUpdateDismiss = {
+                        Analytics.updatePromptAction(isForceUpdate = true, UpdatePromptAction.DISMISS)
+                        finish()
+                    },
                     optionalUpdate = optionalUpdatePrompt,
-                    onOptionalUpdateDownload = { closeOptionalUpdatePrompt(openPage = true) },
-                    onOptionalUpdateClose = { closeOptionalUpdatePrompt(openPage = false) },
+                    onOptionalUpdateDownload = { closeOptionalUpdatePrompt(UpdatePromptAction.DOWNLOAD) },
+                    onOptionalUpdateClose = { closeOptionalUpdatePrompt(UpdatePromptAction.DISMISS) },
+                    onOptionalUpdateLater = { closeOptionalUpdatePrompt(UpdatePromptAction.LATER) },
                 )
             }
         }
@@ -95,6 +112,7 @@ class StarterActivity : BaseActivity() {
         updateJob = launch {
             updateChecker.availableUpdate.collect {
                 availableUpdate = it
+                reportForceUpdateShownIfNeeded(it)
                 showOptionalUpdateDialogIfNeeded(it)
             }
         }
@@ -123,11 +141,20 @@ class StarterActivity : BaseActivity() {
         if (update == null || update.isForceUpdate) return
         if (optionalUpdatePrompt != null) return
         optionalUpdatePrompt = updateChecker.pendingPrompt() ?: return
+        Analytics.updatePromptShown(isForceUpdate = false)
     }
 
-    private fun closeOptionalUpdatePrompt(openPage: Boolean) {
+    private fun reportForceUpdateShownIfNeeded(update: ReleaseInfo?) {
+        if (update?.isForceUpdate != true || update == reportedForceUpdate) return
+        reportedForceUpdate = update
+        Analytics.updatePromptShown(isForceUpdate = true)
+    }
+
+    private fun closeOptionalUpdatePrompt(action: UpdatePromptAction) {
         val prompt = optionalUpdatePrompt ?: return
         optionalUpdatePrompt = null
+        Analytics.updatePromptAction(isForceUpdate = false, action)
+        val openPage = action == UpdatePromptAction.DOWNLOAD
         updateChecker.markPrompted()
         val route = pendingRoute
         pendingRoute = null
@@ -179,10 +206,11 @@ class StarterActivity : BaseActivity() {
         }
     }
 
-    private fun onSelectClient(clientData: ClientData) {
+    private fun onSelectClient(clientData: ClientData, source: ClientOpenSource) {
         if (isBlockedByForceUpdate()) return
         viewModel.setSelectedClientId(clientData)
         clientLoginInteractor.onClientSelect(this, clientData) {
+            if (it) Analytics.clientOpened(source, isPasswordProtected = clientData.getLogPassword() != null)
             isRouteSuccessful(it)
         }
     }
@@ -193,6 +221,7 @@ class StarterActivity : BaseActivity() {
         clientLoginInteractor.onClientSelect(this, target.client) { canRoute ->
             if (isBlockedByForceUpdate()) return@onClientSelect
             if (canRoute) {
+                Analytics.clientOpened(ClientOpenSource.NOTIFICATION, isPasswordProtected = target.client.getLogPassword() != null)
                 startActivity(Intent(this, LogActivity::class.java).apply {
                     target.tag?.let { putExtra(LogActivity.EXTRA_TARGET_TAG, it) }
                 })
@@ -216,6 +245,13 @@ class StarterActivity : BaseActivity() {
 
     private fun onClientListFetchResult(loadState: ClientLoadedState) {
         val notificationTarget = notificationLaunchCoordinator.takeTarget(loadState)
+        Analytics.clientListLoaded(
+            when (loadState) {
+                is ClientLoadedState.Zero -> 0
+                is ClientLoadedState.Single -> 1
+                is ClientLoadedState.Multi -> loadState.clients.size
+            }
+        )
 
         when (loadState) {
             is ClientLoadedState.Single -> {
@@ -226,7 +262,7 @@ class StarterActivity : BaseActivity() {
                     if (notificationTarget != null) {
                         onSelectNotificationTarget(notificationTarget)
                     } else {
-                        onSelectClient(clientData)
+                        onSelectClient(clientData, ClientOpenSource.AUTO)
                     }
                 }
             }

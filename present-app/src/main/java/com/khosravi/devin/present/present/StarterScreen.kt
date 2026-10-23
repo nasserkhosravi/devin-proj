@@ -51,6 +51,7 @@ fun StarterScreen(
     optionalUpdate: ReleaseInfo?,
     onOptionalUpdateDownload: () -> Unit,
     onOptionalUpdateClose: () -> Unit,
+    onOptionalUpdateLater: () -> Unit = onOptionalUpdateClose,
 ) {
     Scaffold(
         topBar = {
@@ -114,7 +115,7 @@ fun StarterScreen(
             update = optionalUpdate,
             onDownload = onOptionalUpdateDownload,
             onDismissRequest = onOptionalUpdateClose,
-            onLater = onOptionalUpdateClose,
+            onLater = onOptionalUpdateLater,
         )
     }
 }

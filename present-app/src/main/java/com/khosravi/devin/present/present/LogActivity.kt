@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +23,8 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import com.khosravi.devin.present.MIME_APP_JSON
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.analytics.Analytics
+import com.khosravi.devin.present.analytics.Analytics.FilterType
 import com.khosravi.devin.present.arch.BaseActivity
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.di.ViewModelFactory
@@ -137,27 +140,45 @@ class LogActivity : BaseActivity() {
             isFilterRowEnabled = isFilterRowEnabled,
             logItems = items,
             isLoading = isLoading,
-            onSelectFilter = ::selectNewFilter,
+            onSelectFilter = {
+                Analytics.filterSelected(FilterType.of(it))
+                selectNewFilter(it)
+            },
             onFilterAction = ::onFilterAction,
+            onTagSearchOpen = { Analytics.tagSearchOpened() },
             onSearchTextChange = { searchInput.tryEmit(it) },
             onTextLogClick = {
                 // Ignore a second tap that lands while the detail transition is already running.
                 if (navController.isCurrentEntryResumed()) {
+                    Analytics.logDetailOpened(Analytics.LogType.TEXT, Analytics.LogSource.LIVE)
                     LogDetailArgs.navigate(navController, it)
                 }
             },
-            onHttpLogClick = { HttpLogDetailActivity.startActivity(this, it.logId) },
+            onHttpLogClick = {
+                Analytics.logDetailOpened(Analytics.LogType.HTTP, Analytics.LogSource.LIVE)
+                HttpLogDetailActivity.startActivity(this, it.logId)
+            },
             onLoadMore = { pagination.maybeLoadMore(::loadMoreItems) },
             onRefresh = ::refreshLogsAndFilters,
-            onClearLogs = { viewModel.clearLogs() },
-            onClearFilters = { viewModel.clearCustomFilters() },
+            onClearLogs = {
+                Analytics.logsCleared()
+                viewModel.clearLogs()
+            },
+            onClearFilters = {
+                Analytics.customFiltersCleared()
+                viewModel.clearCustomFilters()
+            },
             onCreateFilter = ::createFilter,
             onExport = {
                 if (navController.isCurrentEntryResumed()) {
+                    Analytics.exportDialogOpened()
                     navController.navigate(ROUTE_EXPORT)
                 }
             },
-            onToggleTheme = { viewModel.toggleTheme() },
+            onToggleTheme = {
+                viewModel.toggleTheme()
+                Analytics.themeToggled(isDark = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES)
+            },
             onOpenSettings = { startActivity(SettingsActivity.intent(this)) },
         )
     }
@@ -183,6 +204,7 @@ class LogActivity : BaseActivity() {
                 .collect { searchText ->
                     searchRow = searchRow?.copy(text = searchText)
                     optCurrentFilterItem()?.let {
+                        if (!searchText.isNullOrEmpty()) Analytics.logsSearched(FilterType.of(it))
                         viewModel.search(it, searchText)
                     }
                 }
@@ -234,6 +256,10 @@ class LogActivity : BaseActivity() {
     private fun selectNewFilter(data: FilterItem) {
         isFilterRowEnabled = false
         pagination.resetState()
+        if (data is TagFilterItem && data.hasUnseenError) {
+            // The view model stores the tag as seen; clear its dot here so the row doesn't wait for a reload.
+            filterList = filterList.map { if (it === data) data.copy(hasUnseenError = false) else it }
+        }
 
         val hint = viewModel.getSearchItemHint(data)
         searchRow = hint?.let { LogListRowItem.Search(sessionId = ++searchSessionId, filterId = data.id, hint = it, text = null) }
@@ -262,6 +288,7 @@ class LogActivity : BaseActivity() {
             val firstUnpinnedIndex = filterList.indexOfFirst { !it.ui.isPinned }
             val resultFlow = if (filterItem.ui.isPinned) viewModel.removeAsPinned(filterItem) else viewModel.markAsPinned(filterItem)
             resultFlow.flowOn(Dispatchers.Main).collect { updated ->
+                Analytics.filterPinToggled(FilterType.of(updated), isPinned = updated.ui.isPinned)
                 val newList = filterList.toMutableList()
                 newList[position] = updated
                 if (firstUnpinnedIndex != -1) {
@@ -281,6 +308,7 @@ class LogActivity : BaseActivity() {
         lifecycleScope.launch {
             val wasSelected = selectedFilterId == data.id
             viewModel.removeFilter(data, position).collect {
+                Analytics.customFilterRemoved()
                 filterList = filterList.toMutableList().apply { removeAt(position) }
                 if (wasSelected) {
                     resetToDefaultFilter()
@@ -295,6 +323,7 @@ class LogActivity : BaseActivity() {
         shareFilterJob = viewModel.shareFilterItem(data).flowOn(Dispatchers.Main)
             .onEach { exportFile ->
                 isLoading = false
+                Analytics.filterLogsShared()
                 this.toUriByFileProvider(exportFile).let {
                     val intent = sendOrShareFileIntent(it, MIME_APP_JSON)
                     startActivity(Intent.createChooser(intent, getString(R.string.title_of_share)))
@@ -303,6 +332,7 @@ class LogActivity : BaseActivity() {
     }
 
     private fun refreshLogsAndFilters() {
+        Analytics.logsRefreshed()
         isFilterRowEnabled = false
         optCurrentFilterItem()?.let {
             viewModel.refreshLogsAndFilters(it, callbackId = CALLBACK_ID_REFRESH)
@@ -310,7 +340,13 @@ class LogActivity : BaseActivity() {
     }
 
     private fun createFilter() {
-        filterDialogHost.show { viewModel.addFilter(it, CALLBACK_ID_ADD_FILTER) }
+        filterDialogHost.show {
+            Analytics.customFilterCreated(
+                hasTag = !it.criteria.tag.isNullOrEmpty(),
+                hasSearchText = !it.criteria.searchText.isNullOrEmpty()
+            )
+            viewModel.addFilter(it, CALLBACK_ID_ADD_FILTER)
+        }
     }
 
     override fun onResume() {

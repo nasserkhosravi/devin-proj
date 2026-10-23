@@ -2,6 +2,7 @@ package com.khosravi.devin.present.domain
 
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.client.getLogPassword
 import com.khosravi.devin.present.data.AppPref
@@ -15,6 +16,7 @@ class ClientLoginInteractor @Inject constructor(private val appPref: AppPref) {
             ClientLoginDialogHost(activity).show(
                 correctPassword = password,
                 onCorrectPassword = { enteredPassword ->
+                    Analytics.clientPasswordResult(isCorrect = true)
                     appPref.apply {
                         resetLastWrongPasswordCount(clientData.id)
                         saveConfirmedPassword(clientData.id, enteredPassword)
@@ -22,8 +24,10 @@ class ClientLoginInteractor @Inject constructor(private val appPref: AppPref) {
                     onNext(true)
                 },
                 onWrongPassword = {
+                    Analytics.clientPasswordResult(isCorrect = false)
                     val wrongCount = appPref.increaseLastWrongPasswordCount(clientData.id)
                     if (wrongCount == VALUE_MAX_WRONG_PASSWORD_TRY) {
+                        Analytics.clientLockedOut()
                         onNext(false)
                         true
                     } else {
