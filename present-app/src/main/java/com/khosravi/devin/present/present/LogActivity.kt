@@ -255,6 +255,10 @@ class LogActivity : BaseActivity() {
     private fun selectNewFilter(data: FilterItem) {
         isFilterRowEnabled = false
         pagination.resetState()
+        if (data is TagFilterItem && data.hasUnseenError) {
+            // The view model stores the tag as seen; clear its dot here so the row doesn't wait for a reload.
+            filterList = filterList.map { if (it === data) data.copy(hasUnseenError = false) else it }
+        }
 
         val hint = viewModel.getSearchItemHint(data)
         searchRow = hint?.let { LogListRowItem.Search(sessionId = ++searchSessionId, filterId = data.id, hint = it, text = null) }

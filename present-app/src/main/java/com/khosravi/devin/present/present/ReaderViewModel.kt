@@ -16,6 +16,7 @@ import com.khosravi.devin.present.data.ClientContentProvider
 import com.khosravi.devin.present.data.ClientLoadedState
 import com.khosravi.devin.present.data.ContentProviderLogsDao
 import com.khosravi.devin.present.data.FilterRepository
+import com.khosravi.devin.present.data.FilterUsageRepository
 import com.khosravi.devin.present.data.LogData
 import com.khosravi.devin.present.data.UserSettings
 import com.khosravi.devin.present.data.model.GetLogsQueryModel
@@ -28,6 +29,7 @@ import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.IndexFilterItem
 import com.khosravi.devin.present.filter.TagFilterItem
 import com.khosravi.devin.present.filter.setIsPinned
+import com.khosravi.devin.present.filter.FilterRowOrdering
 import com.khosravi.devin.present.formatter.InterAppJsonConverter
 import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.HttpLogItemData
@@ -63,6 +65,7 @@ class ReaderViewModel constructor(
     application: Application,
     private val calendar: CalendarProxy,
     private val filterRepository: FilterRepository,
+    private val filterUsageRepository: FilterUsageRepository,
     private val cacheRepo: CacheRepository,
     private val userSettings: UserSettings,
     private val appPref: AppPref,
@@ -210,9 +213,13 @@ class ReaderViewModel constructor(
     }
 
     fun clearCustomFilters() {
+        val customFilterIds = _uiStateFlow.value.filterList?.filterIsInstance<CustomFilterItem>()?.map { it.id }.orEmpty()
         viewModelScope.launch {
             flow {
                 filterRepository.clearSync()
+                getSelectedClientId()?.let { clientId ->
+                    customFilterIds.forEach { filterUsageRepository.removeUsage(clientId, it) }
+                }
                 emit(Unit)
             }.flatMapConcat {
                 resetPagination()
@@ -293,7 +300,7 @@ class ReaderViewModel constructor(
 
     private fun getAllFiltersFlow(): Flow<List<FilterItem>> {
         return flow {
-            val allComputableFilters = provideAllComputableFilters().sortedByDescending { it.ui.isPinned }
+            val allComputableFilters = provideAllComputableFilters()
             val result = ArrayList<FilterItem>(allComputableFilters.size + 1).apply {
                 add(IndexFilterItem.instance)
                 addAll(allComputableFilters)
@@ -303,17 +310,32 @@ class ReaderViewModel constructor(
     }
 
     private fun provideAllComputableFilters(): List<FilterItem> {
-        val userDefinedFilterList = filterRepository.getCustomFilterItemList(getSelectedClientIdOrError())
+        val clientId = getSelectedClientIdOrError()
+        val userDefinedFilterList = filterRepository.getCustomFilterItemList(clientId)
 
         val result = ArrayList<FilterItem>(userDefinedFilterList)
+        var activity = emptyMap<String, ContentProviderLogsDao.TagActivity>()
         if (userSettings.isEnableTagAsFilter) {
             //we consider developer tag as filter
-            val tags = ContentProviderLogsDao.getAllTags(getAppContext(), getSelectedClientIdOrError())
-            val developerFilters = filterRepository.createTagFilterList(tags, userDefinedFilterList).values.toList()
+            val tags = ContentProviderLogsDao.getAllTags(getAppContext(), clientId)
+            activity = ContentProviderLogsDao.getRecentTagActivity(
+                getAppContext(), clientId, since = System.currentTimeMillis() - TAG_ACTIVITY_WINDOW_MS
+            )
+            val seenTimes = filterUsageRepository.getTagSeenTimes(clientId)
+            val developerFilters = filterRepository.createTagFilterList(tags, userDefinedFilterList).values.map {
+                val lastErrorAt = activity[it.id]?.lastErrorAt
+                val seenAt = seenTimes[it.id]
+                val hasUnseenError = lastErrorAt != null && (seenAt == null || lastErrorAt > seenAt)
+                if (hasUnseenError && it is TagFilterItem) it.copy(hasUnseenError = true) else it
+            }
             result.addAll(developerFilters)
 
         }
-        return result
+        return FilterRowOrdering.order(
+            result,
+            scores = filterUsageRepository.getScores(clientId),
+            lastLogAt = activity.mapValues { it.value.lastLogAt },
+        )
     }
 
     fun search(filter: FilterItem, searchText: String?) {
@@ -357,17 +379,33 @@ class ReaderViewModel constructor(
 
     fun newFilterSelected(filter: FilterItem): Flow<Unit> {
         resetPagination()
+        recordFilterSelection(filter)
         val model = buildQueryGet(filter)
         return getLogListOfFilter(model).map { logList ->
             checkPaginationFinish(logList)
             _uiStateFlow.update {
                 ResultUiState(
-                    logList = logList, filterList = it.filterList,
+                    logList = logList, filterList = it.filterList?.withErrorSeen(filter),
                     pageInfo = pageInfo,
                     updateInfo = ResultUiState.UpdateInfo(filterIdSelection = filter.id, skipFilterList = true)
                 )
             }
         }
+    }
+
+    /** Counts the pick for the chip order, and clears the tag's error dot. */
+    private fun recordFilterSelection(filter: FilterItem) {
+        if (filter is IndexFilterItem) return
+        val clientId = getSelectedClientId() ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            filterUsageRepository.recordPick(clientId, filter.id)
+            if (filter is TagFilterItem) filterUsageRepository.markTagSeen(clientId, filter.id)
+        }
+    }
+
+    private fun List<FilterItem>.withErrorSeen(selected: FilterItem): List<FilterItem> {
+        if (selected !is TagFilterItem) return this
+        return map { if (it is TagFilterItem && it.id == selected.id && it.hasUnseenError) it.copy(hasUnseenError = false) else it }
     }
 
     fun refreshLogsAndFilters(filter: FilterItem, callbackId: String? = null) {
@@ -501,6 +539,7 @@ class ReaderViewModel constructor(
     fun removeFilter(data: CustomFilterItem, position: Int): Flow<Unit> {
         return flow {
             filterRepository.removeFilter(data)
+            getSelectedClientId()?.let { filterUsageRepository.removeUsage(it, data.id) }
             _uiStateFlow.value.filterList?.toMutableList()?.also { list ->
                 list.removeAt(position)
                 _uiStateFlow.update { it.copy(filterList = list) }
@@ -548,6 +587,7 @@ class ReaderViewModel constructor(
 
     companion object {
         private const val TAG = "ReaderViewModel"
+        private const val TAG_ACTIVITY_WINDOW_MS = 24 * 60 * 60 * 1000L
         private const val KEY_LOG_PAYLOAD = "payload"
         private val SESSION_PAYLOAD_VERSION_REGEX = Regex("(?m)^\\s*App Version:\\s*(.+?)\\s*\\(")
         private val SESSION_MESSAGE_VERSION_REGEX = Regex("Session Started:\\s*(.+?)\\s*\\(")
