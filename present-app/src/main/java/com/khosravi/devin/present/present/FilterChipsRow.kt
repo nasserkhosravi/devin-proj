@@ -71,6 +71,7 @@ fun FilterChipsRow(
     enabled: Boolean,
     onSelect: (FilterItem) -> Unit,
     onAction: (FilterChipAction) -> Unit,
+    onSearchOpen: () -> Unit,
 ) {
     // Not saved: the tag search is cleared on rotation and when the screen is left.
     var isSearchOpen by remember { mutableStateOf(false) }
@@ -117,7 +118,10 @@ fun FilterChipsRow(
                     TagSearchChip(
                         isOpen = isSearchOpen,
                         query = query,
-                        onOpen = { isSearchOpen = true },
+                        onOpen = {
+                            isSearchOpen = true
+                            onSearchOpen()
+                        },
                         onQueryChange = { query = it },
                         onClose = ::closeSearch,
                     )

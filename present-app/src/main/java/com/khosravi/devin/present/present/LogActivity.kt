@@ -145,6 +145,7 @@ class LogActivity : BaseActivity() {
                 selectNewFilter(it)
             },
             onFilterAction = ::onFilterAction,
+            onTagSearchOpen = { Analytics.tagSearchOpened() },
             onSearchTextChange = { searchInput.tryEmit(it) },
             onTextLogClick = {
                 // Ignore a second tap that lands while the detail transition is already running.

@@ -66,6 +66,7 @@ fun LogScreen(
     isLoading: Boolean,
     onSelectFilter: (FilterItem) -> Unit,
     onFilterAction: (FilterChipAction) -> Unit,
+    onTagSearchOpen: () -> Unit,
     onSearchTextChange: (String?) -> Unit,
     onTextLogClick: (TextLogItemData) -> Unit,
     onHttpLogClick: (HttpLogItemData) -> Unit,
@@ -149,6 +150,7 @@ fun LogScreen(
                     enabled = isFilterRowEnabled,
                     onSelect = onSelectFilter,
                     onAction = onFilterAction,
+                    onSearchOpen = onTagSearchOpen,
                 )
                 // The search field (always first when present) is a sticky header, so it stays reachable while scrolling.
                 val searchItem = logItems.firstOrNull() as? LogListRowItem.Search
