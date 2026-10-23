@@ -133,6 +133,14 @@ object ContentProviderLogsDao {
         return result
     }
 
+    /** The number of logs [clientId] has, or null if the provider returned nothing. */
+    fun countLogs(context: Context, clientId: String): Int? {
+        val uri: Uri = DevinUriHelper.getLogListUri(clientId, isRawQuery = true)
+        val where = "${LogTable.COLUMN_CLIENT_ID} = ?"
+        val cursor = context.contentResolver.query(uri, arrayOf("COUNT(*)"), where, arrayOf(clientId), null) ?: return null
+        return cursor.use { if (it.moveToFirst()) it.getInt(0) else null }
+    }
+
     /**
      * The newest log and the newest error-level log of each tag logged after [since], from at most
      * [ACTIVITY_ROW_LIMIT] newest logs. The provider's raw query has no GROUP BY, so rows are folded here.

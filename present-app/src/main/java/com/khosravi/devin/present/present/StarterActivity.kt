@@ -35,6 +35,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -67,6 +68,10 @@ class StarterActivity : BaseActivity() {
 
     private var message by mutableStateOf("")
     private var clients by mutableStateOf(emptyList<ClientData>())
+
+    /** Label, icon and log count per client package id; filled in after [clients] loads and on every resume. */
+    private var clientInfo by mutableStateOf(emptyMap<String, ClientDisplayInfo>())
+    private var clientInfoJob: Job? = null
     private var availableUpdate by mutableStateOf<ReleaseInfo?>(null)
 
     /** Refreshed on every resume, so it follows the permission dialog and changes made in system settings. */
@@ -85,6 +90,7 @@ class StarterActivity : BaseActivity() {
                 StarterScreen(
                     message = message,
                     clients = clients,
+                    clientInfo = clientInfo,
                     onClientClick = { onSelectClient(it, ClientOpenSource.LIST) },
                     areNotificationsEnabled = areNotificationsEnabled,
                     onNotificationsDisabledClick = ::openNotificationSettings,
@@ -119,6 +125,8 @@ class StarterActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         areNotificationsEnabled = NotificationManagerCompat.from(this).areNotificationsEnabled()
+        // Log counts change while the log list is open (new logs, clear), so re-read them on return.
+        loadClientInfo()
         updateJob = launch {
             updateChecker.availableUpdate.collect {
                 availableUpdate = it
@@ -251,6 +259,17 @@ class StarterActivity : BaseActivity() {
         }
     }
 
+    private fun loadClientInfo() {
+        val current = clients
+        if (current.isEmpty()) return
+        clientInfoJob?.cancel()
+        clientInfoJob = launch {
+            clientInfo = withContext(Dispatchers.Default) {
+                current.associate { it.packageId to loadClientDisplayInfo(applicationContext, it) }
+            }
+        }
+    }
+
     private fun refreshClients() {
         launchGettingClientList()
     }
@@ -277,6 +296,7 @@ class StarterActivity : BaseActivity() {
             is ClientLoadedState.Single -> {
                 val clientData = loadState.client
                 clients = listOf(clientData)
+                loadClientInfo()
                 message = loadState.toStateMessage()
                 routeAfterUpdatePrompt {
                     if (notificationTarget != null) {
@@ -289,6 +309,7 @@ class StarterActivity : BaseActivity() {
 
             is ClientLoadedState.Multi -> {
                 clients = loadState.clients
+                loadClientInfo()
                 message = loadState.toStateMessage()
                 notificationTarget?.let { routeAfterUpdatePrompt { onSelectNotificationTarget(it) } }
             }
