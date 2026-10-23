@@ -1,9 +1,13 @@
 package com.khosravi.devin.present.present
 
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationManagerCompat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -65,6 +69,9 @@ class StarterActivity : BaseActivity() {
     private var clients by mutableStateOf(emptyList<ClientData>())
     private var availableUpdate by mutableStateOf<ReleaseInfo?>(null)
 
+    /** Refreshed on every resume, so it follows the permission dialog and changes made in system settings. */
+    private var areNotificationsEnabled by mutableStateOf(true)
+
     /** The force update already reported as shown, so it is reported once per activity, not on every resume. */
     private var reportedForceUpdate: ReleaseInfo? = null
 
@@ -79,6 +86,8 @@ class StarterActivity : BaseActivity() {
                     message = message,
                     clients = clients,
                     onClientClick = { onSelectClient(it, ClientOpenSource.LIST) },
+                    areNotificationsEnabled = areNotificationsEnabled,
+                    onNotificationsDisabledClick = ::openNotificationSettings,
                     onRefresh = ::refreshClients,
                     footerText = footerText(availableUpdate),
                     isUpdateAvailable = availableUpdate != null,
@@ -109,6 +118,7 @@ class StarterActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        areNotificationsEnabled = NotificationManagerCompat.from(this).areNotificationsEnabled()
         updateJob = launch {
             updateChecker.availableUpdate.collect {
                 availableUpdate = it
@@ -123,6 +133,16 @@ class StarterActivity : BaseActivity() {
         super.onPause()
         updateJob?.cancel()
         updateJob = null
+    }
+
+    private fun openNotificationSettings() {
+        Analytics.notificationSettingsOpened()
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        } else {
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))
+        }
+        startActivity(intent)
     }
 
     private fun footerText(update: ReleaseInfo?): String = if (update == null) {
