@@ -1,23 +1,25 @@
 package com.khosravi.devin.present.present
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -25,12 +27,12 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,99 +87,144 @@ fun FilterChipsRow(
         else filters.filter { !it.isIndexFilterItem() && chipLabel(it).contains(query.trim(), ignoreCase = true) }
     }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        // As tall as the search icon button, so the row doesn't jump when the search opens or closes.
+    val chip: @Composable (FilterItem) -> Unit = { filter ->
+        FilterChipView(
+            filter = filter,
+            isSelected = filter.id == selectedId,
+            enabled = enabled,
+            onSelect = {
+                closeSearch()
+                onSelect(filter)
+            },
+            onAction = onAction,
+        )
+    }
+
+    // Decided on all filters, not the search matches: switching layouts while typing would
+    // recreate the search chip and drop the keyboard.
+    val rowCount = if (filters.size > TWO_ROWS_THRESHOLD) 2 else 1
+    // Two rows show twice as many chips without scrolling, so a tag is easier to find. Chips alternate
+    // between the rows by position, so none changes row when the search chip widens or the matches change.
+    // Not lazy: every chip is composed, which is fine for a few hundred tags.
+    Column(
         modifier = Modifier
             .padding(vertical = MaterialTheme.spacing.xs)
-            .heightIn(min = 48.dp),
+            .horizontalScroll(rememberScrollState()),
     ) {
-        // Outside the LazyRow, so it stays visible while the chips scroll.
-        TagSearchField(
-            isOpen = isSearchOpen,
-            query = query,
-            onOpen = { isSearchOpen = true },
-            onQueryChange = { query = it },
-            onClose = ::closeSearch,
-        )
-        if (visibleFilters.isEmpty()) {
-            Text(
-                text = stringResource(R.string.tag_search_no_match),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small),
-            )
-        }
-        LazyRow {
-            // Ids are not unique: a custom filter may be titled like a tag, "okhttp", "Index" or another
-            // custom filter, and the list keeps such duplicates. Qualify the key with type and position
-            // so Compose never sees a duplicate key (which would throw).
-            itemsIndexed(visibleFilters, key = { index, filter -> "$index-${filter::class.simpleName}-${filter.id}" }) { _, filter ->
-                FilterChipView(
-                    filter = filter,
-                    isSelected = filter.id == selectedId,
-                    enabled = enabled,
-                    onSelect = {
-                        closeSearch()
-                        onSelect(filter)
-                    },
-                    onAction = onAction,
-                )
+        repeat(rowCount) { row ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (row == 0) {
+                    TagSearchChip(
+                        isOpen = isSearchOpen,
+                        query = query,
+                        onOpen = { isSearchOpen = true },
+                        onQueryChange = { query = it },
+                        onClose = ::closeSearch,
+                    )
+                    if (visibleFilters.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.tag_search_no_match),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small),
+                        )
+                    }
+                }
+                // The search chip is position 0, so filter i is at position i + 1.
+                visibleFilters.forEachIndexed { index, filter ->
+                    if ((index + 1) % rowCount == row) {
+                        // Ids are not unique: a custom filter may be titled like a tag, "okhttp", "Index" or
+                        // another custom filter, so qualify the key with type and position.
+                        key("$index-${filter::class.simpleName}-${filter.id}") { chip(filter) }
+                    }
+                }
             }
         }
     }
 }
 
-/** A search icon that expands in place into a small text field narrowing the chips. */
+// More chips than this are laid out in two rows.
+private const val TWO_ROWS_THRESHOLD = 4
+private val ICON_SIZE = 24.dp
+
+/**
+ * A chip with a search icon that grows in place into a text field narrowing the chips. Same size and
+ * padding as [FilterChipView]; the field widens with the typed text.
+ */
 @Composable
-private fun TagSearchField(
+private fun TagSearchChip(
     isOpen: Boolean,
     query: String,
     onOpen: () -> Unit,
     onQueryChange: (String) -> Unit,
     onClose: () -> Unit,
 ) {
-    if (!isOpen) {
-        IconButton(onClick = onOpen) {
-            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.tag_search_open))
-        }
-    }
-    AnimatedVisibility(visible = isOpen, enter = expandHorizontally(), exit = shrinkHorizontally()) {
-        val focusRequester = remember { FocusRequester() }
-        LaunchedEffect(Unit) { focusRequester.requestFocus() }
-        val pillShape = RoundedCornerShape(50)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .padding(horizontal = MaterialTheme.spacing.xs)
-                .width(160.dp)
-                .border(1.dp, MaterialTheme.colorScheme.primary, pillShape)
-                .padding(start = 12.dp),
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
+    val colors = MaterialTheme.devinColors
+    val pillShape = RoundedCornerShape(50)
+    val focusRequester = remember { FocusRequester() }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(horizontal = MaterialTheme.spacing.xs, vertical = MaterialTheme.spacing.xs)
+            .clip(pillShape)
+            .background(colors.chipUnselected, pillShape)
+            // Added only while closed: a disabled clickable also makes the text field below unfocusable.
+            .then(
+                if (isOpen) Modifier.border(1.dp, MaterialTheme.colorScheme.primary, pillShape)
+                else Modifier.clickable(onClick = onOpen)
+            )
+            // Animates the width only; the height stays the chip height in both states.
+            .animateContentSize()
+            .padding(horizontal = 12.dp, vertical = MaterialTheme.spacing.xs),
+    ) {
+        Icon(
+            Icons.Default.Search,
+            contentDescription = if (isOpen) null else stringResource(R.string.tag_search_open),
+            tint = colors.chipTextUnselected,
+            modifier = Modifier.size(ICON_SIZE),
+        )
+        if (isOpen) {
+            val textStyle = MaterialTheme.typography.bodyLarge
+            Box(
+                contentAlignment = Alignment.CenterStart,
+                modifier = Modifier
+                    .padding(start = MaterialTheme.spacing.xs)
+                    // Max: as wide as the hint while empty, then as wide as the typed text.
+                    .width(IntrinsicSize.Max)
+                    .widthIn(max = 180.dp),
+            ) {
                 if (query.isEmpty()) {
                     Text(
                         text = stringResource(R.string.tag_search_hint),
+                        style = textStyle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
                     )
                 }
                 BasicTextField(
                     value = query,
                     onValueChange = onQueryChange,
                     singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                    textStyle = textStyle.copy(color = colors.chipTextUnselected),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier.focusRequester(focusRequester),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester),
                 )
+                // Runs once the field is in the composition, so the focus request has a target.
+                LaunchedEffect(Unit) { focusRequester.requestFocus() }
             }
-            IconButton(onClick = onClose, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = stringResource(R.string.tag_search_close),
-                    modifier = Modifier.size(18.dp),
-                )
-            }
+            Icon(
+                Icons.Default.Close,
+                contentDescription = stringResource(R.string.tag_search_close),
+                tint = colors.chipTextUnselected,
+                modifier = Modifier
+                    .padding(start = MaterialTheme.spacing.xs)
+                    .size(ICON_SIZE)
+                    .clip(CircleShape)
+                    .clickable(onClick = onClose),
+            )
         }
     }
 }
