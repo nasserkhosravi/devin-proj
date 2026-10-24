@@ -37,14 +37,16 @@ object Analytics {
     fun clientLockedOut() = report("client_locked_out")
 
     fun notificationPermissionResult(isGranted: Boolean) = report("notification_permission_result", "granted" to isGranted)
+
+    fun notificationSettingsOpened() = report("notification_settings_opened")
     // endregion
 
     // region Log list
     fun filterSelected(type: FilterType) = report("filter_selected", "type" to type.value)
 
-    fun customFilterCreated(hasTag: Boolean, hasSearchText: Boolean) = report(
+    fun customFilterCreated(tagCount: Int, hasSearchText: Boolean) = report(
         "custom_filter_created",
-        "has_tag" to hasTag,
+        "tag_count" to tagCount,
         "has_search_text" to hasSearchText
     )
 

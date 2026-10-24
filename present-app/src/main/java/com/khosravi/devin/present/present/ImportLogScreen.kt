@@ -73,8 +73,10 @@ fun ImportLogScreen(
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
                     // Same synthetic position+type key as LogScreen: LogItemData has no common stable id.
-                    itemsIndexed(visibleItems, key = { index, item -> "$index-${item::class.simpleName}" }) { _, item ->
-                        LogItemDataRow(calendar, item, ignoreTagChip = false, onTextLogClick, onHttpLogClick)
+                    itemsIndexed(visibleItems, key = { index, item -> "$index-${item::class.simpleName}" }) { index, item ->
+                        LogItemDataRow(
+                            calendar, item, visibleItems.getOrNull(index - 1), ignoreTagChip = false, onTextLogClick, onHttpLogClick
+                        )
                     }
                 }
             }

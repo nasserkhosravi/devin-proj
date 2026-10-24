@@ -72,7 +72,6 @@ class LogActivity : BaseActivity() {
         ViewModelProvider(this, vmFactory)[ReaderViewModel::class.java]
     }
 
-    private val filterDialogHost by lazy { FilterDialogHost(this, findViewById(android.R.id.content)) }
 
     private var filterList by mutableStateOf<List<FilterItem>>(emptyList())
     private var selectedFilterId by mutableStateOf<String?>(null)
@@ -116,7 +115,7 @@ class LogActivity : BaseActivity() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ROUTE_LOGS) {
             composable(ROUTE_LOGS) { LogsDestination(navController) }
-            logDetailDestination(navController, calendar, startRoute = ROUTE_LOGS)
+            logDetailDestination(navController, calendar, startRoute = ROUTE_LOGS, appPackage = viewModel.getSelectedClientId())
             dialog(ROUTE_EXPORT) {
                 // Scoped to this back-stack entry: cleared (job cancelled, temp file deleted) when the dialog closes.
                 val exportViewModel: ExportViewModel = viewModel(factory = vmFactory)
@@ -125,6 +124,13 @@ class LogActivity : BaseActivity() {
                     onClose = { navController.popBackStack(ROUTE_LOGS, inclusive = false) },
                 )
             }
+            createFilterDestination(
+                loadAvailableTags = viewModel::loadAvailableTags,
+                onConfirm = {
+                    navController.popBackStack(ROUTE_LOGS, inclusive = false)
+                    addFilter(it)
+                },
+            )
         }
     }
 
@@ -144,7 +150,7 @@ class LogActivity : BaseActivity() {
                 Analytics.filterSelected(FilterType.of(it))
                 selectNewFilter(it)
             },
-            onFilterAction = ::onFilterAction,
+            onFilterAction = { onFilterAction(it, navController) },
             onTagSearchOpen = { Analytics.tagSearchOpened() },
             onSearchTextChange = { searchInput.tryEmit(it) },
             onTextLogClick = {
@@ -168,7 +174,7 @@ class LogActivity : BaseActivity() {
                 Analytics.customFiltersCleared()
                 viewModel.clearCustomFilters()
             },
-            onCreateFilter = ::createFilter,
+            onCreateFilter = { openCreateFilter(navController, preselectedTags = emptyList()) },
             onExport = {
                 if (navController.isCurrentEntryResumed()) {
                     Analytics.exportDialogOpened()
@@ -273,11 +279,12 @@ class LogActivity : BaseActivity() {
         selectNewFilter(IndexFilterItem.instance)
     }
 
-    private fun onFilterAction(action: FilterChipAction) {
+    private fun onFilterAction(action: FilterChipAction, navController: NavHostController) {
         when (action) {
+            is FilterChipAction.CreateFilter -> openCreateFilter(navController, action.tags)
             is FilterChipAction.TogglePin -> onTogglePin(action.item)
             is FilterChipAction.ShareAsJson -> shareFilterItemLogs(action.item)
-            is FilterChipAction.Remove -> removeFilter(action.item)
+            is FilterChipAction.Remove -> removeFilters(action.items)
         }
     }
 
@@ -302,14 +309,14 @@ class LogActivity : BaseActivity() {
         }
     }
 
-    private fun removeFilter(data: CustomFilterItem) {
-        val position = filterList.indexOf(data)
-        if (position == -1) return
+    private fun removeFilters(items: List<CustomFilterItem>) {
+        if (items.isEmpty()) return
         lifecycleScope.launch {
-            val wasSelected = selectedFilterId == data.id
-            viewModel.removeFilter(data, position).collect {
-                Analytics.customFilterRemoved()
-                filterList = filterList.toMutableList().apply { removeAt(position) }
+            val wasSelected = items.any { it.id == selectedFilterId }
+            viewModel.removeFilters(items).collect {
+                repeat(items.size) { Analytics.customFilterRemoved() }
+                // By identity: a custom filter's id can equal another chip's.
+                filterList = filterList.filter { item -> items.none { it === item } }
                 if (wasSelected) {
                     resetToDefaultFilter()
                 }
@@ -339,14 +346,18 @@ class LogActivity : BaseActivity() {
         }
     }
 
-    private fun createFilter() {
-        filterDialogHost.show {
-            Analytics.customFilterCreated(
-                hasTag = !it.criteria.tag.isNullOrEmpty(),
-                hasSearchText = !it.criteria.searchText.isNullOrEmpty()
-            )
-            viewModel.addFilter(it, CALLBACK_ID_ADD_FILTER)
+    private fun openCreateFilter(navController: NavHostController, preselectedTags: List<String>) {
+        if (navController.isCurrentEntryResumed()) {
+            navController.navigateToCreateFilter(preselectedTags)
         }
+    }
+
+    private fun addFilter(item: CustomFilterItem) {
+        Analytics.customFilterCreated(
+            tagCount = item.criteria.tags.size,
+            hasSearchText = !item.criteria.searchText.isNullOrEmpty()
+        )
+        viewModel.addFilter(item, CALLBACK_ID_ADD_FILTER)
     }
 
     override fun onResume() {

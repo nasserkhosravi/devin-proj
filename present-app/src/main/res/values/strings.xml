@@ -16,7 +16,9 @@
     <string name="menu_create_filter">Create custom filter</string>
     <string name="field_contain_value">Contain value</string>
     <string name="field_title">title</string>
-    <string name="field_filter_tag">contain tag</string>
+    <string name="field_filter_tags">Tags</string>
+    <string name="filter_no_tags">No tags logged yet</string>
+    <string name="filter_error_no_tag">Pick at least one tag</string>
     <string name="field_search_text">search value</string>
     <string name="confirm">confirm</string>
     <string name="msg_title_required">tag or title required</string>
@@ -29,6 +31,14 @@
     <string name="no_client_found">No client data found, run client app or send logs to devin</string>
     <string name="one_client_found">One client found</string>
     <string name="choose_client">Choose client source</string>
+    <string name="client_selection_title">Clients</string>
+    <plurals name="client_log_count">
+        <item quantity="one">%d log</item>
+        <item quantity="other">%d logs</item>
+    </plurals>
+    <string name="notifications_disabled_title">Notifications are off</string>
+    <string name="notifications_disabled_message">Clients can\'t notify you about new logs.</string>
+    <string name="notifications_disabled_action">Enable</string>
     <string name="starter_footer">v%1$s by %2$s</string>
     <string name="copied">Copied</string>
     <string name="msg_failed_to_copy">Failed to copy, User other available options</string>
@@ -85,7 +95,11 @@
     <string name="menu_action_unpin">Unpin</string>
     <string name="menu_action_share_as_json">Share as json</string>
     <string name="menu_action_remove">Remove</string>
+    <string name="menu_action_select_multiple">Select multiple</string>
     <string name="menu_action_toggle_theme">Toggle theme</string>
+    <string name="selection_count">%1$d selected</string>
+    <string name="selection_close">Close selection</string>
+    <string name="selection_create_filter">Create filter</string>
     <string name="image_status_failed">Failed</string>
     <string name="image_status_success">Succeed</string>
     <string name="image_tag_loading">Loading</string>
@@ -106,6 +120,19 @@
     <string name="field_message">Message</string>
     <string name="field_meta">Meta</string>
     <string name="menu_log_detail_copy">Copy log detail</string>
+    <string name="field_stack_trace">Stack trace</string>
+    <string name="stack_trace_copy">Copy stack trace</string>
+    <string name="stack_trace_root_cause">Root cause</string>
+    <string name="stack_trace_caused_by">Caused by</string>
+    <string name="stack_trace_suppressed">Suppressed</string>
+    <plurals name="stack_trace_framework_frames">
+        <item quantity="one">%d framework frame</item>
+        <item quantity="other">%d framework frames</item>
+    </plurals>
+    <plurals name="stack_trace_more_frames">
+        <item quantity="one">%d more frame, same as above</item>
+        <item quantity="other">%d more frames, same as above</item>
+    </plurals>
     <string name="navigate_up">Navigate up</string>
     <string name="update_notification_channel_name">App updates</string>
     <string name="update_available_title">Devin update available</string>

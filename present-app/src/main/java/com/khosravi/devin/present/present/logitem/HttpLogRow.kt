@@ -21,7 +21,7 @@ import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
 
 @Composable
-fun HttpLogRow(calendar: CalendarProxy, data: HttpLogItemData, onClick: () -> Unit) {
+fun HttpLogRow(calendar: CalendarProxy, data: HttpLogItemData, onClick: () -> Unit, showDivider: Boolean = true) {
     val statusError = MaterialTheme.devinColors.statusError
     val onSurface = MaterialTheme.colorScheme.onSurface
     val statusColor: Color
@@ -54,7 +54,7 @@ fun HttpLogRow(calendar: CalendarProxy, data: HttpLogItemData, onClick: () -> Un
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        Divider()
+        if (showDivider) Divider()
         Row(
             modifier = Modifier
                 .fillMaxWidth()

@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.9.0
+- Create a custom filter from several tags: long-press a tag → Select multiple. Previously saved custom filters are removed on upgrade.
+- Show stack traces in log detail with the root cause first, app frames highlighted and a copy action
+- Show log meta as coloured JSON
+- Show app name, icon and log count in the client list
+- Warn in the client list when notifications are off
+- Make the session start row a compact band without an icon
+- Hide the SessionStart tag from the tag row
+
 ## 4.8.0
 - Order the tag row by use and recent activity
 - Mark tags with new errors with a red dot

@@ -61,7 +61,8 @@ object ContentProviderLogsDao {
                 value = model.value,
                 metaSearch = model.metaParam,
                 timeConstraintLessThan = model.timeLessThan,
-                page = model.page
+                page = model.page,
+                tags = model.tags,
             )
         }
 
@@ -79,7 +80,8 @@ object ContentProviderLogsDao {
             model.value,
             model.metaParam,
             model.timeLessThan,
-            model.page
+            model.page,
+            model.tags,
         )
     }
 
@@ -131,6 +133,14 @@ object ContentProviderLogsDao {
         }
         cursor.close()
         return result
+    }
+
+    /** The number of logs [clientId] has, or null if the provider returned nothing. */
+    fun countLogs(context: Context, clientId: String): Int? {
+        val uri: Uri = DevinUriHelper.getLogListUri(clientId, isRawQuery = true)
+        val where = "${LogTable.COLUMN_CLIENT_ID} = ?"
+        val cursor = context.contentResolver.query(uri, arrayOf("COUNT(*)"), where, arrayOf(clientId), null) ?: return null
+        return cursor.use { if (it.moveToFirst()) it.getInt(0) else null }
     }
 
     /**
@@ -229,9 +239,10 @@ object ContentProviderLogsDao {
         metaSearch: DevinUriHelper.OpStringParam? = null,
         timeConstraintLessThan: Long? = null,
         page: PageInfo? = null,
+        tags: List<String>? = null,
     ): List<LogData> {
         try {
-            val cursor = queryLogListAsCursor(context, clientId, typeId, tag, value, metaSearch, timeConstraintLessThan, page)
+            val cursor = queryLogListAsCursor(context, clientId, typeId, tag, value, metaSearch, timeConstraintLessThan, page, tags)
                 ?: return emptyList()
             val result = cursor.toLogList()
             cursor.close()
@@ -251,6 +262,7 @@ object ContentProviderLogsDao {
         metaSearch: DevinUriHelper.OpStringParam? = null,
         timeLessThan: Long? = null,
         page: PageInfo? = null,
+        tags: List<String>? = null,
     ): Cursor? {
         val args = arrayListOf(clientId)
         val where = StringBuilder("${LogTable.COLUMN_CLIENT_ID} = ?").apply {
@@ -265,6 +277,11 @@ object ContentProviderLogsDao {
             if (tag != null) {
                 args.add(tag.toSqlStringArgs())
                 append(tag.toSqlStringQueryPart(LogTable.COLUMN_TAG))
+            }
+            if (!tags.isNullOrEmpty()) {
+                // One bound argument per tag; a few hundred stay well under SQLite's limit.
+                args.addAll(tags)
+                append(" AND ${LogTable.COLUMN_TAG} IN (${tags.joinToString(",") { "?" }})")
             }
             if (value != null) {
                 args.add(value.toSqlStringArgs())

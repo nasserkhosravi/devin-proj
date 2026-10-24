@@ -19,3 +19,10 @@ fun Context.copyLogDetail(tag: String, timeText: String, message: String, meta: 
         Toast.makeText(this, getString(R.string.copied), Toast.LENGTH_SHORT).show()
     }
 }
+
+/** Copies only the stack trace, unescaped, ready for Android Studio's Analyze Stack Trace or a ticket. */
+fun Context.copyStackTrace(stackTrace: String) {
+    if (setClipboardSafe(stackTrace)) {
+        Toast.makeText(this, getString(R.string.copied), Toast.LENGTH_SHORT).show()
+    }
+}

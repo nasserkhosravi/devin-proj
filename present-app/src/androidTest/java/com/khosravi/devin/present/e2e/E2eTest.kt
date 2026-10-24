@@ -73,6 +73,23 @@ abstract class E2eTest {
 
     protected fun chipMenu(label: String) = Ui.longClick(chip(label))
 
+    /** Enters tag selection mode from [first]'s long-press menu ("Select multiple"), then taps [more] to add them. */
+    protected fun selectChips(first: String, vararg more: String) {
+        chipMenu(first)
+        Ui.clickText("Select multiple")
+        Ui.waitForText("1 selected")
+        more.forEachIndexed { index, label ->
+            selectChip(label)
+            Ui.waitForText("${index + 2} selected")
+        }
+    }
+
+    /**
+     * Picks [tag] in the open filter dialog. The dialog is the topmost window, so its tag chip is found before the
+     * filter-bar chip of the same name; pick tags before typing a title that equals one.
+     */
+    protected fun pickFilterTag(tag: String) = Ui.clickText(tag)
+
     /** Left-to-right labels of the filter chips (the clickable pills above the list). */
     protected fun chipLabels(): List<String> {
         val all = Ui.waitFor("chip All", predicate = Ui.text("All"))
