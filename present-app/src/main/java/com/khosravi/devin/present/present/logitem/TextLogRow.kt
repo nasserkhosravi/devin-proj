@@ -50,19 +50,23 @@ private fun logLevelStyle(logLevel: Int): LogLevelStyle? {
     }
 }
 
+/** Size of the round level icon at the start of a log row; [SessionStartRow] lines its content up with it. */
+internal val LOG_ROW_ICON_SIZE = 40.dp
+
 @Composable
 fun TextLogRow(
     calendar: CalendarProxy,
     data: TextLogItemData,
     ignoreTagChip: Boolean,
     onClick: () -> Unit,
+    showDivider: Boolean = true,
 ) {
     val dateText = calendar.getFormattedWithMillis(data.timePresent)
     val style = logLevelStyle(data.logLevel)
     val previewText = remember(data.text) { data.text.toRowPreview() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Divider()
+        if (showDivider) Divider()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -71,7 +75,7 @@ fun TextLogRow(
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(LOG_ROW_ICON_SIZE)
                     .background(
                         color = style?.colors?.iconBackground ?: MaterialTheme.colorScheme.surfaceVariant,
                         shape = CircleShape

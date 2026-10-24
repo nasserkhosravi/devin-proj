@@ -48,7 +48,7 @@ private sealed interface ImageLoadState {
 }
 
 @Composable
-fun ImageLogRow(calendar: CalendarProxy, data: ImageLogItemData) {
+fun ImageLogRow(calendar: CalendarProxy, data: ImageLogItemData, showDivider: Boolean = true) {
     val context = LocalContext.current
     var loadState by remember(data.data.url) {
         mutableStateOf<ImageLoadState>(if (data.data.isFailed()) ImageLoadState.Failed else ImageLoadState.Loading)
@@ -94,7 +94,7 @@ fun ImageLogRow(calendar: CalendarProxy, data: ImageLogItemData) {
     val fileSizePrefix = stringResource(R.string.image_tag_file_size_prefix)
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Divider()
+        if (showDivider) Divider()
         val state = loadState
         Column(
             modifier = Modifier
