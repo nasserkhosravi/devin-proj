@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
@@ -38,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -55,10 +57,12 @@ import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
 import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 
+/** Actions from a chip's long-press menu and from the selection bar ([CreateFilter]); see [LogScreen]. */
 sealed interface FilterChipAction {
+    data class CreateFilter(val tags: List<String>) : FilterChipAction
     data class TogglePin(val item: FilterItem) : FilterChipAction
     data class ShareAsJson(val item: TagFilterItem) : FilterChipAction
-    data class Remove(val item: CustomFilterItem) : FilterChipAction
+    data class Remove(val items: List<CustomFilterItem>) : FilterChipAction
 }
 
 private data class ChipColors(val container: Color, val content: Color)
@@ -69,8 +73,15 @@ fun FilterChipsRow(
     filters: List<FilterItem>,
     selectedId: String?,
     enabled: Boolean,
+    /** Ids of the tag chips picked in selection mode; null when not in selection mode. */
+    selection: Set<String>?,
     onSelect: (FilterItem) -> Unit,
+    /** An action picked from a chip's long-press menu. */
     onAction: (FilterChipAction) -> Unit,
+    /** "Select multiple" in a tag chip's menu: enters selection mode with that tag picked. */
+    onStartSelection: (TagFilterItem) -> Unit,
+    /** Tapping a tag chip in selection mode. */
+    onToggleSelection: (TagFilterItem) -> Unit,
     onSearchOpen: () -> Unit,
 ) {
     // Not saved: the tag search is cleared on rotation and when the screen is left.
@@ -89,15 +100,25 @@ fun FilterChipsRow(
     }
 
     val chip: @Composable (FilterItem) -> Unit = { filter ->
+        val inSelection = selection != null
+        val isPicked = selection?.contains(filter.id) == true
         FilterChipView(
             filter = filter,
-            isSelected = filter.id == selectedId,
-            enabled = enabled,
+            isSelected = if (inSelection) isPicked else filter.id == selectedId,
+            isChecked = isPicked,
+            // Only tag chips can be picked; "All" and custom filters are dimmed and inert in selection mode.
+            enabled = enabled && (!inSelection || filter is TagFilterItem),
+            hasMenu = !inSelection && !filter.isIndexFilterItem(),
             onSelect = {
-                closeSearch()
-                onSelect(filter)
+                if (inSelection) {
+                    if (filter is TagFilterItem) onToggleSelection(filter)
+                } else {
+                    closeSearch()
+                    onSelect(filter)
+                }
             },
             onAction = onAction,
+            onStartSelection = onStartSelection,
         )
     }
 
@@ -150,6 +171,7 @@ fun FilterChipsRow(
 // More chips than this are laid out in two rows.
 private const val TWO_ROWS_THRESHOLD = 4
 private val ICON_SIZE = 24.dp
+private const val DISABLED_ALPHA = 0.38f
 
 /**
  * A chip with a search icon that grows in place into a text field narrowing the chips. Same size and
@@ -243,9 +265,12 @@ private fun chipLabel(filter: FilterItem): String {
 private fun FilterChipView(
     filter: FilterItem,
     isSelected: Boolean,
+    isChecked: Boolean,
     enabled: Boolean,
+    hasMenu: Boolean,
     onSelect: () -> Unit,
     onAction: (FilterChipAction) -> Unit,
+    onStartSelection: (TagFilterItem) -> Unit,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     val isOkHttp = filter is TagFilterItem && filter.tagValue == DevinHttpFlagsApi.LOG_TAG
@@ -267,11 +292,6 @@ private fun FilterChipView(
     }
 
     val pillShape = RoundedCornerShape(50)
-    val onLongClick: (() -> Unit)? = if (filter.isIndexFilterItem()) {
-        null
-    } else {
-        { menuOpen = true }
-    }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -282,10 +302,23 @@ private fun FilterChipView(
             .combinedClickable(
                 enabled = enabled,
                 onClick = onSelect,
-                onLongClick = onLongClick,
+                onLongClick = if (hasMenu) {
+                    { menuOpen = true }
+                } else null,
             )
             .padding(horizontal = 12.dp, vertical = MaterialTheme.spacing.xs)
+            .alpha(if (enabled) 1f else DISABLED_ALPHA)
     ) {
+        if (isChecked) {
+            Icon(
+                Icons.Default.Check,
+                contentDescription = null,
+                tint = chipColors.content,
+                modifier = Modifier
+                    .padding(end = MaterialTheme.spacing.xs)
+                    .size(18.dp)
+            )
+        }
         if (filter.ui.isPinned) {
             Icon(
                 painter = painterResource(R.drawable.ic_keep_24px),
@@ -305,28 +338,21 @@ private fun FilterChipView(
         Text(text = label, color = chipColors.content)
 
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            if (filter.ui.isPinned) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.menu_action_unpin)) }, onClick = {
+            val item: @Composable (Int, () -> Unit) -> Unit = { label, action ->
+                DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = {
                     menuOpen = false
-                    onAction(FilterChipAction.TogglePin(filter))
+                    action()
                 })
-            } else {
-                DropdownMenuItem(text = { Text(stringResource(R.string.menu_action_pin)) }, onClick = {
-                    menuOpen = false
-                    onAction(FilterChipAction.TogglePin(filter))
-                })
+            }
+            item(if (filter.ui.isPinned) R.string.menu_action_unpin else R.string.menu_action_pin) {
+                onAction(FilterChipAction.TogglePin(filter))
             }
             if (filter is TagFilterItem) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.menu_action_share_as_json)) }, onClick = {
-                    menuOpen = false
-                    onAction(FilterChipAction.ShareAsJson(filter))
-                })
+                item(R.string.menu_action_share_as_json) { onAction(FilterChipAction.ShareAsJson(filter)) }
+                item(R.string.menu_action_select_multiple) { onStartSelection(filter) }
             }
             if (filter is CustomFilterItem) {
-                DropdownMenuItem(text = { Text(stringResource(R.string.menu_action_remove)) }, onClick = {
-                    menuOpen = false
-                    onAction(FilterChipAction.Remove(filter))
-                })
+                item(R.string.menu_action_remove) { onAction(FilterChipAction.Remove(listOf(filter))) }
             }
         }
     }

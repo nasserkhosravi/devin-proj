@@ -9,4 +9,6 @@ data class GetLogsQueryModel(
     val metaParam: DevinUriHelper.OpStringParam?,
     val timeLessThan: Long?,
     val page: PageInfo? = null,
+    /** Exact tags, matched with `tag IN (...)` next to [tag]; null or empty means no tag-set constraint. */
+    val tags: List<String>? = null,
 )

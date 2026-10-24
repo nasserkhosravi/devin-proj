@@ -44,9 +44,9 @@ object Analytics {
     // region Log list
     fun filterSelected(type: FilterType) = report("filter_selected", "type" to type.value)
 
-    fun customFilterCreated(hasTag: Boolean, hasSearchText: Boolean) = report(
+    fun customFilterCreated(tagCount: Int, hasSearchText: Boolean) = report(
         "custom_filter_created",
-        "has_tag" to hasTag,
+        "tag_count" to tagCount,
         "has_search_text" to hasSearchText
     )
 
