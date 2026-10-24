@@ -145,8 +145,8 @@ class LogRowsE2eTest : E2eTest() {
         Waits.require("tag filter: only the filter chip") { Ui.count(Ui.text("Net")) == 1 && Ui.exists(Ui.text("net one")) }
 
         overflow("Create custom filter")
+        pickFilterTag("Net")
         Ui.typeInto("title", "Mine")
-        Ui.typeInto("contain tag", "Net")
         Ui.clickText("confirm")
         Ui.waitForText("Mine")
         Waits.require("custom filter: row chips visible again") { Ui.count(Ui.text("Net")) == 3 }

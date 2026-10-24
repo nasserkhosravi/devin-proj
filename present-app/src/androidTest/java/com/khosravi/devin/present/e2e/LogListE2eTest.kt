@@ -117,7 +117,7 @@ class LogListE2eTest : E2eTest() {
         assertEquals(100, seen.size)
     }
 
-    /** LIST-14, LIST-15, LIST-16: empty dialog stays open; title + search creates a selected, filtering chip. */
+    /** LIST-14, LIST-15, LIST-16: no tag picked keeps the dialog open; tag + search creates a selected, filtering chip. */
     @Test
     fun createCustomFilter_validationAndConfirm() {
         openLogList {
@@ -128,11 +128,13 @@ class LogListE2eTest : E2eTest() {
 
         overflow("Create custom filter")
         Ui.waitForText("title")
-        Ui.waitForText("contain tag")
+        Ui.waitForText("Tags")
         Ui.waitForText("search value")
         Ui.clickText("confirm")
-        Waits.holds("dialog stays open when title and tag are empty", 1_000) { Ui.exists(Ui.text("confirm")) }
+        Ui.waitForText("Pick at least one tag")
+        Waits.holds("dialog stays open when no tag is picked", 1_000) { Ui.exists(Ui.text("confirm")) }
 
+        pickFilterTag("A")
         Ui.typeInto("title", "Errs")
         Ui.typeInto("search value", "boom")
         Ui.clickText("confirm")
@@ -142,6 +144,29 @@ class LogListE2eTest : E2eTest() {
         awaitMessages(listOf("boom happened"), absent = listOf("all quiet"))
     }
 
+    /**
+     * Multi-tag filter from the chip bar: long-press a tag → Select multiple, tap another, Create filter. The dialog
+     * opens with both picked; a blank title defaults to "A + B"; the new chip shows only logs with exactly those tags.
+     */
+    @Test
+    fun createFilterFromSelectedTags_matchesExactTags() {
+        openLogList {
+            TestData.log("A", "a value", date = TestData.ts(30))
+            TestData.log("B", "b value", date = TestData.ts(20))
+            TestData.log("AB", "ab value", date = TestData.ts(10))
+        }
+        awaitMessages(listOf("a value", "b value", "ab value"))
+
+        selectChips("A", "B")
+        Ui.clickText("Create filter")
+        Ui.waitForText("Tags")
+        Ui.clickText("confirm")
+
+        Ui.waitGone("dialog", predicate = Ui.text("confirm"))
+        chip("A + B")
+        awaitMessages(listOf("a value", "b value"), absent = listOf("ab value"))
+    }
+
     /** LIST-17: a custom filter titled like an existing tag doesn't crash; both chips are shown. */
     @Test
     fun customFilterNamedLikeTag_noCrash() {
@@ -149,6 +174,7 @@ class LogListE2eTest : E2eTest() {
         Ui.waitForText("a value")
 
         overflow("Create custom filter")
+        pickFilterTag("A")
         Ui.typeInto("title", "A")
         Ui.clickText("confirm")
 
@@ -197,14 +223,17 @@ class LogListE2eTest : E2eTest() {
         Waits.require("only All chip (got ${chipLabels()})") { chipLabels() == listOf("All") }
     }
 
-    /** LIST-19, LIST-10, LIST-13: custom chip menu has Pin + Remove; remove deletes it; clear removes all custom chips. */
+    /**
+     * LIST-19, LIST-10, LIST-13: custom chip menu has Pin + Remove (no Share as json or Select multiple);
+     * remove deletes it; clear removes all custom chips.
+     */
     @Test
     fun customFilters_removeAndClearAll() {
         openLogList { TestData.log("A", "a value") }
         listOf("F1", "F2", "F3").forEach { title ->
             overflow("Create custom filter")
+            pickFilterTag("A")
             Ui.typeInto("title", title)
-            Ui.typeInto("contain tag", "A")
             Ui.clickText("confirm")
             chip(title)
         }
@@ -212,6 +241,7 @@ class LogListE2eTest : E2eTest() {
         chipMenu("F1")
         Ui.waitForText("Pin")
         Ui.assertNotShown("Share as json on a custom chip", Ui.text("Share as json"))
+        Ui.assertNotShown("Select multiple on a custom chip", Ui.text("Select multiple"))
         Ui.clickText("Remove")
         Ui.waitGone("chip F1", predicate = Ui.text("F1"))
 
@@ -234,7 +264,7 @@ class LogListE2eTest : E2eTest() {
     }
 
     /**
-     * LIST-09, LIST-11, SET-07: tag chip menu has Pin + Share as json; a pinned chip goes to the pinned group
+     * LIST-09, LIST-11, SET-07: tag chip menu has Pin + Share as json + Select multiple; a pinned chip goes to the pinned group
      * (right after "All"), the pin survives a relaunch and is listed in Settings; Unpin restores the old order
      * after a relaunch. (The pin icon has no text/description, so order is what's asserted.)
      */
@@ -251,6 +281,7 @@ class LogListE2eTest : E2eTest() {
 
         chipMenu(target)
         Ui.waitForText("Share as json")
+        Ui.waitForText("Select multiple")
         Ui.assertNotShown("Remove on a tag chip", Ui.text("Remove"))
         Ui.clickText("Pin")
         Waits.require("$target moved before $other (got ${chipLabels()})") { chipLabels().take(3) == listOf("All", target, other) }

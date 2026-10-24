@@ -9,6 +9,7 @@ import com.khosravi.devin.present.filter.FilterItem
 import com.khosravi.devin.present.filter.FilterUiData
 import com.khosravi.devin.present.filter.TagFilterItem
 import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Date
 import javax.inject.Inject
@@ -17,24 +18,36 @@ import androidx.core.content.edit
 class FilterRepository @Inject constructor(appContext: Context) {
 
     private val pref = appContext.applicationContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+    // Custom filters before multi-tag filters (one free-text tag each); only read to drop them, see dropLegacyFilters().
+    private val legacyPref = appContext.applicationContext.getSharedPreferences(PREF_NAME_LEGACY, Context.MODE_PRIVATE)
     private val pinnedFiltersPref =
         appContext.applicationContext.getSharedPreferences(PREF_NAME_PINNED, Context.MODE_PRIVATE)
     private val pinnedMetaPref =
         appContext.applicationContext.getSharedPreferences(PREF_NAME_PINNED_META, Context.MODE_PRIVATE)
 
+    /** This client's custom filters, oldest first. Entries without a client id or tags, or that don't parse, are skipped. */
     fun getCustomFilterItemList(clientId: String): List<FilterItem> {
+        dropLegacyFilters()
         val pinnedList = getPinnedListIds()
-        return pref.all.map {
-            val jsonString = it.value as String
-            JSONObject(jsonString)
+        return pref.all.values.mapNotNull { value ->
+            runCatching { JSONObject(value as String) }.getOrNull()
         }.filter {
-            val savedClientId = it.optString(KEY_CLIENT_ID)
-            if (savedClientId.isEmpty()) {
-                //consider not saved client id as a global filter item.
-                true
-            } else savedClientId == clientId
-        }.sortedBy { it.getLong(KEY_TIMESTAMP) }
-            .mapNotNull { createCustomFilterItem(it, pinnedList) }
+            it.optString(KEY_CLIENT_ID) == clientId
+        }.sortedBy { it.optLong(KEY_TIMESTAMP) }
+            .mapNotNull { runCatching { createCustomFilterItem(it, pinnedList) }.getOrNull() }
+    }
+
+    /**
+     * Removes the single-tag custom filters saved before multi-tag filters, and their pins, once. They are not
+     * migrated: a free-text `LIKE` tag can't be turned into exact tags.
+     */
+    private fun dropLegacyFilters() {
+        if (pinnedMetaPref.getBoolean(KEY_DROPPED_LEGACY_FILTERS, false)) return
+        val legacyIds = legacyPref.all.keys
+        // commit both before setting the flag, so a crash in between retries instead of leaving stale pins.
+        pinnedFiltersPref.edit(commit = true) { legacyIds.forEach { remove(it) } }
+        legacyPref.edit(commit = true) { clear() }
+        pinnedMetaPref.edit { putBoolean(KEY_DROPPED_LEGACY_FILTERS, true) }
     }
 
     @SuppressLint("UseKtx")
@@ -48,7 +61,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
     private fun CustomFilterItem.toJson(clientId: String): JSONObject {
         val criteriaJson = criteria.let {
-            JSONObject().put(KEY_CRITERIA_TAG, it.tag)
+            JSONObject().put(KEY_CRITERIA_TAGS, JSONArray(it.tags))
                 .put(KEY_CRITERIA_SEARCH_TEXT, it.searchText)
         }
         val uiJson = ui.let {
@@ -71,11 +84,13 @@ class FilterRepository @Inject constructor(appContext: Context) {
 
     private fun createCustomFilterItem(json: JSONObject, pinnedList: List<String>): FilterItem? {
         val id = json.getString(KEY_ID)
-        val criteria = json.optJSONObject(KEY_CRITERIA)?.let {
-            CustomFilterCriteria(
-                it.optString(KEY_CRITERIA_TAG), it.optString(KEY_CRITERIA_SEARCH_TEXT)
-            )
-        } ?: return null
+        val criteriaJson = json.optJSONObject(KEY_CRITERIA) ?: return null
+        val tagsJson = criteriaJson.optJSONArray(KEY_CRITERIA_TAGS) ?: return null
+        val tags = (0 until tagsJson.length()).map { tagsJson.getString(it) }.filter { it.isNotEmpty() }.distinct()
+        if (tags.isEmpty()) return null
+        val criteria = CustomFilterCriteria(
+            tags, criteriaJson.optString(KEY_CRITERIA_SEARCH_TEXT).ifBlank { null }
+        )
 
         val uiJson = json.getJSONObject(KEY_UI)
 
@@ -149,8 +164,10 @@ class FilterRepository @Inject constructor(appContext: Context) {
         pinnedMetaPref.edit { putBoolean(KEY_SEEDED_DEFAULT_PINS, true) }
     }
 
+    /** Removes the filter and its pin. */
     fun removeFilter(data: CustomFilterItem) {
         pref.edit { remove(data.id) }
+        removeAsPinned(data)
     }
 
 
@@ -160,17 +177,19 @@ class FilterRepository @Inject constructor(appContext: Context) {
         private const val KEY_CLIENT_ID = "_client_id"
 
         private const val KEY_CRITERIA = "_CRITERIA"
-        private const val KEY_CRITERIA_TAG = "_TAG"
+        private const val KEY_CRITERIA_TAGS = "_TAGS"
         private const val KEY_CRITERIA_SEARCH_TEXT = "_SEARCH_TEXT"
 
         private const val KEY_UI = "_UI"
         private const val KEY_UI_TITLE = "_TITLE"
 
-        private const val PREF_NAME = "filter"
+        private const val PREF_NAME = "filter_v2"
+        private const val PREF_NAME_LEGACY = "filter"
         private const val PREF_NAME_PINNED = "pinned_filter_ids"
         // Separate file: getPinnedListIds() reads every value in PREF_NAME_PINNED as a String.
         private const val PREF_NAME_PINNED_META = "pinned_filter_meta"
         private const val KEY_SEEDED_DEFAULT_PINS = "seeded_default_pins"
+        private const val KEY_DROPPED_LEGACY_FILTERS = "dropped_legacy_filters"
         private val DEFAULT_PINNED_TAGS = listOf(DevinHttpFlagsApi.LOG_TAG)
     }
 

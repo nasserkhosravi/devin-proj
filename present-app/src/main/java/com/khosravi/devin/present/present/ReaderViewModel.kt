@@ -453,6 +453,7 @@ class ReaderViewModel constructor(
         val tagOp: DevinUriHelper.OpStringValue?
         val valueOp: DevinUriHelper.OpStringValue?
         var metaParam: DevinUriHelper.OpStringParam? = null
+        var tags: List<String>? = null
 
         when (filter) {
             is TagFilterItem -> {
@@ -473,10 +474,10 @@ class ReaderViewModel constructor(
             }
 
             is CustomFilterItem -> {
-                tagOp = filter.criteria.tag?.let {
-                    DevinUriHelper.OpStringValue.Contain(it)
-                }
-                valueOp = filter.criteria.searchText?.let {
+                // Exact tags; the okhttp URL meta-search only applies to the plain okhttp tag chip.
+                tags = filter.criteria.tags
+                tagOp = null
+                valueOp = filter.criteria.searchText?.takeIf { it.isNotBlank() }?.let {
                     DevinUriHelper.OpStringValue.Contain(it)
                 }
             }
@@ -486,7 +487,7 @@ class ReaderViewModel constructor(
                 valueOp = null
             }
         }
-        return GetLogsQueryModel(null, tagOp, valueOp, metaParam = metaParam, page = pageInfo, timeLessThan = null)
+        return GetLogsQueryModel(null, tagOp, valueOp, metaParam = metaParam, page = pageInfo, timeLessThan = null, tags = tags)
     }
 
     private fun defaultFilterQuery() = buildQueryGet(IndexFilterItem.instance)
@@ -536,16 +537,27 @@ class ReaderViewModel constructor(
         return ExportViewModel.Common.prepareLogsForExport(getAppContext(), getSelectedClientIdOrError(), calendar, exportOptions)
     }
 
-    fun removeFilter(data: CustomFilterItem, position: Int): Flow<Unit> {
+    /** Removes [items] (and their pins and usage) and drops them from the filter list. */
+    fun removeFilters(items: List<CustomFilterItem>): Flow<Unit> {
         return flow {
-            filterRepository.removeFilter(data)
-            getSelectedClientId()?.let { filterUsageRepository.removeUsage(it, data.id) }
-            _uiStateFlow.value.filterList?.toMutableList()?.also { list ->
-                list.removeAt(position)
-                _uiStateFlow.update { it.copy(filterList = list) }
+            val clientId = getSelectedClientId()
+            items.forEach { data ->
+                filterRepository.removeFilter(data)
+                clientId?.let { filterUsageRepository.removeUsage(it, data.id) }
+            }
+            _uiStateFlow.value.filterList?.let { list ->
+                // By identity: a custom filter's id can equal another chip's.
+                val remaining = list.filter { item -> items.none { it === item } }
+                _uiStateFlow.update { it.copy(filterList = remaining) }
             }
             emit(Unit)
         }.flowOn(Dispatchers.IO)
+    }
+
+    /** Every tag the selected client has logged, sorted, for picking a custom filter's tags. */
+    suspend fun loadAvailableTags(): List<String> = withContext(Dispatchers.IO) {
+        val clientId = getSelectedClientId() ?: return@withContext emptyList()
+        ContentProviderLogsDao.getAllTags(getAppContext(), clientId).sortedBy { it.lowercase() }
     }
 
     fun toggleTheme() {
