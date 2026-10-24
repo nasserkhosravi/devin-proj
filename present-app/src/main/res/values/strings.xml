@@ -29,6 +29,14 @@
     <string name="no_client_found">No client data found, run client app or send logs to devin</string>
     <string name="one_client_found">One client found</string>
     <string name="choose_client">Choose client source</string>
+    <string name="client_selection_title">Clients</string>
+    <plurals name="client_log_count">
+        <item quantity="one">%d log</item>
+        <item quantity="other">%d logs</item>
+    </plurals>
+    <string name="notifications_disabled_title">Notifications are off</string>
+    <string name="notifications_disabled_message">Clients can\'t notify you about new logs.</string>
+    <string name="notifications_disabled_action">Enable</string>
     <string name="starter_footer">v%1$s by %2$s</string>
     <string name="copied">Copied</string>
     <string name="msg_failed_to_copy">Failed to copy, User other available options</string>

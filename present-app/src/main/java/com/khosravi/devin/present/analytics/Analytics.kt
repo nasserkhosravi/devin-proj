@@ -37,6 +37,8 @@ object Analytics {
     fun clientLockedOut() = report("client_locked_out")
 
     fun notificationPermissionResult(isGranted: Boolean) = report("notification_permission_result", "granted" to isGranted)
+
+    fun notificationSettingsOpened() = report("notification_settings_opened")
     // endregion
 
     // region Log list
