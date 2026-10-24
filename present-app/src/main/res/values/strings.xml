@@ -114,6 +114,19 @@
     <string name="field_message">Message</string>
     <string name="field_meta">Meta</string>
     <string name="menu_log_detail_copy">Copy log detail</string>
+    <string name="field_stack_trace">Stack trace</string>
+    <string name="stack_trace_copy">Copy stack trace</string>
+    <string name="stack_trace_root_cause">Root cause</string>
+    <string name="stack_trace_caused_by">Caused by</string>
+    <string name="stack_trace_suppressed">Suppressed</string>
+    <plurals name="stack_trace_framework_frames">
+        <item quantity="one">%d framework frame</item>
+        <item quantity="other">%d framework frames</item>
+    </plurals>
+    <plurals name="stack_trace_more_frames">
+        <item quantity="one">%d more frame, same as above</item>
+        <item quantity="other">%d more frames, same as above</item>
+    </plurals>
     <string name="navigate_up">Navigate up</string>
     <string name="update_notification_channel_name">App updates</string>
     <string name="update_available_title">Devin update available</string>

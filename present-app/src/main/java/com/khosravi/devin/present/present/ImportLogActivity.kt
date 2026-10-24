@@ -81,7 +81,7 @@ class ImportLogActivity : BaseActivity() {
                     },
                 )
             }
-            logDetailDestination(navController, calendar, startRoute = ROUTE_IMPORTED)
+            logDetailDestination(navController, calendar, startRoute = ROUTE_IMPORTED, appPackage = null)
         }
     }
 

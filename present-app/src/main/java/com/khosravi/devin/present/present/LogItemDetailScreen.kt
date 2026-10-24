@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,11 +30,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import com.khosravi.devin.present.R
+import com.khosravi.devin.present.present.http.JsonConfigColor
+import com.khosravi.devin.present.present.stacktrace.StackTrace
+import com.khosravi.devin.present.present.stacktrace.StackTraceBlock
+import com.khosravi.devin.present.uikit.text.CodeBlock
 import com.khosravi.devin.present.uikit.text.chunkForDisplay
+import com.khosravi.devin.present.uikit.text.codeTextStyle
 import com.khosravi.devin.present.uikit.theme.DevinTheme
 import com.khosravi.devin.present.uikit.theme.spacing
 
-/** Stateless log detail screen; [timeText] is pre-formatted by the host and [onCopy] copies the full detail. */
+/**
+ * Stateless log detail screen; [timeText] is pre-formatted by the host and [onCopy] copies the full detail.
+ * A parsed [stackTrace] gets its own block (with [appPackage]'s frames highlighted); [meta] is then shown without it.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogItemDetailScreen(
@@ -41,6 +50,9 @@ fun LogItemDetailScreen(
     message: String,
     timeText: String,
     meta: String?,
+    stackTrace: StackTrace?,
+    appPackage: String?,
+    onCopyStackTrace: () -> Unit,
     onCopy: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -87,8 +99,11 @@ fun LogItemDetailScreen(
                     modifier = Modifier.padding(top = MaterialTheme.spacing.small)
                 )
                 BlockField(label = stringResource(R.string.field_message), value = message)
+                if (stackTrace != null) {
+                    StackTraceBlock(stackTrace, appPackage, onCopyStackTrace)
+                }
                 if (meta != null) {
-                    BlockField(label = stringResource(R.string.field_meta), value = meta)
+                    MetaField(meta)
                 }
             }
         }
@@ -116,14 +131,7 @@ private fun InlineField(label: String, value: String, modifier: Modifier = Modif
 
 @Composable
 private fun BlockField(label: String, value: String) {
-    DisableSelection {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = MaterialTheme.spacing.medium)
-        )
-    }
+    FieldLabel(label)
     val chunks = remember(value) { chunkForDisplay(value) }
     Column(modifier = Modifier.padding(start = MaterialTheme.spacing.medium, top = MaterialTheme.spacing.small)) {
         chunks.forEachIndexed { index, chunk ->
@@ -131,6 +139,33 @@ private fun BlockField(label: String, value: String) {
             val display = if (index < chunks.lastIndex) chunk.removeSuffix("\n") else chunk
             Text(text = display, style = MaterialTheme.typography.bodyMedium)
         }
+    }
+}
+
+/** Meta as coloured, pretty-printed JSON in a code block; falls back to [BlockField] when it isn't JSON. */
+@Composable
+private fun MetaField(meta: String) {
+    val context = LocalContext.current
+    val lines = remember(meta) { formatMetaJson(meta, JsonConfigColor.create(context)) }
+    if (lines == null) {
+        BlockField(label = stringResource(R.string.field_meta), value = meta)
+        return
+    }
+    FieldLabel(stringResource(R.string.field_meta))
+    CodeBlock(modifier = Modifier.padding(top = MaterialTheme.spacing.small)) {
+        lines.forEach { Text(text = it, style = codeTextStyle) }
+    }
+}
+
+@Composable
+private fun FieldLabel(label: String) {
+    DisableSelection {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = MaterialTheme.spacing.medium)
+        )
     }
 }
 
@@ -145,7 +180,10 @@ private fun LogItemDetailScreenPreview() {
             tag = "MyTag",
             message = "A quite long log message that describes what happened in the app.",
             timeText = "11:52:49.123",
-            meta = "{\"userId\":42}",
+            meta = "{\"log_level\":4,\"fields\":{\"userId\":42,\"premium\":true}}",
+            stackTrace = null,
+            appPackage = null,
+            onCopyStackTrace = {},
             onCopy = {},
             onBack = {},
         )
@@ -161,6 +199,9 @@ private fun LogItemDetailScreenNoMetaPreview() {
             message = "No meta on this one.",
             timeText = "11:52:49.123",
             meta = null,
+            stackTrace = null,
+            appPackage = null,
+            onCopyStackTrace = {},
             onCopy = {},
             onBack = {},
         )
