@@ -8,13 +8,9 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,8 +27,7 @@ import com.khosravi.devin.present.uikit.theme.spacing
 
 /**
  * A compact, lightly tinted band marking where an app session starts. It uses the same columns as [TextLogRow]:
- * a start icon centred under the level icons, then "Session started", the version and the date/time where log
- * messages start. Text stays in neutral colours; the tint alone sets the band apart.
+ * an empty icon column, then "Session started", the version and the date/time where log messages start. Text stays in neutral colours; the tint alone sets the band apart.
  */
 @Composable
 fun SessionStartRow(calendar: CalendarProxy, data: SessionStartLogItemData) {
@@ -58,14 +53,8 @@ fun SessionStartRow(calendar: CalendarProxy, data: SessionStartLogItemData) {
             modifier = Modifier.padding(start = spacing.small - 3.dp, end = spacing.medium, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(modifier = Modifier.width(LOG_ROW_ICON_SIZE), contentAlignment = Alignment.Center) {
-                Icon(
-                    Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = colors.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            // Empty icon column, so the text still starts where log messages do.
+            Box(modifier = Modifier.width(LOG_ROW_ICON_SIZE))
             Text(
                 text = stringResource(R.string.session_started),
                 color = colors.onSurface,
