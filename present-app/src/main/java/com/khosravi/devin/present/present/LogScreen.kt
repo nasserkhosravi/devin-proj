@@ -173,8 +173,9 @@ fun LogScreen(
                     // e.g. HttpLogItemData.logId, others don't), so this key is only a synthetic
                     // position+type marker — better than the implicit positional default, but not
                     // true content-identity diffing.
-                    itemsIndexed(rowItems, key = { index, rowItem -> "$index-${rowItem.data::class.simpleName}" }) { _, rowItem ->
-                        LogItemDataRow(calendar, rowItem.data, ignoreTagChip, onTextLogClick, onHttpLogClick)
+                    itemsIndexed(rowItems, key = { index, rowItem -> "$index-${rowItem.data::class.simpleName}" }) { index, rowItem ->
+                        val previous = rowItems.getOrNull(index - 1)?.data
+                        LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, onTextLogClick, onHttpLogClick)
                     }
                 }
             }
@@ -188,20 +189,23 @@ fun LogScreen(
 /**
  * One log row for a [LogItemData]. Shared by [LogScreen] and [ImportLogScreen].
  * [ignoreTagChip] hides the tag chip on text rows; set it when every row has the same tag.
+ * [previous] is the row above; a row right below a session start skips its top divider, since that row is one.
  */
 @Composable
 internal fun LogItemDataRow(
     calendar: CalendarProxy,
     data: LogItemData,
+    previous: LogItemData?,
     ignoreTagChip: Boolean,
     onTextLogClick: (TextLogItemData) -> Unit,
     onHttpLogClick: (HttpLogItemData) -> Unit,
 ) {
+    val showDivider = previous !is SessionStartLogItemData
     when (data) {
         is DateLogItemData -> DateHeaderRow(calendar, data)
-        is TextLogItemData -> TextLogRow(calendar, data, ignoreTagChip = ignoreTagChip, onClick = { onTextLogClick(data) })
-        is HttpLogItemData -> HttpLogRow(calendar, data, onClick = { onHttpLogClick(data) })
-        is ImageLogItemData -> ImageLogRow(calendar, data)
+        is TextLogItemData -> TextLogRow(calendar, data, ignoreTagChip = ignoreTagChip, onClick = { onTextLogClick(data) }, showDivider = showDivider)
+        is HttpLogItemData -> HttpLogRow(calendar, data, onClick = { onHttpLogClick(data) }, showDivider = showDivider)
+        is ImageLogItemData -> ImageLogRow(calendar, data, showDivider = showDivider)
         is SessionStartLogItemData -> SessionStartRow(calendar, data)
         is ReplicatedTextLogItemData -> Unit // never emitted by ReaderViewModel; exhaustiveness guard only
     }
