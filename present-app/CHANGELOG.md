@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.10.0
+- Open a client from other apps with the `devin://client/<packageId>` deeplink
+- Open the log detail from a session start row
+- Show session starts between the logs of a tag filter
+- Show each session start row above its session's logs and keep it pinned while scrolling
+- Highlight links in log text and open them from the log detail
+
 ## 4.9.0
 - Create a custom filter from several tags: long-press a tag → Select multiple. Previously saved custom filters are removed on upgrade.
 - Show stack traces in log detail with the root cause first, app frames highlighted and a copy action
