@@ -34,6 +34,7 @@ import com.khosravi.devin.present.present.http.JsonConfigColor
 import com.khosravi.devin.present.present.stacktrace.StackTrace
 import com.khosravi.devin.present.present.stacktrace.StackTraceBlock
 import com.khosravi.devin.present.uikit.text.CodeBlock
+import com.khosravi.devin.present.uikit.text.LinkText
 import com.khosravi.devin.present.uikit.text.chunkForDisplay
 import com.khosravi.devin.present.uikit.text.codeTextStyle
 import com.khosravi.devin.present.uikit.theme.DevinTheme
@@ -98,7 +99,7 @@ fun LogItemDetailScreen(
                     value = timeText,
                     modifier = Modifier.padding(top = MaterialTheme.spacing.small)
                 )
-                BlockField(label = stringResource(R.string.field_message), value = message)
+                BlockField(label = stringResource(R.string.field_message), value = message, linkify = true)
                 if (stackTrace != null) {
                     StackTraceBlock(stackTrace, appPackage, onCopyStackTrace)
                 }
@@ -130,14 +131,15 @@ private fun InlineField(label: String, value: String, modifier: Modifier = Modif
 }
 
 @Composable
-private fun BlockField(label: String, value: String) {
+private fun BlockField(label: String, value: String, linkify: Boolean = false) {
     FieldLabel(label)
     val chunks = remember(value) { chunkForDisplay(value) }
     Column(modifier = Modifier.padding(start = MaterialTheme.spacing.medium, top = MaterialTheme.spacing.small)) {
         chunks.forEachIndexed { index, chunk ->
             // A boundary '\n' would add a blank line since each chunk already starts a new row; keep the last chunk's.
             val display = if (index < chunks.lastIndex) chunk.removeSuffix("\n") else chunk
-            Text(text = display, style = MaterialTheme.typography.bodyMedium)
+            if (linkify) LinkText(text = display, style = MaterialTheme.typography.bodyMedium)
+            else Text(text = display, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

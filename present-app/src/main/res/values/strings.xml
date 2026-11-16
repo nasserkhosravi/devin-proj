@@ -115,6 +115,7 @@
     <string name="log_item_debug">Debug</string>
     <string name="log_item_verbose">Verbose</string>
     <string name="log_detail_title">Log detail</string>
+    <string name="link_no_handler">No app can open this link</string>
     <string name="field_tag">Tag</string>
     <string name="field_time">Time</string>
     <string name="field_message">Message</string>
