@@ -139,7 +139,7 @@ object Analytics {
         }
     }
 
-    enum class ClientOpenSource(val value: String) { LIST("list"), AUTO("auto"), NOTIFICATION("notification") }
+    enum class ClientOpenSource(val value: String) { LIST("list"), AUTO("auto"), NOTIFICATION("notification"), DEEPLINK("deeplink") }
 
     enum class FilterType(val value: String) {
         INDEX("index"), TAG("tag"), CUSTOM("custom");

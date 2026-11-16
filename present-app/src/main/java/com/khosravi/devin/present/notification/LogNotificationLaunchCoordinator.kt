@@ -3,6 +3,7 @@ package com.khosravi.devin.present.notification
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,12 +28,22 @@ class LogNotificationLaunchCoordinator(
 
     private var targetClientId: String? = null
     private var targetTag: String? = null
+    private var isDeepLink = false
     private var pendingPermissionLoadState: ClientLoadedState? = null
     private var permissionHandled = false
 
     fun readTarget(intent: Intent) {
-        targetClientId = intent.getStringExtra(EXTRA_TARGET_CLIENT_ID)
-        targetTag = intent.getStringExtra(EXTRA_TARGET_TAG)
+        val deepLink = intent.data?.takeIf { intent.action == Intent.ACTION_VIEW }?.let(::parseDeepLink)
+        isDeepLink = deepLink != null
+        targetClientId = deepLink?.first ?: intent.getStringExtra(EXTRA_TARGET_CLIENT_ID)
+        targetTag = deepLink?.second ?: intent.getStringExtra(EXTRA_TARGET_TAG)
+    }
+
+    /** `devin://client/<packageId>[?tag=<tag>]` -> (packageId, tag), or null when it is not that shape. */
+    private fun parseDeepLink(uri: Uri): Pair<String, String?>? {
+        if (uri.scheme != DEEP_LINK_SCHEME || uri.host != DEEP_LINK_HOST) return null
+        val clientId = uri.pathSegments.singleOrNull()?.takeIf { it.isNotBlank() } ?: return null
+        return clientId to uri.getQueryParameter(DEEP_LINK_PARAM_TAG)?.takeIf { it.isNotBlank() }
     }
 
     fun requestPermissionIfNeeded(loadState: ClientLoadedState): Boolean {
@@ -53,12 +64,13 @@ class LogNotificationLaunchCoordinator(
         targetClientId = null
         val notificationTag = targetTag
         targetTag = null
+        val source = if (isDeepLink) Analytics.ClientOpenSource.DEEPLINK else Analytics.ClientOpenSource.NOTIFICATION
         val client = when (loadState) {
             is ClientLoadedState.Single -> loadState.client.takeIf { it.id == requestedClientId }
             is ClientLoadedState.Multi -> loadState.clients.firstOrNull { it.id == requestedClientId }
             is ClientLoadedState.Zero -> null
         } ?: return null
-        return Target(client, notificationTag)
+        return Target(client, notificationTag, source)
     }
 
     private fun ClientLoadedState.clients(): List<ClientData> = when (this) {
@@ -70,10 +82,14 @@ class LogNotificationLaunchCoordinator(
     data class Target(
         val client: ClientData,
         val tag: String?,
+        val source: Analytics.ClientOpenSource,
     )
 
     companion object {
         const val EXTRA_TARGET_CLIENT_ID = "targetClientId"
         const val EXTRA_TARGET_TAG = "targetTag"
+        const val DEEP_LINK_SCHEME = "devin"
+        const val DEEP_LINK_HOST = "client"
+        const val DEEP_LINK_PARAM_TAG = "tag"
     }
 }
