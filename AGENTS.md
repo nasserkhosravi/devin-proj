@@ -27,6 +27,8 @@ Each component is released on its own. Its name is used in its release branch an
   - Its own commits only edit that component's CHANGELOG and version. All code reaches it through feature/fix branches merged into it.
 - **Feature / fix branch**: a descriptive kebab-case name, hyphens not underscores (e.g. `data-retention`). Create it from the release branch it targets, and merge it back into that release branch, never into `main`.
   - Its changes stay inside the target component's modules. If work needs changes in two components (e.g. a `devin-write` provider change used by `present-app`), split it into one branch per component, each targeting its own release branch.
+  - Clean up local branches with `scripts/clean-merged-branches.sh`, never by hand. It lists the local branches and linked worktrees already merged into `main`, asks once, then deletes them (`git branch -D`). It never touches `main`, the current branch, remote branches, or worktrees with uncommitted changes. Because it compares with `main`, a feature branch only shows up after its release branch has been merged into `main` (Releasing, step 2). Run it then, and don't run it without the user's go-ahead, since it deletes after one confirmation.
+  - The script can't detect squash-merged branches. For one of those, check the PR is merged (`gh pr view`) and delete it with `git branch -D <branch>` only after that.
 
 ## Releasing
 
