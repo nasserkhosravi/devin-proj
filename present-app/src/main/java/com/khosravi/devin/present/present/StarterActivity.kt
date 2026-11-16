@@ -249,7 +249,7 @@ class StarterActivity : BaseActivity() {
         clientLoginInteractor.onClientSelect(this, target.client) { canRoute ->
             if (isBlockedByForceUpdate()) return@onClientSelect
             if (canRoute) {
-                Analytics.clientOpened(ClientOpenSource.NOTIFICATION, isPasswordProtected = target.client.getLogPassword() != null)
+                Analytics.clientOpened(target.source, isPasswordProtected = target.client.getLogPassword() != null)
                 startActivity(Intent(this, LogActivity::class.java).apply {
                     target.tag?.let { putExtra(LogActivity.EXTRA_TARGET_TAG, it) }
                 })
