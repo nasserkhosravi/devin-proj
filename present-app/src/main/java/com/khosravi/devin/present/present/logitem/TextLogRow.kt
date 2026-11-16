@@ -27,6 +27,7 @@ import com.khosravi.devin.present.R
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.date.getFormattedWithMillis
 import com.khosravi.devin.present.log.TextLogItemData
+import com.khosravi.devin.present.uikit.text.linkifiedString
 import com.khosravi.devin.present.uikit.theme.LogLevelColors
 import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
@@ -121,8 +122,10 @@ fun TextLogRow(
                         )
                     }
                 }
+                // Links are highlighted but not clickable here: tapping the row opens the detail.
+                val linkColor = MaterialTheme.colorScheme.primary
                 Text(
-                    text = previewText,
+                    text = remember(previewText, linkColor) { linkifiedString(previewText, linkColor) },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = TEXT_LOG_PREVIEW_MAX_LINES,

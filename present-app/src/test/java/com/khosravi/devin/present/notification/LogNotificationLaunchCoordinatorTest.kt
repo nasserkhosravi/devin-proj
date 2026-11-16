@@ -3,6 +3,7 @@ package com.khosravi.devin.present.notification
 import android.Manifest
 import android.content.Intent
 import androidx.activity.ComponentActivity
+import com.khosravi.devin.present.analytics.Analytics
 import com.khosravi.devin.present.client.ClientData
 import com.khosravi.devin.present.data.ClientLoadedState
 import org.json.JSONArray
@@ -54,7 +55,10 @@ class LogNotificationLaunchCoordinatorTest {
     @Test
     fun `finds the target client in a single-client state`() {
         coordinator.readTarget(target(plain.id, "net"))
-        assertEquals(LogNotificationLaunchCoordinator.Target(plain, "net"), coordinator.takeTarget(ClientLoadedState.Single(plain)))
+        assertEquals(
+            LogNotificationLaunchCoordinator.Target(plain, "net", Analytics.ClientOpenSource.NOTIFICATION),
+            coordinator.takeTarget(ClientLoadedState.Single(plain)),
+        )
     }
 
     @Test
