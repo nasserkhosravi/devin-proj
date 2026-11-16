@@ -7,4 +7,6 @@ class SessionStartLogItemData(
     val appVersionName: String?,
     val datePresent: DatePresent,
     val timePresent: TimePresent,
+    /** The stored log, shown in the log detail screen when the row is clicked. */
+    val detail: TextLogItemData,
 ) : LogItemData

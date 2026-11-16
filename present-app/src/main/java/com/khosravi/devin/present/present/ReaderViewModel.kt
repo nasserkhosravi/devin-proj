@@ -159,6 +159,7 @@ class ReaderViewModel constructor(
                 appVersionName = getSessionAppVersionName(it),
                 datePresent = DatePresent(it.date),
                 timePresent = TimePresent(it.date),
+                detail = TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta),
             )
         }
 
@@ -461,11 +462,13 @@ class ReaderViewModel constructor(
                     if (!searchText.isNullOrEmpty()) {
                         metaParam = DevinUriHelper.OpStringParam("url", DevinUriHelper.OpStringValue.Contain(searchText))
                     }
-                    tagOp = DevinUriHelper.OpStringValue.EqualTo(filter.id)
+                    tagOp = null
+                    tags = withSessionStarts(listOf(filter.id), searchText)
                     valueOp = null
                 } else {
                     //normal tag id
-                    tagOp = DevinUriHelper.OpStringValue.EqualTo(filter.id)
+                    tagOp = null
+                    tags = withSessionStarts(listOf(filter.id), searchText)
                     valueOp = if (searchText.isNullOrEmpty()) {
                         null
                     } else DevinUriHelper.OpStringValue.Contain(searchText)
@@ -475,11 +478,10 @@ class ReaderViewModel constructor(
 
             is CustomFilterItem -> {
                 // Exact tags; the okhttp URL meta-search only applies to the plain okhttp tag chip.
-                tags = filter.criteria.tags
+                val criteriaSearch = filter.criteria.searchText?.takeIf { it.isNotBlank() }
+                tags = withSessionStarts(filter.criteria.tags, criteriaSearch)
                 tagOp = null
-                valueOp = filter.criteria.searchText?.takeIf { it.isNotBlank() }?.let {
-                    DevinUriHelper.OpStringValue.Contain(it)
-                }
+                valueOp = criteriaSearch?.let { DevinUriHelper.OpStringValue.Contain(it) }
             }
 
             else -> {
@@ -489,6 +491,13 @@ class ReaderViewModel constructor(
         }
         return GetLogsQueryModel(null, tagOp, valueOp, metaParam = metaParam, page = pageInfo, timeLessThan = null, tags = tags)
     }
+
+    /**
+     * Session starts show between the logs of a tag filter too, so they mark where each app session began.
+     * Not while searching (they would only match by chance) and not for an empty tag list (it means all tags).
+     */
+    private fun withSessionStarts(tags: List<String>, searchText: String?): List<String> =
+        if (tags.isEmpty() || !searchText.isNullOrEmpty()) tags else tags + DevinLogFlagsApi.TAG_SESSION_START
 
     private fun defaultFilterQuery() = buildQueryGet(IndexFilterItem.instance)
 
