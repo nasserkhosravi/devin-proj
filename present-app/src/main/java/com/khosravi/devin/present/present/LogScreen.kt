@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.union
@@ -188,30 +189,41 @@ fun LogScreen(
                     },
                     onSearchOpen = onTagSearchOpen,
                 )
-                // The search field (always first when present) is a sticky header, so it stays reachable while scrolling.
+                // The search field (always first when present) stays above the list, so it is reachable while scrolling.
                 val searchItem = logItems.firstOrNull() as? LogListRowItem.Search
-                val rowItems = remember(logItems) { logItems.filterIsInstance<LogListRowItem.Row>() }
-                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
-                    if (searchItem != null) {
-                        stickyHeader(key = "search") {
-                            // Opaque, so rows scrolling underneath don't show through.
-                            Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
-                                SearchBarRow(
-                                    sessionId = searchItem.sessionId,
-                                    text = searchItem.text,
-                                    hint = searchItem.hint,
-                                    onTextChange = onSearchTextChange,
-                                )
-                            }
-                        }
+                val rowItems = remember(logItems) { logItems.filterIsInstance<LogListRowItem.Row>().sessionStartsFirst() }
+                if (searchItem != null) {
+                    // Opaque, so rows scrolling underneath don't show through.
+                    Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                        SearchBarRow(
+                            sessionId = searchItem.sessionId,
+                            text = searchItem.text,
+                            hint = searchItem.hint,
+                            onTextChange = onSearchTextChange,
+                        )
                     }
+                }
+                LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().weight(1f)) {
                     // No stable content id exists across all LogItemData subtypes (some carry one,
                     // e.g. HttpLogItemData.logId, others don't), so this key is only a synthetic
                     // position+type marker — better than the implicit positional default, but not
                     // true content-identity diffing.
-                    itemsIndexed(rowItems, key = { index, rowItem -> "$index-${rowItem.data::class.simpleName}" }) { index, rowItem ->
+                    rowItems.forEachIndexed { index, rowItem ->
+                        val key = "$index-${rowItem.data::class.simpleName}"
                         val previous = rowItems.getOrNull(index - 1)?.data
-                        LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, onTextLogClick, onHttpLogClick)
+                        if (rowItem.data is SessionStartLogItemData) {
+                            // Opens its session's block, so it stays pinned while that session's logs scroll under it.
+                            stickyHeader(key = key) {
+                                // Opaque, so rows scrolling underneath don't show through.
+                                Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                                    LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, onTextLogClick, onHttpLogClick)
+                                }
+                            }
+                        } else {
+                            item(key = key) {
+                                LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, onTextLogClick, onHttpLogClick)
+                            }
+                        }
                     }
                 }
             }
@@ -261,7 +273,27 @@ internal fun LogItemDataRow(
         is TextLogItemData -> TextLogRow(calendar, data, ignoreTagChip = ignoreTagChip, onClick = { onTextLogClick(data) }, showDivider = showDivider)
         is HttpLogItemData -> HttpLogRow(calendar, data, onClick = { onHttpLogClick(data) }, showDivider = showDivider)
         is ImageLogItemData -> ImageLogRow(calendar, data, showDivider = showDivider)
-        is SessionStartLogItemData -> SessionStartRow(calendar, data)
+        is SessionStartLogItemData -> SessionStartRow(calendar, data, onClick = { onTextLogClick(data.detail) })
         is ReplicatedTextLogItemData -> Unit // never emitted by ReaderViewModel; exhaustiveness guard only
     }
+}
+
+/**
+ * Logs run newest first, so a session start row comes after the logs of its own session. Moves each one in front of
+ * them, so it opens its block (and can be pinned above it); logs above the first session start stay as they are.
+ */
+private fun List<LogListRowItem.Row>.sessionStartsFirst(): List<LogListRowItem.Row> {
+    val result = ArrayList<LogListRowItem.Row>(size)
+    val block = ArrayList<LogListRowItem.Row>()
+    for (row in this) {
+        if (row.data is SessionStartLogItemData) {
+            result += row
+            result += block
+            block.clear()
+        } else {
+            block += row
+        }
+    }
+    result += block
+    return result
 }

@@ -1,6 +1,7 @@
 package com.khosravi.devin.present.present.logitem
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -30,7 +31,7 @@ import com.khosravi.devin.present.uikit.theme.spacing
  * an empty icon column, then "Session started", the version and the date/time where log messages start. Text stays in neutral colours; the tint alone sets the band apart.
  */
 @Composable
-fun SessionStartRow(calendar: CalendarProxy, data: SessionStartLogItemData) {
+fun SessionStartRow(calendar: CalendarProxy, data: SessionStartLogItemData, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val spacing = MaterialTheme.spacing
     val metaStyle = MaterialTheme.typography.labelSmall
@@ -38,6 +39,7 @@ fun SessionStartRow(calendar: CalendarProxy, data: SessionStartLogItemData) {
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
+            .clickable(onClick = onClick)
             .background(colors.primary.copy(alpha = BACKGROUND_ALPHA)),
         verticalAlignment = Alignment.CenterVertically
     ) {
