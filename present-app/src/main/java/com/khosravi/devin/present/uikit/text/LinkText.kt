@@ -1,6 +1,18 @@
 package com.khosravi.devin.present.uikit.text
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.DpOffset
+import com.khosravi.devin.present.setClipboardSafe
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -16,6 +28,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import com.khosravi.devin.present.R
 
@@ -46,6 +59,13 @@ internal fun linkifiedString(text: String, linkColor: Color): AnnotatedString = 
     }
 }
 
+/** The uri of the link covering [offset], or null. The end of a link's range is exclusive. */
+internal fun AnnotatedString.linkAt(offset: Int): String? =
+    getStringAnnotations(LINK_TAG, 0, length).firstOrNull { offset >= it.start && offset < it.end }?.item
+
+/** From Android 13 the system confirms a clipboard copy itself, so the app's own confirmation would be a second one. */
+internal fun needsCopyConfirmation(sdkInt: Int): Boolean = sdkInt < Build.VERSION_CODES.TIRAMISU
+
 /** Opens [uri] with whatever handles it; custom-scheme links may have no handler. */
 internal fun openLink(context: Context, uri: String) {
     try {
@@ -55,7 +75,9 @@ internal fun openLink(context: Context, uri: String) {
     }
 }
 
-/** Text whose links are highlighted and, with [clickable], open on tap. */
+private data class LinkMenu(val uri: String, val anchor: DpOffset)
+
+/** Text whose links are highlighted and, with [clickable], show an Open/Copy menu on tap. */
 @Composable
 fun LinkText(
     text: String,
@@ -64,16 +86,48 @@ fun LinkText(
     clickable: Boolean = true,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val linkColor = MaterialTheme.colorScheme.primary
     val annotated = remember(text, linkColor) { linkifiedString(text, linkColor) }
-    ClickableText(
-        text = annotated,
-        style = style.copy(color = if (style.color == Color.Unspecified) MaterialTheme.colorScheme.onSurface else style.color),
-        modifier = modifier,
-        onClick = { offset ->
-            if (clickable) {
-                annotated.getStringAnnotations(LINK_TAG, offset, offset).firstOrNull()?.let { openLink(context, it.item) }
-            }
-        },
-    )
+    var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var menu by remember { mutableStateOf<LinkMenu?>(null) }
+    Box(modifier = modifier) {
+        ClickableText(
+            text = annotated,
+            style = style.copy(color = if (style.color == Color.Unspecified) MaterialTheme.colorScheme.onSurface else style.color),
+            onTextLayout = { textLayout = it },
+            onClick = { offset ->
+                val uri = annotated.linkAt(offset)
+                val layout = textLayout
+                if (clickable && uri != null && layout != null) {
+                    // The menu opens under the tapped character.
+                    val box = layout.getBoundingBox(offset)
+                    menu = LinkMenu(uri, with(density) { DpOffset(box.left.toDp(), box.bottom.toDp() - layout.size.height.toDp()) })
+                }
+            },
+        )
+        val current = menu
+        DropdownMenu(
+            expanded = current != null,
+            onDismissRequest = { menu = null },
+            offset = current?.anchor ?: DpOffset.Zero,
+        ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.link_menu_open)) },
+                onClick = {
+                    menu = null
+                    current?.let { openLink(context, it.uri) }
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.link_menu_copy)) },
+                onClick = {
+                    menu = null
+                    if (current != null && context.setClipboardSafe(current.uri) && needsCopyConfirmation(Build.VERSION.SDK_INT)) {
+                        Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
+                    }
+                },
+            )
+        }
+    }
 }
