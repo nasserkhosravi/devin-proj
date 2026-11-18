@@ -127,9 +127,11 @@ class LogActivity : BaseActivity() {
             }
             createFilterDestination(
                 loadAvailableTags = viewModel::loadAvailableTags,
-                onConfirm = {
+                isTitleTaken = viewModel::isFilterTitleTaken,
+                onConfirm = { item, originalTitle ->
                     navController.popBackStack(ROUTE_LOGS, inclusive = false)
-                    addFilter(it)
+                    if (originalTitle == null) addFilter(item)
+                    else viewModel.updateFilter(originalTitle, item, CALLBACK_ID_EDIT_FILTER)
                 },
             )
         }
@@ -239,6 +241,10 @@ class LogActivity : BaseActivity() {
             CALLBACK_ID_ADD_FILTER -> {
                 filterList.lastOrNull()?.let(::selectNewFilter)
             }
+
+            CALLBACK_ID_EDIT_FILTER -> {
+                filterList.firstOrNull { it.id == result.updateInfo.filterIdSelection }?.let(::selectNewFilter)
+            }
         }
         presentedFilters?.selectNotificationTargetIfNeeded()
         pagination.setLoaded(result.pageInfo.isFinished)
@@ -289,6 +295,7 @@ class LogActivity : BaseActivity() {
             is FilterChipAction.CreateFilter -> openCreateFilter(navController, action.tags)
             is FilterChipAction.TogglePin -> onTogglePin(action.item)
             is FilterChipAction.ShareAsJson -> shareFilterItemLogs(action.item)
+            is FilterChipAction.Edit -> if (navController.isCurrentEntryResumed()) navController.navigateToEditFilter(action.item)
             is FilterChipAction.Remove -> removeFilters(action.items)
         }
     }
@@ -434,6 +441,7 @@ class LogActivity : BaseActivity() {
         private const val ROUTE_LOGS = "logs"
         private const val ROUTE_EXPORT = "export"
         private const val CALLBACK_ID_REFRESH = "refresh"
+        private const val CALLBACK_ID_EDIT_FILTER = "edit_filter"
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"
     }
 }

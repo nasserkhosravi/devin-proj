@@ -19,6 +19,7 @@
     <string name="field_filter_tags">Tags</string>
     <string name="filter_no_tags">No tags logged yet</string>
     <string name="filter_error_no_tag">Pick at least one tag</string>
+    <string name="filter_error_title_taken">A filter with this name already exists</string>
     <string name="field_search_text">search value</string>
     <string name="confirm">confirm</string>
     <string name="msg_title_required">tag or title required</string>
@@ -94,6 +95,7 @@
     <string name="menu_action_pin">Pin</string>
     <string name="menu_action_unpin">Unpin</string>
     <string name="menu_action_share_as_json">Share as json</string>
+    <string name="menu_action_edit">Edit</string>
     <string name="menu_action_remove">Remove</string>
     <string name="menu_action_select_multiple">Select multiple</string>
     <string name="menu_action_toggle_theme">Toggle theme</string>
