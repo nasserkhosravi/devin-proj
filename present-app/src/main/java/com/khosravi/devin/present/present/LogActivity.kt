@@ -41,7 +41,7 @@ import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.settings.SettingsActivity
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toUriByFileProvider
-import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.uikit.layout.DevinScreen
 import com.khosravi.devin.present.update.UpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -82,6 +82,10 @@ class LogActivity : BaseActivity() {
     private var isRefreshing by mutableStateOf(false)
     private var searchSessionId = 0
 
+    // From a recreated instance (rotation, resize); applied once the view model's current result arrives.
+    private var restoredFilterId: String? = null
+    private var restoredSearchText: String? = null
+
     private val pagination = LogPaginationState()
     private var shareFilterJob: Job? = null
     private var targetTag: String? = null
@@ -93,16 +97,20 @@ class LogActivity : BaseActivity() {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
         targetTag = intent.getStringExtra(EXTRA_TARGET_TAG)
+        restoredFilterId = savedInstanceState?.getString(STATE_FILTER_ID)
+        restoredSearchText = savedInstanceState?.getString(STATE_SEARCH_TEXT)
 
         importIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             onImportFileIntentResult(it)
         }
 
         setContent {
-            DevinTheme { LogNavHost() }
+            DevinScreen { LogNavHost() }
         }
 
-        viewModel.doFirstFetch()
+        // The view model outlives a recreation and replays its current result, so only fetch when it has none yet
+        // (the first start, or after the process was killed).
+        if (viewModel.uiState.value.filterList == null) viewModel.doFirstFetch()
 
         lifecycleScope.launch {
             viewModel.uiState.collect { result -> onUiStateFlowResult(result) }
@@ -224,13 +232,34 @@ class LogActivity : BaseActivity() {
         }
     }
 
+    /** Puts back the filter and tag-search text a recreated activity had; a filter that is gone is ignored. */
+    private fun restoreSelectionIfNeeded() {
+        val id = restoredFilterId ?: return
+        val searchText = restoredSearchText
+        restoredFilterId = null
+        restoredSearchText = null
+        val filter = filterList.find { it.id == id } ?: return
+        selectedFilterId = id
+        searchRow = viewModel.getSearchItemHint(filter)?.let {
+            LogListRowItem.Search(sessionId = ++searchSessionId, filterId = id, hint = it, text = searchText)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_FILTER_ID, selectedFilterId)
+        outState.putString(STATE_SEARCH_TEXT, searchRow?.text)
+    }
+
     private fun onUiStateFlowResult(result: ReaderViewModel.ResultUiState) {
         val presentedFilters = result.filterList?.withNotificationTarget()
-        if (presentedFilters != null && !result.updateInfo.skipFilterList) {
+        // A new instance has no chips yet, so it takes the list even from a result that other instances would skip.
+        if (presentedFilters != null && (!result.updateInfo.skipFilterList || filterList.isEmpty())) {
             filterList = presentedFilters
         }
         result.logList?.let { logRows = it }
         result.updateInfo.filterIdSelection?.let { selectedFilterId = it }
+        restoreSelectionIfNeeded()
         isFilterRowEnabled = true
         when (result.updateInfo.callbackId) {
             CALLBACK_ID_REFRESH -> {
@@ -438,6 +467,8 @@ class LogActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_TARGET_TAG = "targetTag"
+        private const val STATE_FILTER_ID = "state_filter_id"
+        private const val STATE_SEARCH_TEXT = "state_search_text"
         private const val ROUTE_LOGS = "logs"
         private const val ROUTE_EXPORT = "export"
         private const val CALLBACK_ID_REFRESH = "refresh"

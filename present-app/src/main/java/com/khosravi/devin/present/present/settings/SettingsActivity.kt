@@ -19,7 +19,7 @@ import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.retention.RetentionObserver
 import com.khosravi.devin.present.retention.RetentionPolicy
 import com.khosravi.devin.present.retention.StorageUsage
-import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.uikit.layout.DevinScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,7 +59,7 @@ class SettingsActivity : BaseActivity() {
             val maxCount = remember(retentionMaxCount) {
                 choice(retentionMaxCount, RetentionPolicy.COUNT_OPTIONS, ::formatCount)
             }
-            DevinTheme {
+            DevinScreen {
                 SettingsScreen(
                     groupRepeatedLogs = groupRepeatedLogs,
                     onGroupRepeatedLogsChange = ::onGroupRepeatedLogsChange,
