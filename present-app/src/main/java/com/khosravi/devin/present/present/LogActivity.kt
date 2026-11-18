@@ -41,6 +41,8 @@ import com.khosravi.devin.present.present.http.HttpLogDetailActivity
 import com.khosravi.devin.present.present.settings.SettingsActivity
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toUriByFileProvider
+import com.khosravi.devin.present.launcher.LauncherScreen
+import com.khosravi.devin.present.launcher.LauncherViewModel
 import com.khosravi.devin.present.uikit.layout.DevinScreen
 import com.khosravi.devin.present.update.UpdateChecker
 import kotlinx.coroutines.Dispatchers
@@ -124,6 +126,11 @@ class LogActivity : BaseActivity() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ROUTE_LOGS) {
             composable(ROUTE_LOGS) { LogsDestination(navController) }
+            composable(ROUTE_LAUNCHER) {
+                // Scoped to this back-stack entry: a fresh page (and manifest scan) each time it is opened.
+                val launcherViewModel: LauncherViewModel = viewModel(factory = vmFactory)
+                LauncherScreen(viewModel = launcherViewModel, onBack = { navController.popBackStack() })
+            }
             logDetailDestination(navController, calendar, startRoute = ROUTE_LOGS, appPackage = viewModel.getSelectedClientId())
             dialog(ROUTE_EXPORT) {
                 // Scoped to this back-stack entry: cleared (job cancelled, temp file deleted) when the dialog closes.
@@ -200,6 +207,7 @@ class LogActivity : BaseActivity() {
                 viewModel.toggleTheme()
                 Analytics.themeToggled(isDark = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES)
             },
+            onOpenLauncher = { if (navController.isCurrentEntryResumed()) navController.navigate(ROUTE_LAUNCHER) },
             onOpenSettings = { startActivity(SettingsActivity.intent(this)) },
         )
     }
@@ -471,6 +479,7 @@ class LogActivity : BaseActivity() {
         private const val STATE_SEARCH_TEXT = "state_search_text"
         private const val ROUTE_LOGS = "logs"
         private const val ROUTE_EXPORT = "export"
+        private const val ROUTE_LAUNCHER = "launcher"
         private const val CALLBACK_ID_REFRESH = "refresh"
         private const val CALLBACK_ID_EDIT_FILTER = "edit_filter"
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"

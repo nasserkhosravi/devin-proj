@@ -1,5 +1,8 @@
 package com.khosravi.devin.present.di
 
+import com.khosravi.devin.present.launcher.DeeplinkScanner
+import com.khosravi.devin.present.launcher.LaunchRepository
+
 import android.app.Application
 import com.khosravi.devin.present.data.AppPref
 import com.khosravi.devin.present.data.UserSettings
@@ -23,7 +26,12 @@ class ViewModelModule {
         cacheRepository: CacheRepository,
         userSettings: UserSettings,
         appPref: AppPref,
-    ) = ViewModelFactory(application, calendar, filterRepository, filterUsageRepository, cacheRepository, userSettings, appPref)
+        launchRepository: LaunchRepository,
+        deeplinkScanner: DeeplinkScanner,
+    ) = ViewModelFactory(
+        application, calendar, filterRepository, filterUsageRepository, cacheRepository, userSettings, appPref,
+        launchRepository, deeplinkScanner,
+    )
 
 }
 
