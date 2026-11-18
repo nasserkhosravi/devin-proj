@@ -6,6 +6,8 @@ import com.khosravi.devin.present.log.DateLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
 import com.khosravi.devin.present.log.TextLogItemData
+import android.util.Log
+import com.khosravi.devin.present.log.SessionStartLogItemData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -15,7 +17,8 @@ class CountingReplicatedTextLogItemDataOperationTest {
 
     private var nextTimestamp = 0L
 
-    private fun text(value: String) = TextLogItemData("tag", value, TimePresent(nextTimestamp++), 0, null)
+    private fun text(value: String, tag: String = "tag", level: Int = 0) =
+        TextLogItemData(tag, value, TimePresent(nextTimestamp++), level, null)
 
     private fun header() = DateLogItemData(DatePresent(nextTimestamp++))
 
@@ -90,5 +93,51 @@ class CountingReplicatedTextLogItemDataOperationTest {
         assertEquals(2, result.size)
         assertEquals(listOf(a1, a2), (result[0] as ReplicatedTextLogItemData).list)
         assertEquals(listOf(b1, b2), (result[1] as ReplicatedTextLogItemData).list)
+    }
+
+    @Test
+    fun `same text with different tags is not grouped`() {
+        val result = run(text("a", tag = "x"), text("a", tag = "y"))
+        assertEquals(2, result.size)
+        assertTrue(result.all { it is TextLogItemData })
+    }
+
+    @Test
+    fun `group level is the most severe copy`() {
+        val result = run(
+            text("a", level = Log.INFO),
+            text("a", level = Log.ERROR),
+            text("a", level = Log.DEBUG),
+        )
+        val group = result.single() as ReplicatedTextLogItemData
+        assertEquals(Log.ERROR, group.logLevel)
+        assertEquals(3, group.count)
+        assertEquals("tag", group.tag)
+    }
+
+    @Test
+    fun `session start splits a run`() {
+        val a1 = text("a")
+        val start = SessionStartLogItemData(null, DatePresent(nextTimestamp++), TimePresent(nextTimestamp++), text("start"))
+        val a2 = text("a")
+        val result = run(a1, start, a2)
+        assertEquals(3, result.size)
+        assertTrue(result.none { it is ReplicatedTextLogItemData })
+    }
+
+    @Test
+    fun `run across a page join is one group`() {
+        val page1 = listOf(text("x"), text("a"), text("a"))
+        val page2 = listOf(text("a"), text("y"))
+        val result = run(*(page1 + page2).toTypedArray())
+        assertEquals(3, result.size)
+        assertEquals(3, (result[1] as ReplicatedTextLogItemData).count)
+    }
+
+    @Test
+    fun `group keys differ between groups`() {
+        val result = run(text("a"), text("a"), text("b"), text("b"))
+        val keys = result.map { (it as ReplicatedTextLogItemData).groupKey }
+        assertEquals(2, keys.toSet().size)
     }
 }

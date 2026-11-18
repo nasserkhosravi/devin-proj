@@ -128,8 +128,6 @@ class ReaderViewModel constructor(
             // ImportLogActivity, so LogActivity's paging state is unaffected.
             lastDayHeaderDate = null
             val logsWithHeaders = addDateHeadersByDay(it, calendar)
-            //TODO: temporary disabled, use a setting flag
-//            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
             logsWithHeaders
         }.flowOn(Dispatchers.Default)
     }
@@ -568,6 +566,8 @@ class ReaderViewModel constructor(
         val clientId = getSelectedClientId() ?: return@withContext emptyList()
         (ContentProviderLogsDao.getAllTags(getAppContext(), clientId) - HIDDEN_TAGS).sortedBy { it.lowercase() }
     }
+
+    fun isGroupRepeatedLogsEnabled(): Boolean = appPref.groupRepeatedLogs
 
     fun toggleTheme() {
         val newNightMode = if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) {

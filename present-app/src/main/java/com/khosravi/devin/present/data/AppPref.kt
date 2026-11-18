@@ -16,6 +16,10 @@ class AppPref @Inject constructor(appContext: Context) {
         get() = pref.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         set(value) = pref.edit { putInt(KEY_THEME, value) }
 
+    var groupRepeatedLogs: Boolean
+        get() = pref.getBoolean(KEY_GROUP_REPEATED_LOGS, true)
+        set(value) = pref.edit { putBoolean(KEY_GROUP_REPEATED_LOGS, value) }
+
     var retentionEnabled: Boolean
         get() = pref.getBoolean(KEY_RETENTION_ENABLED, RetentionPolicy.DEFAULT.isEnabled)
         set(value) = pref.edit { putBoolean(KEY_RETENTION_ENABLED, value) }
@@ -116,6 +120,7 @@ class AppPref @Inject constructor(appContext: Context) {
 
     companion object {
         private const val KEY_THEME = "theme"
+        private const val KEY_GROUP_REPEATED_LOGS = "group_repeated_logs"
         private const val KEY_LAST_CONFIRMED_PASSWORD = "LAST_CONFIRMED_PASSWORD"
         private const val KEY_WRONG_PASSWORD_COUNT = "KEY_WRONG_PASSWORD_COUNT"
         private const val KEY_WRONG_PASSWORD_DATE = "KEY_WRONG_PASSWORD_DATE"

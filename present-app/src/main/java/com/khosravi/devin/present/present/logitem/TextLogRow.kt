@@ -32,14 +32,14 @@ import com.khosravi.devin.present.uikit.theme.LogLevelColors
 import com.khosravi.devin.present.uikit.theme.devinColors
 import com.khosravi.devin.present.uikit.theme.spacing
 
-private data class LogLevelStyle(
+internal data class LogLevelStyle(
     val label: String,
     val icon: Int,
     val colors: LogLevelColors,
 )
 
 @Composable
-private fun logLevelStyle(logLevel: Int): LogLevelStyle? {
+internal fun logLevelStyle(logLevel: Int): LogLevelStyle? {
     val colors = MaterialTheme.devinColors
     return when (logLevel) {
         Log.ERROR -> LogLevelStyle(stringResource(R.string.log_item_error), R.drawable.ic_info_24px, colors.logError)
