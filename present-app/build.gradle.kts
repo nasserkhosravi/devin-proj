@@ -20,11 +20,12 @@ val appMetricaApiKey: String = run {
 
 android {
     namespace = "com.khosravi.devin.present"
-    compileSdk = libs.versions.project.compileSdk.get().toInt()
+    // The presenter is built and targeted at 36 on its own; the library modules keep the shared value (35).
+    compileSdk = 36
 
     defaultConfig {
         minSdk = libs.versions.project.minSdk.get().toInt()
-        targetSdk = libs.versions.project.targetSdk.get().toInt()
+        targetSdk = 36
         versionCode = 9
         // Stamps the update-check time before Application.onCreate so the e2e suite never hits GitHub.
         testInstrumentationRunner = "com.khosravi.devin.present.e2e.E2eTestRunner"
