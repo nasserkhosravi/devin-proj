@@ -272,6 +272,32 @@ class ReaderViewModel constructor(
 
     private fun getAppContext(): Context = getApplication<Application>().applicationContext
 
+    fun isFilterTitleTaken(title: String): Boolean = filterRepository.isTitleTaken(title)
+
+    /** Saves [data] over the custom filter [originalId], in place in the list; see [FilterRepository.replaceFilter]. */
+    fun updateFilter(originalId: String, data: CustomFilterItem, callbackId: String? = null) {
+        viewModelScope.launch {
+            val clientId = getSelectedClientIdOrError()
+            val newList = withContext(Dispatchers.Default) {
+                val list = _uiStateFlow.value.filterList ?: return@withContext null
+                val index = list.indexOfFirst { it is CustomFilterItem && it.id == originalId }
+                if (index == -1) return@withContext null
+                if (!filterRepository.replaceFilter(originalId, data, clientId)) throw IllegalArgumentException()
+                if (data.id != originalId) filterUsageRepository.removeUsage(clientId, originalId)
+                val saved = data.copy(ui = data.ui.copy(isPinned = list[index].ui.isPinned))
+                list.toMutableList().apply { this[index] = saved }
+            } ?: return@launch
+            _uiStateFlow.update {
+                ResultUiState(
+                    filterList = newList,
+                    logList = it.logList,
+                    ResultUiState.UpdateInfo(filterIdSelection = data.id, callbackId = callbackId),
+                    pageInfo
+                )
+            }
+        }
+    }
+
     fun addFilter(data: CustomFilterItem, callbackId: String? = null) {
         viewModelScope.launch {
             flow<FilterItem> {

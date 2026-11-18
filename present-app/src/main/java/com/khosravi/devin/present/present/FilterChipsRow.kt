@@ -62,6 +62,7 @@ sealed interface FilterChipAction {
     data class CreateFilter(val tags: List<String>) : FilterChipAction
     data class TogglePin(val item: FilterItem) : FilterChipAction
     data class ShareAsJson(val item: TagFilterItem) : FilterChipAction
+    data class Edit(val item: CustomFilterItem) : FilterChipAction
     data class Remove(val items: List<CustomFilterItem>) : FilterChipAction
 }
 
@@ -352,6 +353,7 @@ private fun FilterChipView(
                 item(R.string.menu_action_select_multiple) { onStartSelection(filter) }
             }
             if (filter is CustomFilterItem) {
+                item(R.string.menu_action_edit) { onAction(FilterChipAction.Edit(filter)) }
                 item(R.string.menu_action_remove) { onAction(FilterChipAction.Remove(listOf(filter))) }
             }
         }

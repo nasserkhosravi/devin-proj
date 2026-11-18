@@ -59,7 +59,36 @@ class FilterRepository @Inject constructor(appContext: Context) {
         return pref.edit().putString(data.id, data.toJson(clientId).toString()).commit()
     }
 
-    private fun CustomFilterItem.toJson(clientId: String): JSONObject {
+    /** True when a filter with this title exists. Titles are the ids, and the store is shared by every client. */
+    fun isTitleTaken(title: String): Boolean = pref.contains(title)
+
+    /**
+     * Saves [data] over the filter [originalId] (an edit). The filter keeps its place in the list (the original save
+     * time is kept), and its pin moves along when the title changed. Refuses, changing nothing, to rename onto
+     * another filter's title.
+     */
+    @SuppressLint("UseKtx")
+    fun replaceFilter(originalId: String, data: CustomFilterItem, clientId: String): Boolean {
+        if (data.id.isEmpty()) return false
+        val renamed = data.id != originalId
+        if (renamed && isTitleTaken(data.id)) return false
+
+        val originalTimestamp = pref.getString(originalId, null)
+            ?.let { runCatching { JSONObject(it).getLong(KEY_TIMESTAMP) }.getOrNull() }
+        val saved = pref.edit()
+            .putString(data.id, data.toJson(clientId, originalTimestamp ?: Date().time).toString())
+            .apply { if (renamed) remove(originalId) }
+            .commit()
+        if (saved && renamed && pinnedFiltersPref.contains(originalId)) {
+            pinnedFiltersPref.edit {
+                remove(originalId)
+                putString(data.id, data.ui.title.value)
+            }
+        }
+        return saved
+    }
+
+    private fun CustomFilterItem.toJson(clientId: String, timestamp: Long = Date().time): JSONObject {
         val criteriaJson = criteria.let {
             JSONObject().put(KEY_CRITERIA_TAGS, JSONArray(it.tags))
                 .put(KEY_CRITERIA_SEARCH_TEXT, it.searchText)
@@ -71,7 +100,7 @@ class FilterRepository @Inject constructor(appContext: Context) {
         return JSONObject()
             .put(KEY_ID, id)
             .put(KEY_CLIENT_ID, clientId)
-            .put(KEY_TIMESTAMP, Date().time)
+            .put(KEY_TIMESTAMP, timestamp)
             .put(KEY_CRITERIA, criteriaJson)
             .put(KEY_UI, uiJson)
 

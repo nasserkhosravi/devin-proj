@@ -152,6 +152,60 @@ class FilterRepositoryTest {
         assertTrue(result.getValue("ui") is TagFilterItem)
     }
 
+    @Test
+    fun `replaceFilter keeps position and pin when the title is unchanged`() {
+        saveInOrder("x", filter("a"), filter("b"), filter("c"))
+        repository.saveAsPinned(filter("b"))
+
+        assertTrue(repository.replaceFilter("b", filter("b", tags = listOf("db"), search = null), "x"))
+
+        val result = repository.getCustomFilterItemList("x").map { it as CustomFilterItem }
+        assertEquals(listOf("a", "b", "c"), result.map { it.id })
+        assertEquals(CustomFilterCriteria(listOf("db"), null), result[1].criteria)
+        assertTrue(result[1].ui.isPinned)
+    }
+
+    @Test
+    fun `renaming keeps position and moves the pin`() {
+        saveInOrder("x", filter("a"), filter("b"), filter("c"))
+        repository.saveAsPinned(filter("b"))
+
+        assertTrue(repository.replaceFilter("b", filter("b2"), "x"))
+
+        val result = repository.getCustomFilterItemList("x").map { it as CustomFilterItem }
+        assertEquals(listOf("a", "b2", "c"), result.map { it.id })
+        assertTrue(result[1].ui.isPinned)
+        assertFalse(repository.getPinnedListIds().contains("b"))
+    }
+
+    @Test
+    fun `renaming an unpinned filter does not pin the new title`() {
+        saveInOrder("x", filter("a"))
+
+        assertTrue(repository.replaceFilter("a", filter("a2"), "x"))
+
+        assertFalse((repository.getCustomFilterItemList("x").single() as CustomFilterItem).ui.isPinned)
+    }
+
+    @Test
+    fun `renaming onto another filter is refused`() {
+        saveInOrder("x", filter("a"), filter("b"))
+
+        assertFalse(repository.replaceFilter("a", filter("b", tags = listOf("zzz")), "x"))
+
+        val result = repository.getCustomFilterItemList("x").map { it as CustomFilterItem }
+        assertEquals(listOf("a", "b"), result.map { it.id })
+        assertEquals(listOf("net"), result[1].criteria.tags)
+    }
+
+    @Test
+    fun `isTitleTaken is true for any client's saved title`() {
+        saveInOrder("y", filter("t"))
+
+        assertTrue(repository.isTitleTaken("t"))
+        assertFalse(repository.isTitleTaken("nope"))
+    }
+
     private companion object {
         const val PREF_FILTERS = "filter_v2"
         const val PREF_LEGACY_FILTERS = "filter"
