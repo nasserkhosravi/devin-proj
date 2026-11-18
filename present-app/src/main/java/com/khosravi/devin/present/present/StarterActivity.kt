@@ -25,7 +25,7 @@ import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.domain.ClientLoginInteractor
 import com.khosravi.devin.present.notification.LogNotificationLaunchCoordinator
-import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.uikit.layout.DevinScreen
 import com.khosravi.devin.present.update.GitHubReleaseSource
 import com.khosravi.devin.present.update.ReleaseInfo
 import com.khosravi.devin.present.update.UpdateChecker
@@ -87,7 +87,7 @@ class StarterActivity : BaseActivity() {
         notificationLaunchCoordinator.readTarget(intent)
 
         setContent {
-            DevinTheme {
+            DevinScreen {
                 StarterScreen(
                     message = message,
                     clients = clients,
