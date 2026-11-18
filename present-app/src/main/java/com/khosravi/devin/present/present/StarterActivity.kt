@@ -67,6 +67,7 @@ class StarterActivity : BaseActivity() {
     }
 
     private var message by mutableStateOf("")
+    private var isRefreshing by mutableStateOf(false)
     private var clients by mutableStateOf(emptyList<ClientData>())
 
     /** Label, icon and log count per client package id; filled in after [clients] loads and on every resume. */
@@ -94,6 +95,7 @@ class StarterActivity : BaseActivity() {
                     onClientClick = { onSelectClient(it, ClientOpenSource.LIST) },
                     areNotificationsEnabled = areNotificationsEnabled,
                     onNotificationsDisabledClick = ::openNotificationSettings,
+                    isRefreshing = isRefreshing,
                     onRefresh = ::refreshClients,
                     footerText = footerText(availableUpdate),
                     isUpdateAvailable = availableUpdate != null,
@@ -230,6 +232,8 @@ class StarterActivity : BaseActivity() {
                     if (!notificationLaunchCoordinator.requestPermissionIfNeeded(it)) {
                         onClientListFetchResult(it)
                     }
+                    // Also when the result waits for the notification permission, so the spinner can't stay up.
+                    isRefreshing = false
                 }
         }
     }
@@ -271,6 +275,7 @@ class StarterActivity : BaseActivity() {
     }
 
     private fun refreshClients() {
+        isRefreshing = true
         launchGettingClientList()
     }
 

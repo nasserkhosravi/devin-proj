@@ -17,6 +17,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -65,7 +69,7 @@ import com.khosravi.devin.present.present.logic.expandRepeatedGroups
 import com.khosravi.devin.present.log.RepeatedTextLogChildItemData
 import com.khosravi.devin.present.present.logitem.TextLogRow
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun LogScreen(
     calendar: CalendarProxy,
@@ -76,6 +80,7 @@ fun LogScreen(
     isFilterRowEnabled: Boolean,
     logItems: List<LogListRowItem>,
     isLoading: Boolean,
+    isRefreshing: Boolean,
     onSelectFilter: (FilterItem) -> Unit,
     onFilterAction: (FilterChipAction) -> Unit,
     onTagSearchOpen: () -> Unit,
@@ -177,10 +182,13 @@ fun LogScreen(
             )
         }
     ) { padding ->
+        // Pulling is off in tag selection mode, where a drag must not refresh.
+        val pullState = rememberPullRefreshState(refreshing = isRefreshing, onRefresh = onRefresh)
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .pullRefresh(pullState, enabled = selectedTags == null)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
                 FilterChipsRow(
@@ -247,6 +255,7 @@ fun LogScreen(
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
+            PullRefreshIndicator(refreshing = isRefreshing, state = pullState, modifier = Modifier.align(Alignment.TopCenter))
         }
     }
 }

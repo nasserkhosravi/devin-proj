@@ -26,6 +26,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,7 +56,7 @@ import com.khosravi.devin.present.update.ReleaseInfo
 import com.khosravi.devin.present.update.updateMessage
 import com.khosravi.devin.present.update.updateTitle
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun StarterScreen(
     message: String,
@@ -61,6 +65,7 @@ fun StarterScreen(
     onClientClick: (ClientData) -> Unit,
     areNotificationsEnabled: Boolean,
     onNotificationsDisabledClick: () -> Unit,
+    isRefreshing: Boolean,
     onRefresh: () -> Unit,
     footerText: String,
     isUpdateAvailable: Boolean,
@@ -97,14 +102,18 @@ fun StarterScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small)
             )
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            ) {
-                items(clients, key = { it.packageId }) { client ->
-                    ClientCard(client = client, info = clientInfo[client.packageId], onClick = { onClientClick(client) })
+            val pullState = rememberPullRefreshState(refreshing = isRefreshing, onRefresh = onRefresh)
+            Box(modifier = Modifier.weight(1f).pullRefresh(pullState)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                ) {
+                    items(clients, key = { it.packageId }) { client ->
+                        ClientCard(client = client, info = clientInfo[client.packageId], onClick = { onClientClick(client) })
+                    }
                 }
+                PullRefreshIndicator(refreshing = isRefreshing, state = pullState, modifier = Modifier.align(Alignment.TopCenter))
             }
             // A button, so it reads as tappable: it opens the release page.
             TextButton(

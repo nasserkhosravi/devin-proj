@@ -44,6 +44,7 @@ import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.read.DevinUriHelper
 import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -407,9 +408,9 @@ class ReaderViewModel constructor(
         return map { if (it is TagFilterItem && it.id == selected.id && it.hasUnseenError) it.copy(hasUnseenError = false) else it }
     }
 
-    fun refreshLogsAndFilters(filter: FilterItem, callbackId: String? = null) {
+    fun refreshLogsAndFilters(filter: FilterItem, callbackId: String? = null): Job {
         lastDayHeaderDate = null
-        viewModelScope.launch {
+        return viewModelScope.launch {
             resetPagination()
             val queryModel = buildQueryGet(filter)
             refreshLogsAndFilters(filter.id, queryModel, callbackId).collect {}
