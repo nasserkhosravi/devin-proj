@@ -94,6 +94,7 @@ fun LogScreen(
     onCreateFilter: () -> Unit,
     onExport: () -> Unit,
     onToggleTheme: () -> Unit,
+    onOpenLauncher: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     var overflowOpen by remember { mutableStateOf(false) }
@@ -172,6 +173,10 @@ fun LogScreen(
                         DropdownMenuItem(text = { Text(stringResource(R.string.menu_action_toggle_theme)) }, onClick = {
                             overflowOpen = false
                             onToggleTheme()
+                        })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.menu_launcher)) }, onClick = {
+                            overflowOpen = false
+                            onOpenLauncher()
                         })
                         DropdownMenuItem(text = { Text(stringResource(R.string.menu_settings)) }, onClick = {
                             overflowOpen = false
