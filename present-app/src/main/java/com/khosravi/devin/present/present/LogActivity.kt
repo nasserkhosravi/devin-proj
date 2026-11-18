@@ -134,6 +134,8 @@ class LogActivity : BaseActivity() {
         }
     }
 
+    private var groupRepeatedLogs by mutableStateOf(true)
+
     @Composable
     private fun LogsDestination(navController: NavHostController) {
         val items = remember(logRows, searchRow) { buildLogItems() }
@@ -143,6 +145,7 @@ class LogActivity : BaseActivity() {
             selectedFilterId = selectedFilterId,
             // A tag chip filters to one tag, so every row would repeat it; "All" and custom filters show it.
             ignoreTagChip = optCurrentFilterItem() is TagFilterItem,
+            groupRepeatedLogs = groupRepeatedLogs,
             isFilterRowEnabled = isFilterRowEnabled,
             logItems = items,
             isLoading = isLoading,
@@ -362,6 +365,8 @@ class LogActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Settings can change it while this screen is in the background.
+        groupRepeatedLogs = viewModel.isGroupRepeatedLogsEnabled()
         updateJob = lifecycleScope.launch {
             updateChecker.availableUpdate.collect { update ->
                 if (update?.isForceUpdate == true) {

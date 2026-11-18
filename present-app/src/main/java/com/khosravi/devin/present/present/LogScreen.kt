@@ -57,7 +57,12 @@ import com.khosravi.devin.present.present.logitem.DateHeaderRow
 import com.khosravi.devin.present.present.logitem.HttpLogRow
 import com.khosravi.devin.present.present.logitem.ImageLogRow
 import com.khosravi.devin.present.present.logitem.SearchBarRow
+import com.khosravi.devin.present.present.logitem.RepeatedTextLogChildRow
+import com.khosravi.devin.present.present.logitem.RepeatedTextLogRow
 import com.khosravi.devin.present.present.logitem.SessionStartRow
+import com.khosravi.devin.present.present.logic.CountingReplicatedTextLogItemDataOperation
+import com.khosravi.devin.present.present.logic.expandRepeatedGroups
+import com.khosravi.devin.present.log.RepeatedTextLogChildItemData
 import com.khosravi.devin.present.present.logitem.TextLogRow
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -67,6 +72,7 @@ fun LogScreen(
     filters: List<FilterItem>,
     selectedFilterId: String?,
     ignoreTagChip: Boolean,
+    groupRepeatedLogs: Boolean,
     isFilterRowEnabled: Boolean,
     logItems: List<LogListRowItem>,
     isLoading: Boolean,
@@ -86,6 +92,8 @@ fun LogScreen(
     onOpenSettings: () -> Unit,
 ) {
     var overflowOpen by remember { mutableStateOf(false) }
+    // Keys of expanded repeated-log groups; an ArrayList so it survives rotation and the trip to the detail screen.
+    var expandedKeys by rememberSaveable { mutableStateOf(ArrayList<String>()) }
     val listState = rememberLazyListState()
     // Tag ids picked in selection mode ("Select multiple"; null = not in it); an ArrayList so it survives rotation.
     var selectionIds by rememberSaveable { mutableStateOf<ArrayList<String>?>(null) }
@@ -191,7 +199,16 @@ fun LogScreen(
                 )
                 // The search field (always first when present) stays above the list, so it is reachable while scrolling.
                 val searchItem = logItems.firstOrNull() as? LogListRowItem.Search
-                val rowItems = remember(logItems) { logItems.filterIsInstance<LogListRowItem.Row>().sessionStartsFirst() }
+                val rowItems = remember(logItems, groupRepeatedLogs, expandedKeys) {
+                    val rows = logItems.filterIsInstance<LogListRowItem.Row>().sessionStartsFirst()
+                    if (!groupRepeatedLogs) rows
+                    else rows.map { it.data }
+                        .groupRepeatedAndExpand(expandedKeys.toSet())
+                        .map { LogListRowItem.Row(it) }
+                }
+                val onGroupClick = { group: ReplicatedTextLogItemData ->
+                    expandedKeys = ArrayList(if (group.groupKey in expandedKeys) expandedKeys - group.groupKey else expandedKeys + group.groupKey)
+                }
                 if (searchItem != null) {
                     // Opaque, so rows scrolling underneath don't show through.
                     Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
@@ -216,12 +233,12 @@ fun LogScreen(
                             stickyHeader(key = key) {
                                 // Opaque, so rows scrolling underneath don't show through.
                                 Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
-                                    LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, onTextLogClick, onHttpLogClick)
+                                    LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, expandedKeys.toSet(), onGroupClick, onTextLogClick, onHttpLogClick)
                                 }
                             }
                         } else {
                             item(key = key) {
-                                LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, onTextLogClick, onHttpLogClick)
+                                LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, expandedKeys.toSet(), onGroupClick, onTextLogClick, onHttpLogClick)
                             }
                         }
                     }
@@ -264,6 +281,8 @@ internal fun LogItemDataRow(
     data: LogItemData,
     previous: LogItemData?,
     ignoreTagChip: Boolean,
+    expandedGroupKeys: Set<String>,
+    onGroupClick: (ReplicatedTextLogItemData) -> Unit,
     onTextLogClick: (TextLogItemData) -> Unit,
     onHttpLogClick: (HttpLogItemData) -> Unit,
 ) {
@@ -274,7 +293,11 @@ internal fun LogItemDataRow(
         is HttpLogItemData -> HttpLogRow(calendar, data, onClick = { onHttpLogClick(data) }, showDivider = showDivider)
         is ImageLogItemData -> ImageLogRow(calendar, data, showDivider = showDivider)
         is SessionStartLogItemData -> SessionStartRow(calendar, data, onClick = { onTextLogClick(data.detail) })
-        is ReplicatedTextLogItemData -> Unit // never emitted by ReaderViewModel; exhaustiveness guard only
+        is ReplicatedTextLogItemData -> RepeatedTextLogRow(
+            calendar, data, isExpanded = data.groupKey in expandedGroupKeys, ignoreTagChip = ignoreTagChip,
+            onClick = { onGroupClick(data) }, showDivider = showDivider,
+        )
+        is RepeatedTextLogChildItemData -> RepeatedTextLogChildRow(calendar, data, onClick = { onTextLogClick(data.log) })
     }
 }
 
@@ -297,3 +320,7 @@ private fun List<LogListRowItem.Row>.sessionStartsFirst(): List<LogListRowItem.R
     result += block
     return result
 }
+
+/** Folds back-to-back repeats into groups, then adds the children of the expanded ones. Shared by both screens. */
+internal fun List<LogItemData>.groupRepeatedAndExpand(expandedKeys: Set<String>): List<LogItemData> =
+    CountingReplicatedTextLogItemDataOperation(this).get().expandRepeatedGroups(expandedKeys)

@@ -3,7 +3,6 @@ package com.khosravi.devin.present.present.logic
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
 import com.khosravi.devin.present.log.TextLogItemData
-import java.lang.IllegalStateException
 
 class CountingReplicatedTextLogItemDataOperation(private val logs: List<LogItemData>) {
 
@@ -15,17 +14,12 @@ class CountingReplicatedTextLogItemDataOperation(private val logs: List<LogItemD
         val replicatedItems = ArrayList<TextLogItemData>()
         logs.forEach {
             if (it is TextLogItemData) {
-                if (it.text != latestItemInProcess?.text) {
+                val current = latestItemInProcess
+                if (current != null && (it.text != current.text || it.tag != current.tag)) {
                     moveReplicateItemsIfNeed(finalResult, replicatedItems)
-                    latestItemInProcess = null
                 }
-
-                if (latestItemInProcess == null || latestItemInProcess?.text == it.text) {
-                    latestItemInProcess = it
-                    replicatedItems.add(it)
-                } else {
-                    throw IllegalStateException("Unsupported state")
-                }
+                latestItemInProcess = it
+                replicatedItems.add(it)
             } else {
                 //first or new header iteration occur here
                 moveReplicateItemsIfNeed(finalResult, replicatedItems)

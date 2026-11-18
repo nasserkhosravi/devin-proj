@@ -72,6 +72,8 @@ private enum class SettingsDialog { NONE, KEEP_DAYS, MAX_COUNT, ADD_TAG }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    groupRepeatedLogs: Boolean,
+    onGroupRepeatedLogsChange: (Boolean) -> Unit,
     retentionEnabled: Boolean,
     keepDays: SettingsChoice,
     maxCount: SettingsChoice,
@@ -111,6 +113,14 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
+            SectionHeader(stringResource(R.string.settings_section_log_list))
+            SwitchRow(
+                title = stringResource(R.string.settings_group_repeated_logs),
+                checked = groupRepeatedLogs,
+                onCheckedChange = onGroupRepeatedLogsChange,
+            )
+            Summary(stringResource(R.string.settings_group_repeated_logs_summary))
+            Divider()
             SectionHeader(stringResource(R.string.settings_section_storage))
             SwitchRow(
                 title = stringResource(R.string.settings_retention_enabled),
@@ -359,6 +369,8 @@ private val MIN_ROW_HEIGHT = 48.dp
 private fun SettingsScreenPreview() {
     DevinTheme {
         SettingsScreen(
+            groupRepeatedLogs = true,
+            onGroupRepeatedLogsChange = {},
             retentionEnabled = false,
             keepDays = SettingsChoice("7 days", listOf("1 day", "3 days", "7 days"), 2),
             maxCount = SettingsChoice("10,000", listOf("1,000", "10,000"), 1),

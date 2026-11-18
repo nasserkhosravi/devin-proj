@@ -68,6 +68,7 @@ class ImportLogActivity : BaseActivity() {
                 ImportLogScreen(
                     calendar = calendar,
                     items = items,
+                    groupRepeatedLogs = viewModel.isGroupRepeatedLogsEnabled(),
                     onTextLogClick = {
                         // Ignore a second tap that lands while the detail transition is already running.
                         if (navController.isCurrentEntryResumed()) {
