@@ -79,6 +79,7 @@ class LogActivity : BaseActivity() {
     private var logRows by mutableStateOf<List<LogItemData>>(emptyList())
     private var searchRow by mutableStateOf<LogListRowItem.Search?>(null)
     private var isLoading by mutableStateOf(false)
+    private var isRefreshing by mutableStateOf(false)
     private var searchSessionId = 0
 
     private val pagination = LogPaginationState()
@@ -149,6 +150,7 @@ class LogActivity : BaseActivity() {
             isFilterRowEnabled = isFilterRowEnabled,
             logItems = items,
             isLoading = isLoading,
+            isRefreshing = isRefreshing,
             onSelectFilter = {
                 Analytics.filterSelected(FilterType.of(it))
                 selectNewFilter(it)
@@ -345,7 +347,15 @@ class LogActivity : BaseActivity() {
         Analytics.logsRefreshed()
         isFilterRowEnabled = false
         optCurrentFilterItem()?.let {
-            viewModel.refreshLogsAndFilters(it, callbackId = CALLBACK_ID_REFRESH)
+            isRefreshing = true
+            val refresh = viewModel.refreshLogsAndFilters(it, callbackId = CALLBACK_ID_REFRESH)
+            lifecycleScope.launch {
+                refresh.join()
+                // Not tied to onUiStateFlowResult: a refresh that returns the same result as before isn't re-emitted
+                // by the StateFlow, which would leave the spinner (and the disabled filter row) stuck.
+                isRefreshing = false
+                isFilterRowEnabled = true
+            }
         }
     }
 

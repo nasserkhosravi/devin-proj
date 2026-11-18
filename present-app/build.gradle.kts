@@ -102,6 +102,8 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    // Only for pull-to-refresh (experimental), until Material 3 ships it; see the follow-up issue to drop it.
+    implementation(libs.compose.material)
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.activity.compose)
     implementation(libs.compose.material.icons.core)
