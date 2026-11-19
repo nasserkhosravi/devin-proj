@@ -81,6 +81,12 @@ object AppState {
         return Stage.values().filter { it != Stage.DESTROYED }.flatMap { registry.getActivitiesInStage(it) }
     }
 
+    fun activitiesIn(stage: Stage): List<Activity> {
+        var result: List<Activity> = emptyList()
+        instrumentation.runOnMainSync { result = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(stage).toList() }
+        return result
+    }
+
     fun resumedActivity(): Activity? {
         var result: Activity? = null
         instrumentation.runOnMainSync {

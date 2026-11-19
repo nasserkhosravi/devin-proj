@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.Stage
 import com.khosravi.devin.present.present.StarterActivity
 import org.junit.After
 import org.junit.Before
@@ -90,11 +91,20 @@ abstract class E2eTest {
      */
     protected fun pickFilterTag(tag: String) = Ui.clickText(tag)
 
-    /** Left-to-right labels of the filter chips (the clickable pills above the list). */
+    /**
+     * Labels of the filter chips (the clickable pills above the list), in chip order. With more than 4 chips the bar
+     * is a 2-row horizontally scrolling grid filled column by column, so chip order is left-to-right across both rows.
+     * A chip is a text whose parent is a narrow clickable pill near the "All" chip (log rows span the full width).
+     */
     protected fun chipLabels(): List<String> {
         val all = Ui.waitFor("chip All", predicate = Ui.text("All"))
-        val rowTop = Ui.bounds(all).top
-        return Ui.findAll { n -> n.text != null && Ui.bounds(n).let { it.top in (rowTop - 30)..(rowTop + 30) } }
+        val allBounds = Ui.bounds(all)
+        val band = (allBounds.height() * 2.5).toInt()
+        val maxPillWidth = Ui.screenWidth() * 2 / 3
+        return Ui.findAll { n ->
+            n.text != null && Ui.bounds(n).top in (allBounds.top - band)..(allBounds.top + band) &&
+                n.parent?.let { p -> p.isClickable && Ui.bounds(p).width() < maxPillWidth } == true
+        }
             .sortedBy { Ui.bounds(it).left }
             .map { it.text.toString() }
     }
@@ -111,6 +121,20 @@ abstract class E2eTest {
         }
     }
     // endregion
+
+    /**
+     * Leaves the app with Home (its activities stop, the task stays), runs [whileAway], then comes back like a launcher
+     * tap: starting the task's root intent ([launchStarter]'s, without `CLEAR_TASK`) with `NEW_TASK` only brings the
+     * existing task to the front, with the same activity instances (no new log list).
+     */
+    protected fun leaveAppAndReturn(whileAway: () -> Unit) {
+        val before = AppState.resumedActivity()
+        Ui.home()
+        Waits.require("app in background") { AppState.resumedActivity() == null && AppState.activitiesIn(Stage.STOPPED).isNotEmpty() }
+        whileAway()
+        context.startActivity(Intent(context, StarterActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        Waits.require("same activity resumed again") { AppState.resumedActivity().let { it != null && it === before } }
+    }
 
     protected fun relaunchApp() {
         AppState.finishAllActivities()
