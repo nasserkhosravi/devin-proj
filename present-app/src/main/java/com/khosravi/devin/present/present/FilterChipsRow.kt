@@ -339,22 +339,11 @@ private fun FilterChipView(
         Text(text = label, color = chipColors.content)
 
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            val item: @Composable (Int, () -> Unit) -> Unit = { label, action ->
-                DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = {
+            filterMenuEntries(filter, onAction, onStartSelection).forEach { entry ->
+                DropdownMenuItem(text = { Text(stringResource(entry.label)) }, onClick = {
                     menuOpen = false
-                    action()
+                    entry.onClick()
                 })
-            }
-            item(if (filter.ui.isPinned) R.string.menu_action_unpin else R.string.menu_action_pin) {
-                onAction(FilterChipAction.TogglePin(filter))
-            }
-            if (filter is TagFilterItem) {
-                item(R.string.menu_action_share_as_json) { onAction(FilterChipAction.ShareAsJson(filter)) }
-                item(R.string.menu_action_select_multiple) { onStartSelection(filter) }
-            }
-            if (filter is CustomFilterItem) {
-                item(R.string.menu_action_edit) { onAction(FilterChipAction.Edit(filter)) }
-                item(R.string.menu_action_remove) { onAction(FilterChipAction.Remove(listOf(filter))) }
             }
         }
     }
