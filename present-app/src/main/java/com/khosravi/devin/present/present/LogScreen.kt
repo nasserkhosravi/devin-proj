@@ -2,9 +2,17 @@ package com.khosravi.devin.present.present
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +51,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -131,6 +143,33 @@ fun LogScreen(
     }
     BackHandler(enabled = selectionIds != null) { exitSelection() }
 
+    // Ids are not unique, so look up by the same id the activity uses; not found (still loading) acts as "All".
+    val selectedFilter = filters.find { it.id == selectedFilterId }
+    var fabExpanded by rememberSaveable { mutableStateOf(false) }
+    // Set while the user scrolls down the list; the FAB comes back on any upward scroll or at the top.
+    var fabScrolledAway by remember { mutableStateOf(false) }
+    val fabVisible = selectedTags == null && isFilterRowEnabled && !fabScrolledAway
+    // Collapse when the menu's target changes or the FAB hides, so the scrim never outlives the FAB.
+    LaunchedEffect(selectedFilterId) { fabExpanded = false }
+    LaunchedEffect(fabVisible) { if (!fabVisible) fabExpanded = false }
+    // Scrolling in selection mode would otherwise keep the FAB hidden once the mode ends.
+    LaunchedEffect(selectionIds == null) { fabScrolledAway = false }
+    // No "Select multiple" here, to keep the FAB menu short; it stays in the chip's long-press menu.
+    val fabEntries = (selectedFilter?.let { filterMenuEntries(it, onFilterAction, onStartSelection = null) } ?: emptyList()) +
+        createFilterMenuEntry {
+            val tags = listOfNotNull((selectedFilter as? TagFilterItem)?.tagValue)
+            onFilterAction(FilterChipAction.CreateFilter(tags))
+        }
+    val fabScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                // Finger moving up scrolls the list down. Nothing is consumed, so the list and pull-to-refresh are unaffected.
+                if (available.y < -1f) fabScrolledAway = true else if (available.y > 1f) fabScrolledAway = false
+                return Offset.Zero
+            }
+        }
+    }
+
     // Fires on every scroll frame while near the end, not just once — callers of onLoadMore() must
     // debounce/guard against duplicate calls themselves (see LogActivity's LogPaginationState).
     LaunchedEffect(listState) {
@@ -149,13 +188,25 @@ fun LogScreen(
     LaunchedEffect(listState) {
         snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
             .distinctUntilChanged()
-            .collect { onAtTopChange(it) }
+            .collect {
+                if (it) fabScrolledAway = false
+                onAtTopChange(it)
+            }
     }
     LaunchedEffect(scrollToTopRequest) {
         if (scrollToTopRequest > 0) listState.scrollToItem(0)
     }
 
     Scaffold(
+        floatingActionButton = {
+            AnimatedVisibility(
+                visible = fabVisible,
+                enter = slideInVertically { it } + fadeIn(),
+                exit = slideOutVertically { it } + fadeOut(),
+            ) {
+                FilterActionsFab(fabEntries, fabExpanded, { fabExpanded = it })
+            }
+        },
         // Edge-to-edge: the window no longer resizes for the keyboard, so keep the content above it too.
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets.union(WindowInsets.ime),
         topBar = {
@@ -258,8 +309,13 @@ fun LogScreen(
                         )
                     }
                 }
-                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.fillMaxWidth().weight(1f).nestedScroll(fabScrollConnection)) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        // Lets the last row scroll above the FAB.
+                        contentPadding = PaddingValues(bottom = 88.dp),
+                    ) {
                         rowItems.forEachIndexed { index, rowItem ->
                             val key = keys[index]
                             val previous = rowItems.getOrNull(index - 1)?.data
@@ -291,6 +347,15 @@ fun LogScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
             PullToRefreshDefaults.Indicator(state = pullState, isRefreshing = isRefreshing, modifier = Modifier.align(Alignment.TopCenter))
+            if (fabExpanded) {
+                // Tapping outside the menu collapses it. The Scaffold draws the FAB above this, so it stays tappable.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { fabExpanded = false }
+                )
+            }
         }
     }
 }

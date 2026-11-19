@@ -14,6 +14,8 @@
     <string name="msg_refreshed">refreshed</string>
     <string name="title_of_share">Share file through</string>
     <string name="menu_create_filter">Create custom filter</string>
+    <string name="filter_actions_open">Filter actions</string>
+    <string name="filter_actions_close">Close filter actions</string>
     <string name="field_contain_value">Contain value</string>
     <string name="field_title">title</string>
     <string name="field_filter_tags">Tags</string>
