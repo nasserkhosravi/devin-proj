@@ -25,7 +25,7 @@ import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.domain.ClientLoginInteractor
 import com.khosravi.devin.present.notification.LogNotificationLaunchCoordinator
-import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.uikit.layout.DevinScreen
 import com.khosravi.devin.present.update.GitHubReleaseSource
 import com.khosravi.devin.present.update.ReleaseInfo
 import com.khosravi.devin.present.update.UpdateChecker
@@ -67,6 +67,7 @@ class StarterActivity : BaseActivity() {
     }
 
     private var message by mutableStateOf("")
+    private var isRefreshing by mutableStateOf(false)
     private var clients by mutableStateOf(emptyList<ClientData>())
 
     /** Label, icon and log count per client package id; filled in after [clients] loads and on every resume. */
@@ -86,7 +87,7 @@ class StarterActivity : BaseActivity() {
         notificationLaunchCoordinator.readTarget(intent)
 
         setContent {
-            DevinTheme {
+            DevinScreen {
                 StarterScreen(
                     message = message,
                     clients = clients,
@@ -94,6 +95,7 @@ class StarterActivity : BaseActivity() {
                     onClientClick = { onSelectClient(it, ClientOpenSource.LIST) },
                     areNotificationsEnabled = areNotificationsEnabled,
                     onNotificationsDisabledClick = ::openNotificationSettings,
+                    isRefreshing = isRefreshing,
                     onRefresh = ::refreshClients,
                     footerText = footerText(availableUpdate),
                     isUpdateAvailable = availableUpdate != null,
@@ -230,6 +232,8 @@ class StarterActivity : BaseActivity() {
                     if (!notificationLaunchCoordinator.requestPermissionIfNeeded(it)) {
                         onClientListFetchResult(it)
                     }
+                    // Also when the result waits for the notification permission, so the spinner can't stay up.
+                    isRefreshing = false
                 }
         }
     }
@@ -271,6 +275,7 @@ class StarterActivity : BaseActivity() {
     }
 
     private fun refreshClients() {
+        isRefreshing = true
         launchGettingClientList()
     }
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 4.11.0
+- Group repeated text logs into an expandable row, with a setting to turn it off
+- Show an Open/Copy menu when tapping a link in a log
+- Pull to refresh the log list and the client list
+- Edit a custom filter from its chip menu
+- Open the client app by deeplink from the new Launcher page, and relaunch, edit or delete saved launches
+- Add new logs at the top when returning to the app, keeping the scroll position and marking what is new
+- Open the selected filter's actions from a floating button
+- Target Android 16 (SDK 36) and center content on wide windows
+
 ## 4.10.0
 - Open a client from other apps with the `devin://client/<packageId>` deeplink
 - Open the log detail from a session start row

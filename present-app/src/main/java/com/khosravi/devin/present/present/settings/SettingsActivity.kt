@@ -19,7 +19,7 @@ import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.retention.RetentionObserver
 import com.khosravi.devin.present.retention.RetentionPolicy
 import com.khosravi.devin.present.retention.StorageUsage
-import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.uikit.layout.DevinScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +34,7 @@ class SettingsActivity : BaseActivity() {
     @Inject
     lateinit var filterRepository: FilterRepository
 
+    private var groupRepeatedLogs by mutableStateOf(true)
     private var retentionEnabled by mutableStateOf(false)
     private var retentionDays by mutableStateOf(0)
     private var retentionMaxCount by mutableStateOf(0)
@@ -47,6 +48,7 @@ class SettingsActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) Analytics.settingsOpened()
 
+        groupRepeatedLogs = appPref.groupRepeatedLogs
         refreshRetentionValues()
         refreshPinnedTags()
 
@@ -57,8 +59,10 @@ class SettingsActivity : BaseActivity() {
             val maxCount = remember(retentionMaxCount) {
                 choice(retentionMaxCount, RetentionPolicy.COUNT_OPTIONS, ::formatCount)
             }
-            DevinTheme {
+            DevinScreen {
                 SettingsScreen(
+                    groupRepeatedLogs = groupRepeatedLogs,
+                    onGroupRepeatedLogsChange = ::onGroupRepeatedLogsChange,
                     retentionEnabled = retentionEnabled,
                     keepDays = keepDays,
                     maxCount = maxCount,
@@ -79,6 +83,11 @@ class SettingsActivity : BaseActivity() {
 
     private fun choice(current: Int, options: List<Int>, format: (Int) -> String) =
         SettingsChoice(value = format(current), labels = options.map(format), selectedIndex = options.indexOf(current))
+
+    private fun onGroupRepeatedLogsChange(isEnabled: Boolean) {
+        appPref.groupRepeatedLogs = isEnabled
+        groupRepeatedLogs = isEnabled
+    }
 
     private fun onRetentionEnabledChange(isEnabled: Boolean) {
         appPref.retentionEnabled = isEnabled

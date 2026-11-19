@@ -23,7 +23,7 @@ class ImportLogE2eTest : E2eTest() {
      */
     private fun launchOverStarter(intent: android.content.Intent) {
         launchStarter()
-        Ui.waitForText("Client selection")
+        Ui.waitForText("Clients")
         context.startActivity(intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 

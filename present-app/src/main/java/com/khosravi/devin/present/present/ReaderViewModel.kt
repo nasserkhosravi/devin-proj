@@ -44,6 +44,7 @@ import com.khosravi.devin.read.DevinLogFlagsApi
 import com.khosravi.devin.read.DevinUriHelper
 import com.khosravi.devin.write.okhttp.read.DevinHttpFlagsApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -128,23 +129,34 @@ class ReaderViewModel constructor(
             // ImportLogActivity, so LogActivity's paging state is unaffected.
             lastDayHeaderDate = null
             val logsWithHeaders = addDateHeadersByDay(it, calendar)
-            //TODO: temporary disabled, use a setting flag
-//            CountingReplicatedTextLogItemDataOperation(logsWithHeaders).get()
             logsWithHeaders
         }.flowOn(Dispatchers.Default)
     }
 
-    private fun addDateHeadersByDay(logs: List<LogData>, calendar: CalendarProxy): List<LogItemData> {
+    /**
+     * Every log newer than [newerThanId] for [filter] and [searchText], newest first, with no page limit.
+     * Leaves paging and [uiState] alone; the caller merges the result into the list it shows.
+     */
+    fun fetchNewLogs(filter: FilterItem, searchText: String?, newerThanId: Long): Flow<List<LogItemData>> {
+        val model = buildQueryGet(filter, pageInfo, searchText).copy(page = null, idGreaterThan = newerThanId)
+        return collectLogs(model).map { logTables ->
+            addDateHeadersByDay(logTables, calendar, pagingDay = false)
+        }.flowOn(Dispatchers.Default)
+    }
+
+    /** [pagingDay] false keeps the day tracking local, so a one-off fetch doesn't disturb [lastDayHeaderDate]. */
+    private fun addDateHeadersByDay(logs: List<LogData>, calendar: CalendarProxy, pagingDay: Boolean = true): List<LogItemData> {
         if (logs.isEmpty()) return emptyList()
         val result = ArrayList<LogItemData>()
+        var lastDay: Int? = null
         var nextDateDifferInDayCode: Int? = null
         logs.forEach { data ->
             val presentDate = calendar.initIfNeed(DatePresent(data.date))
             val candidateCode = presentDate.dumbed.hashCode()
             if (candidateCode != nextDateDifferInDayCode) {
                 nextDateDifferInDayCode = candidateCode
-                if (lastDayHeaderDate != candidateCode) {
-                    lastDayHeaderDate = candidateCode
+                if ((if (pagingDay) lastDayHeaderDate else lastDay) != candidateCode) {
+                    if (pagingDay) lastDayHeaderDate = candidateCode else lastDay = candidateCode
                     result.add(DateLogItemData(presentDate))
                 }
             }
@@ -159,7 +171,7 @@ class ReaderViewModel constructor(
                 appVersionName = getSessionAppVersionName(it),
                 datePresent = DatePresent(it.date),
                 timePresent = TimePresent(it.date),
-                detail = TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta),
+                detail = TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta, it.id),
             )
         }
 
@@ -170,10 +182,10 @@ class ReaderViewModel constructor(
 
             DevinImageFlagsApi.TYPE_ID -> {
                 val imageData = ContentProviderLogsDao.mapToImageModel(it)
-                ImageLogItemData(imageData, DatePresent(it.date), TimePresent(it.date))
+                ImageLogItemData(imageData, DatePresent(it.date), TimePresent(it.date), it.id)
             }
 
-            else -> TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta)
+            else -> TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta, it.id)
         }
     }
 
@@ -273,7 +285,38 @@ class ReaderViewModel constructor(
 
     private fun getAppContext(): Context = getApplication<Application>().applicationContext
 
-    fun addFilter(data: CustomFilterItem, callbackId: String? = null) {
+    fun isFilterTitleTaken(title: String): Boolean = filterRepository.isTitleTaken(title)
+
+    /**
+     * Saves [data] over the custom filter [originalId], in place in the list; see [FilterRepository.replaceFilter].
+     * [currentList] is the list the screen shows; it is the base when given, because pin changes reorder the
+     * screen's chips without going through [uiState].
+     */
+    fun updateFilter(originalId: String, data: CustomFilterItem, callbackId: String? = null, currentList: List<FilterItem>? = null) {
+        viewModelScope.launch {
+            val clientId = getSelectedClientIdOrError()
+            val newList = withContext(Dispatchers.Default) {
+                val list = currentList ?: _uiStateFlow.value.filterList ?: return@withContext null
+                val index = list.indexOfFirst { it is CustomFilterItem && it.id == originalId }
+                if (index == -1) return@withContext null
+                if (!filterRepository.replaceFilter(originalId, data, clientId)) throw IllegalArgumentException()
+                if (data.id != originalId) filterUsageRepository.removeUsage(clientId, originalId)
+                val saved = data.copy(ui = data.ui.copy(isPinned = list[index].ui.isPinned))
+                list.toMutableList().apply { this[index] = saved }
+            } ?: return@launch
+            _uiStateFlow.update {
+                ResultUiState(
+                    filterList = newList,
+                    logList = it.logList,
+                    ResultUiState.UpdateInfo(filterIdSelection = data.id, callbackId = callbackId),
+                    pageInfo
+                )
+            }
+        }
+    }
+
+    /** Saves [data] and appends it to [currentList] (the screen's list, see [updateFilter]) or else to [uiState]'s. */
+    fun addFilter(data: CustomFilterItem, callbackId: String? = null, currentList: List<FilterItem>? = null) {
         viewModelScope.launch {
             flow<FilterItem> {
                 val result = filterRepository.saveFilter(data, getSelectedClientIdOrError())
@@ -282,7 +325,7 @@ class ReaderViewModel constructor(
                 }
                 emit(data)
             }.map {
-                (_uiStateFlow.value.filterList?.toMutableList() ?: ArrayList()).apply {
+                ((currentList ?: _uiStateFlow.value.filterList)?.toMutableList() ?: ArrayList()).apply {
                     add(data)
                 }
             }.flowOn(Dispatchers.Default)
@@ -409,9 +452,9 @@ class ReaderViewModel constructor(
         return map { if (it is TagFilterItem && it.id == selected.id && it.hasUnseenError) it.copy(hasUnseenError = false) else it }
     }
 
-    fun refreshLogsAndFilters(filter: FilterItem, callbackId: String? = null) {
+    fun refreshLogsAndFilters(filter: FilterItem, callbackId: String? = null): Job {
         lastDayHeaderDate = null
-        viewModelScope.launch {
+        return viewModelScope.launch {
             resetPagination()
             val queryModel = buildQueryGet(filter)
             refreshLogsAndFilters(filter.id, queryModel, callbackId).collect {}
@@ -568,6 +611,8 @@ class ReaderViewModel constructor(
         val clientId = getSelectedClientId() ?: return@withContext emptyList()
         (ContentProviderLogsDao.getAllTags(getAppContext(), clientId) - HIDDEN_TAGS).sortedBy { it.lowercase() }
     }
+
+    fun isGroupRepeatedLogsEnabled(): Boolean = appPref.groupRepeatedLogs
 
     fun toggleTheme() {
         val newNightMode = if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES) {

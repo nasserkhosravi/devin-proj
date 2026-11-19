@@ -38,10 +38,16 @@ import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.LogListRowItem
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
+import com.khosravi.devin.present.present.logic.appendDistinct
+import com.khosravi.devin.present.present.logic.countLogRows
+import com.khosravi.devin.present.present.logic.newestLogId
+import com.khosravi.devin.present.present.logic.prependNewLogs
 import com.khosravi.devin.present.present.settings.SettingsActivity
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toUriByFileProvider
-import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.launcher.LauncherScreen
+import com.khosravi.devin.present.launcher.LauncherViewModel
+import com.khosravi.devin.present.uikit.layout.DevinScreen
 import com.khosravi.devin.present.update.UpdateChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -49,6 +55,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -79,7 +86,20 @@ class LogActivity : BaseActivity() {
     private var logRows by mutableStateOf<List<LogItemData>>(emptyList())
     private var searchRow by mutableStateOf<LogListRowItem.Search?>(null)
     private var isLoading by mutableStateOf(false)
+    private var isRefreshing by mutableStateOf(false)
     private var searchSessionId = 0
+
+    // Quiet refresh on return: logs written while away are added at the top without a spinner or a toast.
+    private var newLogsCount by mutableStateOf(0)
+    private var newLogsBoundaryId by mutableStateOf<Long?>(null)
+    private var scrollToTopRequest by mutableStateOf(0)
+    private var isListAtTop = true
+    private var quietJob: Job? = null
+    private var skipNextQuietRefresh = false
+
+    // From a recreated instance (rotation, resize); applied once the view model's current result arrives.
+    private var restoredFilterId: String? = null
+    private var restoredSearchText: String? = null
 
     private val pagination = LogPaginationState()
     private var shareFilterJob: Job? = null
@@ -91,17 +111,23 @@ class LogActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
+        // onStart follows onCreate on the first start and on a recreation, and neither is a return.
+        skipNextQuietRefresh = true
         targetTag = intent.getStringExtra(EXTRA_TARGET_TAG)
+        restoredFilterId = savedInstanceState?.getString(STATE_FILTER_ID)
+        restoredSearchText = savedInstanceState?.getString(STATE_SEARCH_TEXT)
 
         importIntentLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             onImportFileIntentResult(it)
         }
 
         setContent {
-            DevinTheme { LogNavHost() }
+            DevinScreen { LogNavHost() }
         }
 
-        viewModel.doFirstFetch()
+        // The view model outlives a recreation and replays its current result, so only fetch when it has none yet
+        // (the first start, or after the process was killed).
+        if (viewModel.uiState.value.filterList == null) viewModel.doFirstFetch()
 
         lifecycleScope.launch {
             viewModel.uiState.collect { result -> onUiStateFlowResult(result) }
@@ -115,6 +141,11 @@ class LogActivity : BaseActivity() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = ROUTE_LOGS) {
             composable(ROUTE_LOGS) { LogsDestination(navController) }
+            composable(ROUTE_LAUNCHER) {
+                // Scoped to this back-stack entry: a fresh page (and manifest scan) each time it is opened.
+                val launcherViewModel: LauncherViewModel = viewModel(factory = vmFactory)
+                LauncherScreen(viewModel = launcherViewModel, onBack = { navController.popBackStack() })
+            }
             logDetailDestination(navController, calendar, startRoute = ROUTE_LOGS, appPackage = viewModel.getSelectedClientId())
             dialog(ROUTE_EXPORT) {
                 // Scoped to this back-stack entry: cleared (job cancelled, temp file deleted) when the dialog closes.
@@ -126,13 +157,17 @@ class LogActivity : BaseActivity() {
             }
             createFilterDestination(
                 loadAvailableTags = viewModel::loadAvailableTags,
-                onConfirm = {
+                isTitleTaken = viewModel::isFilterTitleTaken,
+                onConfirm = { item, originalTitle ->
                     navController.popBackStack(ROUTE_LOGS, inclusive = false)
-                    addFilter(it)
+                    if (originalTitle == null) addFilter(item)
+                    else viewModel.updateFilter(originalTitle, item, CALLBACK_ID_EDIT_FILTER, currentList = filterList)
                 },
             )
         }
     }
+
+    private var groupRepeatedLogs by mutableStateOf(true)
 
     @Composable
     private fun LogsDestination(navController: NavHostController) {
@@ -143,9 +178,18 @@ class LogActivity : BaseActivity() {
             selectedFilterId = selectedFilterId,
             // A tag chip filters to one tag, so every row would repeat it; "All" and custom filters show it.
             ignoreTagChip = optCurrentFilterItem() is TagFilterItem,
+            groupRepeatedLogs = groupRepeatedLogs,
             isFilterRowEnabled = isFilterRowEnabled,
             logItems = items,
             isLoading = isLoading,
+            isRefreshing = isRefreshing,
+            newLogsCount = newLogsCount,
+            newLogsBoundaryId = newLogsBoundaryId,
+            scrollToTopRequest = scrollToTopRequest,
+            onAtTopChange = {
+                isListAtTop = it
+                if (it) newLogsCount = 0
+            },
             onSelectFilter = {
                 Analytics.filterSelected(FilterType.of(it))
                 selectNewFilter(it)
@@ -168,6 +212,7 @@ class LogActivity : BaseActivity() {
             onRefresh = ::refreshLogsAndFilters,
             onClearLogs = {
                 Analytics.logsCleared()
+                quietJob?.cancel()
                 viewModel.clearLogs()
             },
             onClearFilters = {
@@ -185,6 +230,7 @@ class LogActivity : BaseActivity() {
                 viewModel.toggleTheme()
                 Analytics.themeToggled(isDark = AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_YES)
             },
+            onOpenLauncher = { if (navController.isCurrentEntryResumed()) navController.navigate(ROUTE_LAUNCHER) },
             onOpenSettings = { startActivity(SettingsActivity.intent(this)) },
         )
     }
@@ -198,7 +244,7 @@ class LogActivity : BaseActivity() {
         lifecycleScope.launch {
             viewModel.nextPageFlow.collect {
                 pagination.setLoaded(it.pageInfo.isFinished)
-                logRows = logRows + it.logs
+                logRows = appendDistinct(logRows, it.logs)
             }
         }
     }
@@ -208,6 +254,7 @@ class LogActivity : BaseActivity() {
             searchInput.debounce(700)
                 .distinctUntilChanged()
                 .collect { searchText ->
+                    quietJob?.cancel()
                     searchRow = searchRow?.copy(text = searchText)
                     optCurrentFilterItem()?.let {
                         if (!searchText.isNullOrEmpty()) Analytics.logsSearched(FilterType.of(it))
@@ -217,13 +264,39 @@ class LogActivity : BaseActivity() {
         }
     }
 
+    /** Puts back the filter and tag-search text a recreated activity had; a filter that is gone is ignored. */
+    private fun restoreSelectionIfNeeded() {
+        val id = restoredFilterId ?: return
+        val searchText = restoredSearchText
+        restoredFilterId = null
+        restoredSearchText = null
+        val filter = filterList.find { it.id == id } ?: return
+        selectedFilterId = id
+        searchRow = viewModel.getSearchItemHint(filter)?.let {
+            LogListRowItem.Search(sessionId = ++searchSessionId, filterId = id, hint = it, text = searchText)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_FILTER_ID, selectedFilterId)
+        outState.putString(STATE_SEARCH_TEXT, searchRow?.text)
+    }
+
     private fun onUiStateFlowResult(result: ReaderViewModel.ResultUiState) {
         val presentedFilters = result.filterList?.withNotificationTarget()
-        if (presentedFilters != null && !result.updateInfo.skipFilterList) {
+        // A new instance has no chips yet, so it takes the list even from a result that other instances would skip.
+        if (presentedFilters != null && (!result.updateInfo.skipFilterList || filterList.isEmpty())) {
             filterList = presentedFilters
         }
-        result.logList?.let { logRows = it }
+        result.logList?.let {
+            logRows = it
+            // The list was replaced, so what the hint pointed at is gone.
+            newLogsCount = 0
+            newLogsBoundaryId = null
+        }
         result.updateInfo.filterIdSelection?.let { selectedFilterId = it }
+        restoreSelectionIfNeeded()
         isFilterRowEnabled = true
         when (result.updateInfo.callbackId) {
             CALLBACK_ID_REFRESH -> {
@@ -233,6 +306,10 @@ class LogActivity : BaseActivity() {
 
             CALLBACK_ID_ADD_FILTER -> {
                 filterList.lastOrNull()?.let(::selectNewFilter)
+            }
+
+            CALLBACK_ID_EDIT_FILTER -> {
+                filterList.firstOrNull { it.id == result.updateInfo.filterIdSelection }?.let(::selectNewFilter)
             }
         }
         presentedFilters?.selectNotificationTargetIfNeeded()
@@ -254,12 +331,14 @@ class LogActivity : BaseActivity() {
     }
 
     private fun loadMoreItems(currentPage: Int) {
+        quietJob?.cancel()
         optCurrentFilterItem()?.let {
             viewModel.nextPage(currentPage - 1, it, searchRow?.text)
         }
     }
 
     private fun selectNewFilter(data: FilterItem) {
+        quietJob?.cancel()
         isFilterRowEnabled = false
         pagination.resetState()
         if (data is TagFilterItem && data.hasUnseenError) {
@@ -284,6 +363,7 @@ class LogActivity : BaseActivity() {
             is FilterChipAction.CreateFilter -> openCreateFilter(navController, action.tags)
             is FilterChipAction.TogglePin -> onTogglePin(action.item)
             is FilterChipAction.ShareAsJson -> shareFilterItemLogs(action.item)
+            is FilterChipAction.Edit -> if (navController.isCurrentEntryResumed()) navController.navigateToEditFilter(action.item)
             is FilterChipAction.Remove -> removeFilters(action.items)
         }
     }
@@ -340,9 +420,18 @@ class LogActivity : BaseActivity() {
 
     private fun refreshLogsAndFilters() {
         Analytics.logsRefreshed()
+        quietJob?.cancel()
         isFilterRowEnabled = false
         optCurrentFilterItem()?.let {
-            viewModel.refreshLogsAndFilters(it, callbackId = CALLBACK_ID_REFRESH)
+            isRefreshing = true
+            val refresh = viewModel.refreshLogsAndFilters(it, callbackId = CALLBACK_ID_REFRESH)
+            lifecycleScope.launch {
+                refresh.join()
+                // Not tied to onUiStateFlowResult: a refresh that returns the same result as before isn't re-emitted
+                // by the StateFlow, which would leave the spinner (and the disabled filter row) stuck.
+                isRefreshing = false
+                isFilterRowEnabled = true
+            }
         }
     }
 
@@ -357,11 +446,43 @@ class LogActivity : BaseActivity() {
             tagCount = item.criteria.tags.size,
             hasSearchText = !item.criteria.searchText.isNullOrEmpty()
         )
-        viewModel.addFilter(item, CALLBACK_ID_ADD_FILTER)
+        viewModel.addFilter(item, CALLBACK_ID_ADD_FILTER, currentList = filterList)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (skipNextQuietRefresh) skipNextQuietRefresh = false else quietRefresh()
+    }
+
+    /** Adds the logs written since the list was loaded at the top, with no spinner or toast; see [prependNewLogs]. */
+    private fun quietRefresh() {
+        val filter = optCurrentFilterItem() ?: return
+        if (isRefreshing || !isFilterRowEnabled || pagination.isLoading) return
+        val text = searchRow?.text
+        val topId = newestLogId(logRows)
+        if (topId == null) {
+            // Nothing loaded to compare with (e.g. an empty list), so load the list the usual way.
+            viewModel.search(filter, text)
+            return
+        }
+        quietJob?.cancel()
+        quietJob = lifecycleScope.launch {
+            val new = viewModel.fetchNewLogs(filter, text, topId).first()
+            // The filter or the search text changed while this loaded.
+            if (selectedFilterId != filter.id || searchRow?.text != text) return@launch
+            val count = countLogRows(new)
+            if (count == 0) return@launch
+            // A second return before reaching the top keeps the first divider.
+            if (newLogsCount == 0) newLogsBoundaryId = topId
+            logRows = prependNewLogs(logRows, new)
+            if (isListAtTop) scrollToTopRequest++ else newLogsCount += count
+        }
     }
 
     override fun onResume() {
         super.onResume()
+        // Settings can change it while this screen is in the background.
+        groupRepeatedLogs = viewModel.isGroupRepeatedLogsEnabled()
         updateJob = lifecycleScope.launch {
             updateChecker.availableUpdate.collect { update ->
                 if (update?.isForceUpdate == true) {
@@ -392,6 +513,7 @@ class LogActivity : BaseActivity() {
 
     private class LogPaginationState {
         private var loading = false
+        val isLoading: Boolean get() = loading
         private var isFinished = false
         private var currentPage = 0
 
@@ -416,9 +538,13 @@ class LogActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_TARGET_TAG = "targetTag"
+        private const val STATE_FILTER_ID = "state_filter_id"
+        private const val STATE_SEARCH_TEXT = "state_search_text"
         private const val ROUTE_LOGS = "logs"
         private const val ROUTE_EXPORT = "export"
+        private const val ROUTE_LAUNCHER = "launcher"
         private const val CALLBACK_ID_REFRESH = "refresh"
+        private const val CALLBACK_ID_EDIT_FILTER = "edit_filter"
         private const val CALLBACK_ID_ADD_FILTER = "filter_add"
     }
 }

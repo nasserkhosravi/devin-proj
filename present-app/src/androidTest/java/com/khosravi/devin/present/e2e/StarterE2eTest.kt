@@ -18,7 +18,7 @@ class StarterE2eTest : E2eTest() {
     fun noClients_showsZeroStateMessage() {
         launchStarter()
 
-        Ui.waitForText("Client selection")
+        Ui.waitForText("Clients")
         Ui.waitForDesc("Refresh")
         Ui.waitForText("No client data found, run client app or send logs to devin")
         Ui.assertNotShown("a client row") { it.textValue()?.startsWith("e2e.") == true }
@@ -48,7 +48,7 @@ class StarterE2eTest : E2eTest() {
         Ui.waitForText("Choose client source")
         Ui.waitForText(TestData.CLIENT)
         Ui.waitForText(TestData.CLIENT_B)
-        Waits.holds("stays on Starter", 1_000) { Ui.exists(Ui.text("Client selection")) }
+        Waits.holds("stays on Starter", 1_000) { Ui.exists(Ui.text("Clients")) }
 
         Ui.clickText(TestData.CLIENT_B)
         awaitLogList()
@@ -68,7 +68,7 @@ class StarterE2eTest : E2eTest() {
         Ui.waitForText(TestData.CLIENT)
         Waits.require("log list destroyed") { AppState.activities().none { it is LogActivity } }
         Waits.holds("stays on Starter, no new log list", 2_000) { AppState.activities().none { it is LogActivity } }
-        Ui.waitForText("Client selection")
+        Ui.waitForText("Clients")
     }
 
     /** START-06, START-09: refresh refetches; a second client shows both rows, and zero clients clear stale rows. */
@@ -97,6 +97,6 @@ class StarterE2eTest : E2eTest() {
 
         val view = IntentStubs.waitForStarted("ACTION_VIEW of the releases page") { it.action == Intent.ACTION_VIEW }
         assertEquals("https://github.com/nasserkhosravi/devin-proj/releases", view.dataString)
-        assertTrue(Ui.exists(Ui.text("Client selection")))
+        assertTrue(Ui.exists(Ui.text("Clients")))
     }
 }

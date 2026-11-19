@@ -58,6 +58,6 @@ class NotificationLaunchE2eTest : E2eTest() {
         launchFromNotification("gone.client", "A")
 
         Ui.waitForText("Choose client source")
-        Waits.holds("no routing", 1_500) { Ui.exists(Ui.text("Client selection")) }
+        Waits.holds("no routing", 1_500) { Ui.exists(Ui.text("Clients")) }
     }
 }

@@ -32,7 +32,7 @@ import com.khosravi.devin.present.formatter.TextualReport
 import com.khosravi.devin.present.getLongExtraOrFail
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.setClipboardSafe
-import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.uikit.layout.DevinScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapConcat
@@ -73,7 +73,7 @@ class HttpLogDetailActivity : AppCompatActivity() {
         }
 
         setContent {
-            DevinTheme {
+            DevinScreen {
                 val data by viewModel.detailData.collectAsState()
                 val isLoadFailed by viewModel.isLoadFailed.collectAsState()
                 HttpLogDetailScreen(

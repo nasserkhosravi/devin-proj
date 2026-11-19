@@ -41,12 +41,20 @@ import com.khosravi.devin.present.uikit.theme.spacing
 fun ImportLogScreen(
     calendar: CalendarProxy,
     items: List<LogItemData>?,
+    groupRepeatedLogs: Boolean,
     onTextLogClick: (TextLogItemData) -> Unit,
     onHttpLogClick: (HttpLogItemData) -> Unit,
 ) {
     // Saveable so the query survives a trip to the detail destination and back.
     var query by rememberSaveable { mutableStateOf("") }
-    val visibleItems = remember(items, query) { items?.filterByText(query) }
+    var expandedKeys by rememberSaveable { mutableStateOf(ArrayList<String>()) }
+    val visibleItems = remember(items, query, groupRepeatedLogs, expandedKeys) {
+        val filtered = items?.filterByText(query)
+        if (groupRepeatedLogs) filtered?.groupRepeatedAndExpand(expandedKeys.toSet()) else filtered
+    }
+    val onGroupClick = { group: ReplicatedTextLogItemData ->
+        expandedKeys = ArrayList(if (group.groupKey in expandedKeys) expandedKeys - group.groupKey else expandedKeys + group.groupKey)
+    }
 
     Scaffold(
         // Edge-to-edge: the window no longer resizes for the keyboard, so keep the content above it too.
@@ -75,7 +83,8 @@ fun ImportLogScreen(
                     // Same synthetic position+type key as LogScreen: LogItemData has no common stable id.
                     itemsIndexed(visibleItems, key = { index, item -> "$index-${item::class.simpleName}" }) { index, item ->
                         LogItemDataRow(
-                            calendar, item, visibleItems.getOrNull(index - 1), ignoreTagChip = false, onTextLogClick, onHttpLogClick
+                            calendar, item, visibleItems.getOrNull(index - 1), ignoreTagChip = false,
+                            expandedKeys.toSet(), onGroupClick, onTextLogClick, onHttpLogClick
                         )
                     }
                 }

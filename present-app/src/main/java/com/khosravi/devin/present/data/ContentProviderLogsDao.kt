@@ -63,6 +63,7 @@ object ContentProviderLogsDao {
                 timeConstraintLessThan = model.timeLessThan,
                 page = model.page,
                 tags = model.tags,
+                idGreaterThan = model.idGreaterThan,
             )
         }
 
@@ -82,6 +83,7 @@ object ContentProviderLogsDao {
             model.timeLessThan,
             model.page,
             model.tags,
+            model.idGreaterThan,
         )
     }
 
@@ -240,9 +242,10 @@ object ContentProviderLogsDao {
         timeConstraintLessThan: Long? = null,
         page: PageInfo? = null,
         tags: List<String>? = null,
+        idGreaterThan: Long? = null,
     ): List<LogData> {
         try {
-            val cursor = queryLogListAsCursor(context, clientId, typeId, tag, value, metaSearch, timeConstraintLessThan, page, tags)
+            val cursor = queryLogListAsCursor(context, clientId, typeId, tag, value, metaSearch, timeConstraintLessThan, page, tags, idGreaterThan)
                 ?: return emptyList()
             val result = cursor.toLogList()
             cursor.close()
@@ -263,6 +266,7 @@ object ContentProviderLogsDao {
         timeLessThan: Long? = null,
         page: PageInfo? = null,
         tags: List<String>? = null,
+        idGreaterThan: Long? = null,
     ): Cursor? {
         val args = arrayListOf(clientId)
         val where = StringBuilder("${LogTable.COLUMN_CLIENT_ID} = ?").apply {
@@ -273,6 +277,10 @@ object ContentProviderLogsDao {
             if (timeLessThan != null) {
                 args.add(timeLessThan.toString())
                 append(" AND ${LogTable.COLUMN_DATE} < ?")
+            }
+            if (idGreaterThan != null) {
+                args.add(idGreaterThan.toString())
+                append(" AND ${LogTable.COLUMN_ID} > ?")
             }
             if (tag != null) {
                 args.add(tag.toSqlStringArgs())

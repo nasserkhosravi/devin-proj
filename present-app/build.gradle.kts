@@ -20,16 +20,17 @@ val appMetricaApiKey: String = run {
 
 android {
     namespace = "com.khosravi.devin.present"
-    compileSdk = libs.versions.project.compileSdk.get().toInt()
+    // The presenter is built and targeted at 36 on its own; the library modules keep the shared value (35).
+    compileSdk = 36
 
     defaultConfig {
         minSdk = libs.versions.project.minSdk.get().toInt()
-        targetSdk = libs.versions.project.targetSdk.get().toInt()
-        versionCode = 9
+        targetSdk = 36
+        versionCode = 10
         // Stamps the update-check time before Application.onCreate so the e2e suite never hits GitHub.
         testInstrumentationRunner = "com.khosravi.devin.present.e2e.E2eTestRunner"
     }
-    val versionName = "\"4.10.0\""
+    val versionName = "\"4.11.0\""
 
     // Only set on CI (see .github/workflows/release-presenter.yml); local release builds stay as before.
     val releaseKeystorePath: String? = System.getenv("PRESENTER_KEYSTORE_PATH")
@@ -102,6 +103,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    // Only for pull-to-refresh (experimental), until Material 3 ships it; see the follow-up issue to drop it.
     debugImplementation(libs.compose.ui.tooling)
     implementation(libs.activity.compose)
     implementation(libs.compose.material.icons.core)

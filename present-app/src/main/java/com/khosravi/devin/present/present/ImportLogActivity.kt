@@ -25,7 +25,7 @@ import com.khosravi.devin.present.di.ViewModelFactory
 import com.khosravi.devin.present.di.getAppComponent
 import com.khosravi.devin.present.getParcelableExtraSupport
 import com.khosravi.devin.present.log.LogItemData
-import com.khosravi.devin.present.uikit.theme.DevinTheme
+import com.khosravi.devin.present.uikit.layout.DevinScreen
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -53,7 +53,7 @@ class ImportLogActivity : BaseActivity() {
         isImportResultReported = savedInstanceState != null
 
         setContent {
-            DevinTheme { ImportLogNavHost() }
+            DevinScreen { ImportLogNavHost() }
         }
         // No-op after a configuration change: the ViewModel keeps the already loaded result.
         viewModel.loadImportedLogs(intent.getParcelableExtraSupport(KEY_DATA, Uri::class.java))
@@ -68,6 +68,7 @@ class ImportLogActivity : BaseActivity() {
                 ImportLogScreen(
                     calendar = calendar,
                     items = items,
+                    groupRepeatedLogs = viewModel.isGroupRepeatedLogsEnabled(),
                     onTextLogClick = {
                         // Ignore a second tap that lands while the detail transition is already running.
                         if (navController.isCurrentEntryResumed()) {

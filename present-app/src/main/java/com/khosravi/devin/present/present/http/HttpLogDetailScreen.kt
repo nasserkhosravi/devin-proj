@@ -93,7 +93,7 @@ fun HttpLogDetailScreen(
                     .fillMaxWidth()
                     .weight(1f),
                 // Keep every tab composed so swiping doesn't re-format a body or drop its search/scroll state.
-                beyondBoundsPageCount = HttpDetailTab.entries.size - 1,
+                beyondViewportPageCount = HttpDetailTab.entries.size - 1,
             ) { page ->
                 when (HttpDetailTab.entries[page]) {
                     HttpDetailTab.Overview -> HttpDetailOverviewPage(data = data, calendar = calendar)

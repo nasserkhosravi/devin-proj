@@ -1345,6 +1345,184 @@ adb shell content insert --uri content://com.khosravi.devin.provider/log \
 - Status: CHANGED-INTENTIONALLY (`2026-10-17-design-system-fixes-design.md`; commit `72bd92e`)
 - E2E: no (screenshot tests only).
 
+## 13. Presenter 4.11.0 additions
+
+Added 2026-11-19 for the features on `presenter-release-4.11.0` (issues #137, #138, #155, #175, #180, #181, #182,
+#191). IDs continue each area's numbering; `LAUNCH` is a new area for the Launcher page. All are `NEW-ONLY`
+(no counterpart in 4.10.0). Sources: `docs/superpowers/plans/2026-11-18-*.md`, `2026-11-19-*.md` and
+`docs/superpowers/specs/2026-11-19-filter-actions-fab-design.md`. E2E: the test KDoc in
+`present-app/src/androidTest/.../e2e/` names the IDs it covers.
+
+**ROW-15 — Repeated text logs fold into one row**
+- Given back-to-back text logs with the same tag and message, Then one row shows the newest copy's time, the
+  message, a "×N" pill (content description "Repeated N times") and a chevron "Expand". A different tag, or any
+  other row in between (another log, a session start, the LIST-37 divider), ends the run.
+- New: `P/present/logitem/RepeatedTextLogRow.kt`; `P/present/logic/CountingReplicatedTextLogItemDataOperation.kt`
+- Status: NEW-ONLY (#181)
+- E2E: yes (`RepeatedLogsE2eTest`).
+
+**ROW-16 — Expand / collapse a group**
+- When the group row is tapped, Then one child row per copy (time with millis, one-line message) follows it and
+  the chevron reads "Collapse"; tapping a child opens that copy's detail; back keeps the group expanded; tapping
+  the header again collapses it. Expansion survives a recreation.
+- New: `P/present/logic/ExpandRepeatedGroups.kt`; `P/present/LogScreen.kt`
+- Status: NEW-ONLY (#181)
+- E2E: yes.
+
+**SET-12 — "Group repeated logs" setting**
+- Settings has a "Log list" section with the switch "Group repeated logs" ("Folds back-to-back copies of the same
+  log into one row"), on by default. Off: every copy is its own row when the list is shown again.
+- New: `P/present/settings/SettingsScreen.kt`; `P/data/AppPref.kt` (`group_repeated_logs`)
+- Status: NEW-ONLY (#181)
+- E2E: yes.
+
+**DET-09 — Link tap opens an Open/Copy menu**
+- When a highlighted link in the detail's message is tapped, Then a small menu with "Open" and "Copy" shows under
+  it and nothing opens yet. Tapping plain text shows no menu. Long-press still selects text.
+- New: `P/uikit/text/LinkText.kt`
+- Status: NEW-ONLY (#180; was: the tap opened the link right away)
+- E2E: yes (real tap on the link's first characters).
+
+**DET-10 — Open**
+- "Open" fires `ACTION_VIEW` for the link and closes the menu; with no handler the toast "No app can open this
+  link" shows.
+- Status: NEW-ONLY (#180)
+- E2E: yes (stubbed `ACTION_VIEW`; an unhandled custom scheme for the toast).
+
+**DET-11 — Copy**
+- "Copy" puts only the link on the clipboard and closes the menu. Below Android 13 the toast "Link copied" shows;
+  from 13 the system confirms the copy, so the app shows none.
+- Status: NEW-ONLY (#180)
+- E2E: yes (clipboard).
+
+**LIST-33 — Pull to refresh the log list**
+- When the list is pulled down (also when it is empty), Then the same refresh as the toolbar button runs: a
+  spinner, the reload, and the "refreshed" toast. Disabled in tag selection mode.
+- New: `P/present/LogScreen.kt` (Material 3 `PullToRefresh`)
+- Status: NEW-ONLY (#175)
+- E2E: yes (`PullToRefreshE2eTest`, real swipe).
+
+**START-11 — Pull to refresh the client list**
+- When the client list is pulled down, Then the clients are fetched again (a newly registered client appears).
+- New: `P/present/StarterScreen.kt` (`PullToRefreshBox`)
+- Status: NEW-ONLY (#175)
+- E2E: yes.
+
+**LIST-34 — Edit a custom filter**
+- A custom chip's long-press menu has "Edit" (tag chips don't). It opens the create-filter dialog filled with the
+  title, tags and search text. Confirming saves over the filter: the chip keeps its place, becomes selected and
+  its logs reload.
+- New: `P/present/FilterMenuEntries.kt`; `P/present/CreateFilterDestination.kt`; `P/present/ReaderViewModel.kt` (`updateFilter`)
+- Status: NEW-ONLY (#138)
+- E2E: yes (`EditFilterE2eTest`).
+
+**LIST-35 — Rename keeps place and pin**
+- Renaming keeps the chip's position and moves its pin to the new title; the old title is gone, also after a
+  relaunch.
+- Status: NEW-ONLY (#138). **Bug (2026-11-19, e2e):** if any Pin/Unpin happened in the same visit of the log list,
+  the edit result replaces the chips with the view model's stale list, so the pin is lost on screen (fine after a
+  relaunch). `rename_rightAfterPinning_keepsPinAndPosition` is `@Ignore`d for it.
+- E2E: yes.
+
+**LIST-36 — Duplicate filter title rejected**
+- A title another filter already uses shows "A filter with this name already exists" under the title field and
+  keeps the dialog open, both when editing and when creating. Keeping a filter's own title is allowed; typing
+  clears the error.
+- Status: NEW-ONLY (#138)
+- E2E: yes.
+
+**LAUNCH-01 — Launcher page**
+- The log list overflow has "Launcher" (above "Settings"). The page "Launcher" has a back arrow, the fields
+  "Deeplink", "Extra key", "Extra value (JSON object)", a "Launch" button (disabled until the input is valid) and,
+  with nothing saved, "Launches you make are saved here.". The deeplink field suggests the client's declared
+  deeplinks.
+- New: `P/launcher/LauncherScreen.kt`; `P/present/LogScreen.kt`
+- Status: NEW-ONLY (#137)
+- E2E: yes (`LauncherE2eTest`; suggestions not covered, they need a real client app).
+
+**LAUNCH-02 — Launch**
+- Launch sends `ACTION_VIEW` for the deeplink, restricted to the selected client's package, with the JSON value as
+  a String extra under the key. The launch is saved at the top of the list (per client, at most 50). An identical
+  launch (JSON compared without whitespace) moves to the top instead of duplicating. The last key is prefilled.
+- New: `P/launcher/AppLauncher.kt`; `P/launcher/LaunchRepository.kt`
+- Status: NEW-ONLY (#137)
+- E2E: yes (stubbed `ACTION_VIEW`).
+
+**LAUNCH-03 — Input validation**
+- Deeplink without a scheme: "Start with a scheme, like myapp://". A value without a key: "Add a key for this
+  value, or clear the value". A value that is not a JSON object: "Must be a JSON object, like {"key": "value"}".
+  Each disables Launch.
+- New: `P/launcher/LaunchInput.kt`
+- Status: NEW-ONLY (#137)
+- E2E: yes.
+
+**LAUNCH-04 — Relaunch, edit, delete**
+- Each saved launch has "Relaunch" (sends it again), "Edit" (fills the inputs, shows an "Editing…" chip whose ✕
+  "Stop editing" leaves editing; Launch then updates that entry) and "Delete" (snackbar "Launch removed" with
+  "Undo").
+- Status: NEW-ONLY (#137)
+- E2E: yes.
+
+**LAUNCH-05 — Launch failures**
+- No activity of the client handles the link: snackbar "This app has no screen for that link". The handler is not
+  exported: "This app's screen for that link can't be opened from other apps". Nothing is saved.
+- Status: NEW-ONLY (#137)
+- E2E: yes for "no screen" (the not-exported case needs a real client app).
+
+**LIST-37 — Quiet refresh on return**
+- When the user comes back to the log list (Home then the launcher, or back from Settings; not on the first start or
+  a recreation), Then logs written meanwhile that match the selected filter and search are added at the top
+  without a spinner or toast. A divider "N new logs above" sits between the new and the old rows. At the top, the
+  list shows the new rows. A refresh, filter change, search or clear removes the divider and pill.
+- New: `P/present/LogActivity.kt` (`quietRefresh`); `P/present/logic/NewLogsMerge.kt`, `NewLogsDivider.kt`
+- Status: NEW-ONLY (#182)
+- E2E: yes (`QuietRefreshE2eTest`).
+
+**LIST-38 — New-logs pill**
+- When the user returns while scrolled down, Then the rows being read stay in place and a pill "↑ N new logs"
+  shows at the top; tapping it scrolls to the top, where it goes away.
+- New: `P/present/logitem/NewLogsPill.kt`
+- Status: NEW-ONLY (#182)
+- E2E: yes.
+
+**LIST-39 — Quiet refresh respects the filter**
+- With a tag (or custom filter / search) selected, only matching new logs are added and counted; the chips don't
+  change.
+- Status: NEW-ONLY (#182)
+- E2E: yes.
+
+**LIST-40 — Filter actions FAB content**
+- A FAB ("Filter actions"; "Close filter actions" when open) at the bottom end lists, for the selected filter:
+  "All" → "Create custom filter"; a tag → Pin/Unpin, "Share as json", "Create custom filter"; a custom filter →
+  Pin/Unpin, "Edit", "Remove", "Create custom filter". Never "Select multiple".
+- New: `P/present/FilterActionsFab.kt`; `P/present/FilterMenuEntries.kt`
+- Status: NEW-ONLY (#191). **Bug (2026-11-19, e2e):** the expanded items' labels are missing from the
+  accessibility tree (each item is a clickable button with no text or description; uiautomator marks it `NAF`),
+  so TalkBack can't name them and the label-based e2e tests are `@Ignore`d.
+- E2E: partly (`FilterActionsFabE2eTest`): the FAB's own descriptions and visibility (LIST-42) are covered; the
+  item tests wait on the bug above.
+
+**LIST-41 — Filter actions FAB behaviour**
+- Each item runs the same action as the chip's long-press menu; "Create custom filter" preselects the selected tag.
+  Back or a tap on the scrim collapses the menu without running anything.
+- Status: NEW-ONLY (#191)
+- E2E: written but `@Ignore`d (LIST-40 bug).
+
+**LIST-42 — Filter actions FAB visibility**
+- Hidden in tag selection mode, while the filter row is disabled, and while scrolling the list down; shown again on
+  scrolling up, at the top, and when selection ends. The list has bottom padding so the last row clears the FAB.
+- Status: NEW-ONLY (#191)
+- E2E: yes (real swipes; a11y scroll actions bypass the nested-scroll detection).
+
+**GEN-03 — Target SDK 36, resizable windows**
+- `present-app` targets SDK 36; on wide windows content is centred at most 600 dp wide; state (selected filter,
+  expanded groups, dialogs, typed text) survives rotation, resize and fold.
+- New: `P/uikit/layout/DevinWindow.kt`; `present-app/build.gradle.kts`
+- Status: NEW-ONLY (#155)
+- E2E: partly. A recreation (`Activity.recreate()`, what a rotation or resize does) keeps the selected chip and an
+  expanded group and is not treated as a return. Wide-window centring and real rotation are not covered (the suite
+  doesn't change device rotation or window size).
+
 ---
 
 ## Summary

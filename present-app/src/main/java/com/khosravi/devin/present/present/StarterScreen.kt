@@ -26,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -61,6 +62,7 @@ fun StarterScreen(
     onClientClick: (ClientData) -> Unit,
     areNotificationsEnabled: Boolean,
     onNotificationsDisabledClick: () -> Unit,
+    isRefreshing: Boolean,
     onRefresh: () -> Unit,
     footerText: String,
     isUpdateAvailable: Boolean,
@@ -97,13 +99,15 @@ fun StarterScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small)
             )
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
-                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
-            ) {
-                items(clients, key = { it.packageId }) { client ->
-                    ClientCard(client = client, info = clientInfo[client.packageId], onClick = { onClientClick(client) })
+            PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = Modifier.weight(1f)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
+                ) {
+                    items(clients, key = { it.packageId }) { client ->
+                        ClientCard(client = client, info = clientInfo[client.packageId], onClick = { onClientClick(client) })
+                    }
                 }
             }
             // A button, so it reads as tappable: it opens the release page.

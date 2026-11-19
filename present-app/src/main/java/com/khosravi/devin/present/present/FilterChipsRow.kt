@@ -62,6 +62,7 @@ sealed interface FilterChipAction {
     data class CreateFilter(val tags: List<String>) : FilterChipAction
     data class TogglePin(val item: FilterItem) : FilterChipAction
     data class ShareAsJson(val item: TagFilterItem) : FilterChipAction
+    data class Edit(val item: CustomFilterItem) : FilterChipAction
     data class Remove(val items: List<CustomFilterItem>) : FilterChipAction
 }
 
@@ -338,21 +339,11 @@ private fun FilterChipView(
         Text(text = label, color = chipColors.content)
 
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            val item: @Composable (Int, () -> Unit) -> Unit = { label, action ->
-                DropdownMenuItem(text = { Text(stringResource(label)) }, onClick = {
+            filterMenuEntries(filter, onAction, onStartSelection).forEach { entry ->
+                DropdownMenuItem(text = { Text(stringResource(entry.label)) }, onClick = {
                     menuOpen = false
-                    action()
+                    entry.onClick()
                 })
-            }
-            item(if (filter.ui.isPinned) R.string.menu_action_unpin else R.string.menu_action_pin) {
-                onAction(FilterChipAction.TogglePin(filter))
-            }
-            if (filter is TagFilterItem) {
-                item(R.string.menu_action_share_as_json) { onAction(FilterChipAction.ShareAsJson(filter)) }
-                item(R.string.menu_action_select_multiple) { onStartSelection(filter) }
-            }
-            if (filter is CustomFilterItem) {
-                item(R.string.menu_action_remove) { onAction(FilterChipAction.Remove(listOf(filter))) }
             }
         }
     }

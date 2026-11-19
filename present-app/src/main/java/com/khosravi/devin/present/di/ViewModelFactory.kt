@@ -12,6 +12,9 @@ import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.present.ExportViewModel
 import com.khosravi.devin.present.present.http.HttpDetailViewModel
 import com.khosravi.devin.present.present.ReaderViewModel
+import com.khosravi.devin.present.launcher.DeeplinkScanner
+import com.khosravi.devin.present.launcher.LaunchRepository
+import com.khosravi.devin.present.launcher.LauncherViewModel
 import java.lang.IllegalArgumentException
 
 class ViewModelFactory(
@@ -22,6 +25,8 @@ class ViewModelFactory(
     private val cacheRepo: CacheRepository,
     private val userSettings: UserSettings,
     private val appPref: AppPref,
+    private val launchRepository: LaunchRepository,
+    private val deeplinkScanner: DeeplinkScanner,
 ) : ViewModelProvider.Factory {
 
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -36,6 +41,10 @@ class ViewModelFactory(
 
             modelClass.isAssignableFrom(ExportViewModel::class.java) -> {
                 ExportViewModel(application, cacheRepo, calendar) as T
+            }
+
+            modelClass.isAssignableFrom(LauncherViewModel::class.java) -> {
+                LauncherViewModel(application, cacheRepo, launchRepository, deeplinkScanner) as T
             }
 
             else -> throw IllegalArgumentException()

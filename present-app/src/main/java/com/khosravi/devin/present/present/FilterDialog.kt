@@ -46,6 +46,8 @@ import com.khosravi.devin.present.uikit.theme.spacing
  * Creates a custom filter from one or more exact tags, plus optional search text. [availableTags] are the tags the
  * client has logged (null while loading); [preselectedTags] start checked and are shown even when not available.
  * A blank title defaults to the picked tags joined with " + ". Field values survive rotation.
+ * Editing: [initialTitle] and [initialSearchText] fill the fields, and [originalTitle] may be kept as the title; any other
+ * title for which [isTitleTaken] is true is rejected (also when creating).
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -53,9 +55,14 @@ fun FilterDialog(
     availableTags: List<String>?,
     preselectedTags: List<String>,
     onConfirm: (CustomFilterItem) -> Unit,
+    initialTitle: String = "",
+    initialSearchText: String = "",
+    originalTitle: String? = null,
+    isTitleTaken: (String) -> Boolean = { false },
 ) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var searchText by rememberSaveable { mutableStateOf("") }
+    var title by rememberSaveable { mutableStateOf(initialTitle) }
+    var searchText by rememberSaveable { mutableStateOf(initialSearchText) }
+    var showTitleError by rememberSaveable { mutableStateOf(false) }
     // In pick order; an ArrayList so it can be saved.
     var picked by rememberSaveable { mutableStateOf(ArrayList(preselectedTags.distinct())) }
     var showTagError by rememberSaveable { mutableStateOf(false) }
@@ -73,7 +80,14 @@ fun FilterDialog(
         ) {
             OutlinedTextField(
                 value = title,
-                onValueChange = { title = it },
+                onValueChange = {
+                    title = it
+                    showTitleError = false
+                },
+                isError = showTitleError,
+                supportingText = if (showTitleError) {
+                    { Text(stringResource(R.string.filter_error_title_taken)) }
+                } else null,
                 label = { Text(stringResource(R.string.field_title)) },
                 placeholder = if (picked.isEmpty()) null else {
                     { Text(picked.joinToString(TITLE_SEPARATOR), maxLines = 1) }
@@ -150,6 +164,10 @@ fun FilterDialog(
                         return@Button
                     }
                     val fTitle = title.trim().ifEmpty { picked.joinToString(TITLE_SEPARATOR) }
+                    if (fTitle != originalTitle && isTitleTaken(fTitle)) {
+                        showTitleError = true
+                        return@Button
+                    }
                     onConfirm(
                         CustomFilterItem(
                             ui = FilterUiData(fTitle, fTitle.itsNotEmpty(), false),

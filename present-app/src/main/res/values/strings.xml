@@ -14,11 +14,14 @@
     <string name="msg_refreshed">refreshed</string>
     <string name="title_of_share">Share file through</string>
     <string name="menu_create_filter">Create custom filter</string>
+    <string name="filter_actions_open">Filter actions</string>
+    <string name="filter_actions_close">Close filter actions</string>
     <string name="field_contain_value">Contain value</string>
     <string name="field_title">title</string>
     <string name="field_filter_tags">Tags</string>
     <string name="filter_no_tags">No tags logged yet</string>
     <string name="filter_error_no_tag">Pick at least one tag</string>
+    <string name="filter_error_title_taken">A filter with this name already exists</string>
     <string name="field_search_text">search value</string>
     <string name="confirm">confirm</string>
     <string name="msg_title_required">tag or title required</string>
@@ -35,6 +38,14 @@
     <plurals name="client_log_count">
         <item quantity="one">%d log</item>
         <item quantity="other">%d logs</item>
+    </plurals>
+    <plurals name="new_logs_pill">
+        <item quantity="one">↑ %d new log</item>
+        <item quantity="other">↑ %d new logs</item>
+    </plurals>
+    <plurals name="new_logs_divider">
+        <item quantity="one">%d new log above</item>
+        <item quantity="other">%d new logs above</item>
     </plurals>
     <string name="notifications_disabled_title">Notifications are off</string>
     <string name="notifications_disabled_message">Clients can\'t notify you about new logs.</string>
@@ -94,6 +105,26 @@
     <string name="menu_action_pin">Pin</string>
     <string name="menu_action_unpin">Unpin</string>
     <string name="menu_action_share_as_json">Share as json</string>
+    <string name="menu_action_edit">Edit</string>
+    <string name="menu_launcher">Launcher</string>
+    <string name="launcher_title">Launcher</string>
+    <string name="launcher_deeplink">Deeplink</string>
+    <string name="launcher_extra_key">Extra key</string>
+    <string name="launcher_extra_value">Extra value (JSON object)</string>
+    <string name="launcher_launch">Launch</string>
+    <string name="launcher_editing">Editing…</string>
+    <string name="launcher_cancel_edit">Stop editing</string>
+    <string name="launcher_relaunch">Relaunch</string>
+    <string name="launcher_edit">Edit</string>
+    <string name="launcher_delete">Delete</string>
+    <string name="launcher_deleted">Launch removed</string>
+    <string name="launcher_undo">Undo</string>
+    <string name="launcher_failed_no_handler">This app has no screen for that link</string>
+    <string name="launcher_failed_not_exported">This app\'s screen for that link can\'t be opened from other apps</string>
+    <string name="launcher_saved_empty">Launches you make are saved here.</string>
+    <string name="launcher_error_invalid_deeplink">Start with a scheme, like myapp://</string>
+    <string name="launcher_error_missing_key">Add a key for this value, or clear the value</string>
+    <string name="launcher_error_invalid_json">Must be a JSON object, like {\"key\": \"value\"}</string>
     <string name="menu_action_remove">Remove</string>
     <string name="menu_action_select_multiple">Select multiple</string>
     <string name="menu_action_toggle_theme">Toggle theme</string>
@@ -109,12 +140,18 @@
     <string name="image_tag_image_size_prefix">"Image size: "</string>
     <string name="image_tag_date_prefix">"Date: "</string>
     <string name="image_tag_time_prefix">"Time: "</string>
+    <string name="log_repeated_count">Repeated %d times</string>
+    <string name="log_group_expand">Expand</string>
+    <string name="log_group_collapse">Collapse</string>
     <string name="log_item_error">Error</string>
     <string name="log_item_warn">Warn</string>
     <string name="log_item_info">Info</string>
     <string name="log_item_debug">Debug</string>
     <string name="log_item_verbose">Verbose</string>
     <string name="log_detail_title">Log detail</string>
+    <string name="link_menu_open">Open</string>
+    <string name="link_menu_copy">Copy</string>
+    <string name="link_copied">Link copied</string>
     <string name="link_no_handler">No app can open this link</string>
     <string name="field_tag">Tag</string>
     <string name="field_time">Time</string>
@@ -146,6 +183,9 @@
 
     <string name="menu_settings">Settings</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_section_log_list">Log list</string>
+    <string name="settings_group_repeated_logs">Group repeated logs</string>
+    <string name="settings_group_repeated_logs_summary">Folds back-to-back copies of the same log into one row</string>
     <string name="settings_section_storage">Storage</string>
     <string name="settings_retention_enabled">Auto-delete old logs</string>
     <string name="settings_retention_enabled_summary">Keeps storage small by removing old logs automatically</string>

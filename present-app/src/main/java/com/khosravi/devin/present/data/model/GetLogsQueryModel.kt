@@ -11,4 +11,6 @@ data class GetLogsQueryModel(
     val page: PageInfo? = null,
     /** Exact tags, matched with `tag IN (...)` next to [tag]; null or empty means no tag-set constraint. */
     val tags: List<String>? = null,
+    /** Only logs with an id above this; with a null [page] it returns all of them (used to fetch what is new). */
+    val idGreaterThan: Long? = null,
 )

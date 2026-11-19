@@ -9,7 +9,8 @@ class TextLogItemData(
     val text: String,
     val timePresent: TimePresent,
     val logLevel: Int,
-    val meta: JsonObject?
+    val meta: JsonObject?,
+    val logId: Long = 0L,
 ) : LogItemData, Serializable
 
 //TODO, fix RuntimeException: Parcelable encountered IOException writing serializable object (name = com.khosravi.devin.present.log.TextLogItemData)

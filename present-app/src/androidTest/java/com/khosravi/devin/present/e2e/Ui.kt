@@ -122,6 +122,19 @@ object Ui {
 
     fun tapAt(x: Int, y: Int) = shell("input tap $x $y")
 
+    /** A real finger drag from (x1, y1) to (x2, y2) over [durationMs] (goes through nested scrolling, unlike scroll actions). */
+    fun swipe(x1: Int, y1: Int, x2: Int, y2: Int, durationMs: Int = 400) = shell("input swipe $x1 $y1 $x2 $y2 $durationMs")
+
+    /** Pulls down from [startY] by [distance] px at the horizontal centre of the screen (pull to refresh). */
+    fun pullDown(startY: Int, distance: Int = 1_000) {
+        val x = screenWidth() / 2
+        swipe(x, startY, x, startY + distance, durationMs = 600)
+    }
+
+    fun screenWidth(): Int = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.widthPixels
+
+    fun screenHeight(): Int = InstrumentationRegistry.getInstrumentation().targetContext.resources.displayMetrics.heightPixels
+
     fun setText(node: AccessibilityNodeInfo, value: String) {
         val target = node.selfOrAncestor { it.isEditable } ?: node.firstDescendant { it.isEditable }
             ?: throw AssertionError("No editable node at/near ${node.describe()}")
@@ -153,6 +166,10 @@ object Ui {
     }
 
     fun firstScrollable(): AccessibilityNodeInfo? = find { it.isScrollable && it.className?.contains("HorizontalScroll") != true && it.isVerticalList() }
+
+    fun home() {
+        check(automation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_HOME)) { "Global home failed" }
+    }
 
     fun back() {
         check(automation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK)) { "Global back failed" }
