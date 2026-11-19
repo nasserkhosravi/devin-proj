@@ -60,7 +60,8 @@ class ContentProviderLogsDaoTest {
         meta: OpStringParam? = null,
         timeLessThan: Long? = null,
         page: PageInfo? = null,
-    ) = GetLogsQueryModel(null, tag, value, meta, timeLessThan, page)
+        idGreaterThan: Long? = null,
+    ) = GetLogsQueryModel(null, tag, value, meta, timeLessThan, page, idGreaterThan = idGreaterThan)
 
     @Test
     fun `client list returns registered clients with their config`() {
@@ -161,6 +162,52 @@ class ContentProviderLogsDaoTest {
         val result = query("app.a", model(meta = OpStringParam("url", OpStringValue.Contain("api."))))
 
         assertEquals(listOf("a"), result.map { it.value })
+    }
+
+    @Test
+    fun `idGreaterThan returns only logs with a larger id`() {
+        val ids = (1..4).map { putLog("app.a", "t", "v$it", it.toLong()) }
+
+        val result = query("app.a", model(idGreaterThan = ids[1]))
+
+        assertEquals(listOf("v4", "v3"), result.map { it.value })
+        assertTrue(result.all { it.id > ids[1] })
+    }
+
+    @Test
+    fun `idGreaterThan of the newest id returns nothing`() {
+        val ids = (1..3).map { putLog("app.a", "t", "v$it", it.toLong()) }
+
+        assertTrue(query("app.a", model(idGreaterThan = ids.max())).isEmpty())
+    }
+
+    @Test
+    fun `idGreaterThan combines with the tag filter and client`() {
+        val first = putLog("app.a", "net", "n1", 1)
+        putLog("app.a", "ui", "u2", 2)
+        putLog("app.a", "net", "n3", 3)
+        putLog("app.b", "net", "other", 4)
+
+        val result = query("app.a", model(tag = OpStringValue.EqualTo("net"), idGreaterThan = first))
+
+        assertEquals(listOf("n3"), result.map { it.value })
+    }
+
+    @Test
+    fun `null idGreaterThan applies no id constraint`() {
+        (1..3).forEach { putLog("app.a", "t", "v$it", it.toLong()) }
+
+        assertEquals(listOf("v3", "v2", "v1"), query("app.a", model(idGreaterThan = null)).map { it.value })
+    }
+
+    @Test
+    fun `idGreaterThan with no page returns all newer logs beyond one page`() {
+        val first = putLog("app.a", "t", "v0", 0)
+        (1..5).forEach { putLog("app.a", "t", "v$it", it.toLong()) }
+
+        val result = query("app.a", model(page = null, idGreaterThan = first))
+
+        assertEquals(listOf("v5", "v4", "v3", "v2", "v1"), result.map { it.value })
     }
 
     @Test
