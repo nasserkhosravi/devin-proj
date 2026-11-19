@@ -287,12 +287,16 @@ class ReaderViewModel constructor(
 
     fun isFilterTitleTaken(title: String): Boolean = filterRepository.isTitleTaken(title)
 
-    /** Saves [data] over the custom filter [originalId], in place in the list; see [FilterRepository.replaceFilter]. */
-    fun updateFilter(originalId: String, data: CustomFilterItem, callbackId: String? = null) {
+    /**
+     * Saves [data] over the custom filter [originalId], in place in the list; see [FilterRepository.replaceFilter].
+     * [currentList] is the list the screen shows; it is the base when given, because pin changes reorder the
+     * screen's chips without going through [uiState].
+     */
+    fun updateFilter(originalId: String, data: CustomFilterItem, callbackId: String? = null, currentList: List<FilterItem>? = null) {
         viewModelScope.launch {
             val clientId = getSelectedClientIdOrError()
             val newList = withContext(Dispatchers.Default) {
-                val list = _uiStateFlow.value.filterList ?: return@withContext null
+                val list = currentList ?: _uiStateFlow.value.filterList ?: return@withContext null
                 val index = list.indexOfFirst { it is CustomFilterItem && it.id == originalId }
                 if (index == -1) return@withContext null
                 if (!filterRepository.replaceFilter(originalId, data, clientId)) throw IllegalArgumentException()
@@ -311,7 +315,8 @@ class ReaderViewModel constructor(
         }
     }
 
-    fun addFilter(data: CustomFilterItem, callbackId: String? = null) {
+    /** Saves [data] and appends it to [currentList] (the screen's list, see [updateFilter]) or else to [uiState]'s. */
+    fun addFilter(data: CustomFilterItem, callbackId: String? = null, currentList: List<FilterItem>? = null) {
         viewModelScope.launch {
             flow<FilterItem> {
                 val result = filterRepository.saveFilter(data, getSelectedClientIdOrError())
@@ -320,7 +325,7 @@ class ReaderViewModel constructor(
                 }
                 emit(data)
             }.map {
-                (_uiStateFlow.value.filterList?.toMutableList() ?: ArrayList()).apply {
+                ((currentList ?: _uiStateFlow.value.filterList)?.toMutableList() ?: ArrayList()).apply {
                     add(data)
                 }
             }.flowOn(Dispatchers.Default)

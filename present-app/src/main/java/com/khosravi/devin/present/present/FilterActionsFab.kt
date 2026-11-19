@@ -55,6 +55,7 @@ fun FilterActionsFab(
                 modifier = Modifier.padding(bottom = MaterialTheme.spacing.xs),
             ) {
                 entries.forEach { entry ->
+                    val label = stringResource(entry.label)
                     ExtendedFloatingActionButton(
                         onClick = {
                             onExpandedChange(false)
@@ -62,9 +63,10 @@ fun FilterActionsFab(
                         },
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        // The label says what it does, so the icon is decorative.
-                        icon = { Icon(entry.icon(), contentDescription = null) },
-                        text = { Text(stringResource(entry.label)) },
+                        // ExtendedFloatingActionButton hides its text from accessibility and takes the button's
+                        // label from the icon, so the icon carries the label.
+                        icon = { Icon(entry.icon(), contentDescription = label) },
+                        text = { Text(label) },
                     )
                 }
             }

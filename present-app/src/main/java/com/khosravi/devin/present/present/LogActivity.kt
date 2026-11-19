@@ -161,7 +161,7 @@ class LogActivity : BaseActivity() {
                 onConfirm = { item, originalTitle ->
                     navController.popBackStack(ROUTE_LOGS, inclusive = false)
                     if (originalTitle == null) addFilter(item)
-                    else viewModel.updateFilter(originalTitle, item, CALLBACK_ID_EDIT_FILTER)
+                    else viewModel.updateFilter(originalTitle, item, CALLBACK_ID_EDIT_FILTER, currentList = filterList)
                 },
             )
         }
@@ -446,7 +446,7 @@ class LogActivity : BaseActivity() {
             tagCount = item.criteria.tags.size,
             hasSearchText = !item.criteria.searchText.isNullOrEmpty()
         )
-        viewModel.addFilter(item, CALLBACK_ID_ADD_FILTER)
+        viewModel.addFilter(item, CALLBACK_ID_ADD_FILTER, currentList = filterList)
     }
 
     override fun onStart() {
