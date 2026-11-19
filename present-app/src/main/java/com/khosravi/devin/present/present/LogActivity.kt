@@ -38,6 +38,10 @@ import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.LogListRowItem
 import com.khosravi.devin.present.log.TextLogItemData
 import com.khosravi.devin.present.present.http.HttpLogDetailActivity
+import com.khosravi.devin.present.present.logic.appendDistinct
+import com.khosravi.devin.present.present.logic.countLogRows
+import com.khosravi.devin.present.present.logic.newestLogId
+import com.khosravi.devin.present.present.logic.prependNewLogs
 import com.khosravi.devin.present.present.settings.SettingsActivity
 import com.khosravi.devin.present.sendOrShareFileIntent
 import com.khosravi.devin.present.toUriByFileProvider
@@ -51,6 +55,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -84,6 +89,14 @@ class LogActivity : BaseActivity() {
     private var isRefreshing by mutableStateOf(false)
     private var searchSessionId = 0
 
+    // Quiet refresh on return: logs written while away are added at the top without a spinner or a toast.
+    private var newLogsCount by mutableStateOf(0)
+    private var newLogsBoundaryId by mutableStateOf<Long?>(null)
+    private var scrollToTopRequest by mutableStateOf(0)
+    private var isListAtTop = true
+    private var quietJob: Job? = null
+    private var skipNextQuietRefresh = false
+
     // From a recreated instance (rotation, resize); applied once the view model's current result arrives.
     private var restoredFilterId: String? = null
     private var restoredSearchText: String? = null
@@ -98,6 +111,8 @@ class LogActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         getAppComponent().inject(this)
         super.onCreate(savedInstanceState)
+        // onStart follows onCreate on the first start and on a recreation, and neither is a return.
+        skipNextQuietRefresh = true
         targetTag = intent.getStringExtra(EXTRA_TARGET_TAG)
         restoredFilterId = savedInstanceState?.getString(STATE_FILTER_ID)
         restoredSearchText = savedInstanceState?.getString(STATE_SEARCH_TEXT)
@@ -168,6 +183,13 @@ class LogActivity : BaseActivity() {
             logItems = items,
             isLoading = isLoading,
             isRefreshing = isRefreshing,
+            newLogsCount = newLogsCount,
+            newLogsBoundaryId = newLogsBoundaryId,
+            scrollToTopRequest = scrollToTopRequest,
+            onAtTopChange = {
+                isListAtTop = it
+                if (it) newLogsCount = 0
+            },
             onSelectFilter = {
                 Analytics.filterSelected(FilterType.of(it))
                 selectNewFilter(it)
@@ -190,6 +212,7 @@ class LogActivity : BaseActivity() {
             onRefresh = ::refreshLogsAndFilters,
             onClearLogs = {
                 Analytics.logsCleared()
+                quietJob?.cancel()
                 viewModel.clearLogs()
             },
             onClearFilters = {
@@ -221,7 +244,7 @@ class LogActivity : BaseActivity() {
         lifecycleScope.launch {
             viewModel.nextPageFlow.collect {
                 pagination.setLoaded(it.pageInfo.isFinished)
-                logRows = logRows + it.logs
+                logRows = appendDistinct(logRows, it.logs)
             }
         }
     }
@@ -231,6 +254,7 @@ class LogActivity : BaseActivity() {
             searchInput.debounce(700)
                 .distinctUntilChanged()
                 .collect { searchText ->
+                    quietJob?.cancel()
                     searchRow = searchRow?.copy(text = searchText)
                     optCurrentFilterItem()?.let {
                         if (!searchText.isNullOrEmpty()) Analytics.logsSearched(FilterType.of(it))
@@ -265,7 +289,12 @@ class LogActivity : BaseActivity() {
         if (presentedFilters != null && (!result.updateInfo.skipFilterList || filterList.isEmpty())) {
             filterList = presentedFilters
         }
-        result.logList?.let { logRows = it }
+        result.logList?.let {
+            logRows = it
+            // The list was replaced, so what the hint pointed at is gone.
+            newLogsCount = 0
+            newLogsBoundaryId = null
+        }
         result.updateInfo.filterIdSelection?.let { selectedFilterId = it }
         restoreSelectionIfNeeded()
         isFilterRowEnabled = true
@@ -302,12 +331,14 @@ class LogActivity : BaseActivity() {
     }
 
     private fun loadMoreItems(currentPage: Int) {
+        quietJob?.cancel()
         optCurrentFilterItem()?.let {
             viewModel.nextPage(currentPage - 1, it, searchRow?.text)
         }
     }
 
     private fun selectNewFilter(data: FilterItem) {
+        quietJob?.cancel()
         isFilterRowEnabled = false
         pagination.resetState()
         if (data is TagFilterItem && data.hasUnseenError) {
@@ -389,6 +420,7 @@ class LogActivity : BaseActivity() {
 
     private fun refreshLogsAndFilters() {
         Analytics.logsRefreshed()
+        quietJob?.cancel()
         isFilterRowEnabled = false
         optCurrentFilterItem()?.let {
             isRefreshing = true
@@ -415,6 +447,36 @@ class LogActivity : BaseActivity() {
             hasSearchText = !item.criteria.searchText.isNullOrEmpty()
         )
         viewModel.addFilter(item, CALLBACK_ID_ADD_FILTER)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (skipNextQuietRefresh) skipNextQuietRefresh = false else quietRefresh()
+    }
+
+    /** Adds the logs written since the list was loaded at the top, with no spinner or toast; see [prependNewLogs]. */
+    private fun quietRefresh() {
+        val filter = optCurrentFilterItem() ?: return
+        if (isRefreshing || !isFilterRowEnabled || pagination.isLoading) return
+        val text = searchRow?.text
+        val topId = newestLogId(logRows)
+        if (topId == null) {
+            // Nothing loaded to compare with (e.g. an empty list), so load the list the usual way.
+            viewModel.search(filter, text)
+            return
+        }
+        quietJob?.cancel()
+        quietJob = lifecycleScope.launch {
+            val new = viewModel.fetchNewLogs(filter, text, topId).first()
+            // The filter or the search text changed while this loaded.
+            if (selectedFilterId != filter.id || searchRow?.text != text) return@launch
+            val count = countLogRows(new)
+            if (count == 0) return@launch
+            // A second return before reaching the top keeps the first divider.
+            if (newLogsCount == 0) newLogsBoundaryId = topId
+            logRows = prependNewLogs(logRows, new)
+            if (isListAtTop) scrollToTopRequest++ else newLogsCount += count
+        }
     }
 
     override fun onResume() {
@@ -451,6 +513,7 @@ class LogActivity : BaseActivity() {
 
     private class LogPaginationState {
         private var loading = false
+        val isLoading: Boolean get() = loading
         private var isFinished = false
         private var currentPage = 0
 

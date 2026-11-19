@@ -8,5 +8,6 @@ import java.io.Serializable
 class ImageLogItemData(
     val data: ImageLogData,
     val datePresent: DatePresent,
-    val timePresent: TimePresent
+    val timePresent: TimePresent,
+    val logId: Long = 0L,
 ) : LogItemData, Serializable

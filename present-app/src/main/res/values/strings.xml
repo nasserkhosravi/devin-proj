@@ -37,6 +37,14 @@
         <item quantity="one">%d log</item>
         <item quantity="other">%d logs</item>
     </plurals>
+    <plurals name="new_logs_pill">
+        <item quantity="one">↑ %d new log</item>
+        <item quantity="other">↑ %d new logs</item>
+    </plurals>
+    <plurals name="new_logs_divider">
+        <item quantity="one">%d new log above</item>
+        <item quantity="other">%d new logs above</item>
+    </plurals>
     <string name="notifications_disabled_title">Notifications are off</string>
     <string name="notifications_disabled_message">Clients can\'t notify you about new logs.</string>
     <string name="notifications_disabled_action">Enable</string>

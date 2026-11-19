@@ -133,17 +133,30 @@ class ReaderViewModel constructor(
         }.flowOn(Dispatchers.Default)
     }
 
-    private fun addDateHeadersByDay(logs: List<LogData>, calendar: CalendarProxy): List<LogItemData> {
+    /**
+     * Every log newer than [newerThanId] for [filter] and [searchText], newest first, with no page limit.
+     * Leaves paging and [uiState] alone; the caller merges the result into the list it shows.
+     */
+    fun fetchNewLogs(filter: FilterItem, searchText: String?, newerThanId: Long): Flow<List<LogItemData>> {
+        val model = buildQueryGet(filter, pageInfo, searchText).copy(page = null, idGreaterThan = newerThanId)
+        return collectLogs(model).map { logTables ->
+            addDateHeadersByDay(logTables, calendar, pagingDay = false)
+        }.flowOn(Dispatchers.Default)
+    }
+
+    /** [pagingDay] false keeps the day tracking local, so a one-off fetch doesn't disturb [lastDayHeaderDate]. */
+    private fun addDateHeadersByDay(logs: List<LogData>, calendar: CalendarProxy, pagingDay: Boolean = true): List<LogItemData> {
         if (logs.isEmpty()) return emptyList()
         val result = ArrayList<LogItemData>()
+        var lastDay: Int? = null
         var nextDateDifferInDayCode: Int? = null
         logs.forEach { data ->
             val presentDate = calendar.initIfNeed(DatePresent(data.date))
             val candidateCode = presentDate.dumbed.hashCode()
             if (candidateCode != nextDateDifferInDayCode) {
                 nextDateDifferInDayCode = candidateCode
-                if (lastDayHeaderDate != candidateCode) {
-                    lastDayHeaderDate = candidateCode
+                if ((if (pagingDay) lastDayHeaderDate else lastDay) != candidateCode) {
+                    if (pagingDay) lastDayHeaderDate = candidateCode else lastDay = candidateCode
                     result.add(DateLogItemData(presentDate))
                 }
             }
@@ -158,7 +171,7 @@ class ReaderViewModel constructor(
                 appVersionName = getSessionAppVersionName(it),
                 datePresent = DatePresent(it.date),
                 timePresent = TimePresent(it.date),
-                detail = TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta),
+                detail = TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta, it.id),
             )
         }
 
@@ -169,10 +182,10 @@ class ReaderViewModel constructor(
 
             DevinImageFlagsApi.TYPE_ID -> {
                 val imageData = ContentProviderLogsDao.mapToImageModel(it)
-                ImageLogItemData(imageData, DatePresent(it.date), TimePresent(it.date))
+                ImageLogItemData(imageData, DatePresent(it.date), TimePresent(it.date), it.id)
             }
 
-            else -> TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta)
+            else -> TextLogItemData(it.tag, it.value, TimePresent(it.date), getLogIdFromMetaJsonOrDefault(it.meta), it.meta, it.id)
         }
     }
 

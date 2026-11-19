@@ -38,6 +38,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -45,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.khosravi.devin.present.R
 import com.khosravi.devin.present.date.CalendarProxy
 import com.khosravi.devin.present.filter.FilterItem
@@ -54,6 +56,7 @@ import com.khosravi.devin.present.log.HttpLogItemData
 import com.khosravi.devin.present.log.ImageLogItemData
 import com.khosravi.devin.present.log.LogItemData
 import com.khosravi.devin.present.log.LogListRowItem
+import com.khosravi.devin.present.log.NewLogsDividerItemData
 import com.khosravi.devin.present.log.ReplicatedTextLogItemData
 import com.khosravi.devin.present.log.SessionStartLogItemData
 import com.khosravi.devin.present.log.TextLogItemData
@@ -66,6 +69,12 @@ import com.khosravi.devin.present.present.logitem.RepeatedTextLogRow
 import com.khosravi.devin.present.present.logitem.SessionStartRow
 import com.khosravi.devin.present.present.logic.CountingReplicatedTextLogItemDataOperation
 import com.khosravi.devin.present.present.logic.expandRepeatedGroups
+import com.khosravi.devin.present.present.logic.logRowKeys
+import com.khosravi.devin.present.present.logic.withNewLogsDivider
+import com.khosravi.devin.present.present.logitem.NewLogsDividerRow
+import com.khosravi.devin.present.present.logitem.NewLogsPill
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import com.khosravi.devin.present.log.RepeatedTextLogChildItemData
 import com.khosravi.devin.present.present.logitem.TextLogRow
 
@@ -81,6 +90,10 @@ fun LogScreen(
     logItems: List<LogListRowItem>,
     isLoading: Boolean,
     isRefreshing: Boolean,
+    newLogsCount: Int,
+    newLogsBoundaryId: Long?,
+    scrollToTopRequest: Int,
+    onAtTopChange: (Boolean) -> Unit,
     onSelectFilter: (FilterItem) -> Unit,
     onFilterAction: (FilterChipAction) -> Unit,
     onTagSearchOpen: () -> Unit,
@@ -101,6 +114,7 @@ fun LogScreen(
     // Keys of expanded repeated-log groups; an ArrayList so it survives rotation and the trip to the detail screen.
     var expandedKeys by rememberSaveable { mutableStateOf(ArrayList<String>()) }
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
     // Tag ids picked in selection mode ("Select multiple"; null = not in it); an ArrayList so it survives rotation.
     var selectionIds by rememberSaveable { mutableStateOf<ArrayList<String>?>(null) }
     // In pick order. Drop picks whose chip is gone (refreshed tags); leaving the last one ends selection mode.
@@ -130,6 +144,16 @@ fun LogScreen(
                 onLoadMore()
             }
         }
+    }
+
+    // The activity needs to know whether the user is at the top, to choose between jumping and the pill.
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex == 0 && listState.firstVisibleItemScrollOffset == 0 }
+            .distinctUntilChanged()
+            .collect { onAtTopChange(it) }
+    }
+    LaunchedEffect(scrollToTopRequest) {
+        if (scrollToTopRequest > 0) listState.scrollToItem(0)
     }
 
     Scaffold(
@@ -212,13 +236,15 @@ fun LogScreen(
                 )
                 // The search field (always first when present) stays above the list, so it is reachable while scrolling.
                 val searchItem = logItems.firstOrNull() as? LogListRowItem.Search
-                val rowItems = remember(logItems, groupRepeatedLogs, expandedKeys) {
+                val rowItems = remember(logItems, groupRepeatedLogs, expandedKeys, newLogsBoundaryId) {
+                    // The divider goes in before grouping, so repeats don't fold across it.
                     val rows = logItems.filterIsInstance<LogListRowItem.Row>().sessionStartsFirst()
-                    if (!groupRepeatedLogs) rows
-                    else rows.map { it.data }
-                        .groupRepeatedAndExpand(expandedKeys.toSet())
+                        .map { it.data }
+                        .withNewLogsDivider(newLogsBoundaryId)
+                    (if (groupRepeatedLogs) rows.groupRepeatedAndExpand(expandedKeys.toSet()) else rows)
                         .map { LogListRowItem.Row(it) }
                 }
+                val keys = remember(rowItems) { logRowKeys(rowItems.map { it.data }) }
                 val onGroupClick = { group: ReplicatedTextLogItemData ->
                     expandedKeys = ArrayList(if (group.groupKey in expandedKeys) expandedKeys - group.groupKey else expandedKeys + group.groupKey)
                 }
@@ -233,27 +259,32 @@ fun LogScreen(
                         )
                     }
                 }
-                LazyColumn(state = listState, modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    // No stable content id exists across all LogItemData subtypes (some carry one,
-                    // e.g. HttpLogItemData.logId, others don't), so this key is only a synthetic
-                    // position+type marker — better than the implicit positional default, but not
-                    // true content-identity diffing.
-                    rowItems.forEachIndexed { index, rowItem ->
-                        val key = "$index-${rowItem.data::class.simpleName}"
-                        val previous = rowItems.getOrNull(index - 1)?.data
-                        if (rowItem.data is SessionStartLogItemData) {
-                            // Opens its session's block, so it stays pinned while that session's logs scroll under it.
-                            stickyHeader(key = key) {
-                                // Opaque, so rows scrolling underneath don't show through.
-                                Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                        rowItems.forEachIndexed { index, rowItem ->
+                            val key = keys[index]
+                            val previous = rowItems.getOrNull(index - 1)?.data
+                            if (rowItem.data is SessionStartLogItemData) {
+                                // Opens its session's block, so it stays pinned while that session's logs scroll under it.
+                                stickyHeader(key = key) {
+                                    // Opaque, so rows scrolling underneath don't show through.
+                                    Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                                        LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, expandedKeys.toSet(), onGroupClick, onTextLogClick, onHttpLogClick)
+                                    }
+                                }
+                            } else {
+                                item(key = key) {
                                     LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, expandedKeys.toSet(), onGroupClick, onTextLogClick, onHttpLogClick)
                                 }
                             }
-                        } else {
-                            item(key = key) {
-                                LogItemDataRow(calendar, rowItem.data, previous, ignoreTagChip, expandedKeys.toSet(), onGroupClick, onTextLogClick, onHttpLogClick)
-                            }
                         }
+                    }
+                    if (newLogsCount > 0) {
+                        NewLogsPill(
+                            count = newLogsCount,
+                            onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                            modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp),
+                        )
                     }
                 }
             }
@@ -312,6 +343,7 @@ internal fun LogItemDataRow(
             onClick = { onGroupClick(data) }, showDivider = showDivider,
         )
         is RepeatedTextLogChildItemData -> RepeatedTextLogChildRow(calendar, data, onClick = { onTextLogClick(data.log) })
+        is NewLogsDividerItemData -> NewLogsDividerRow(data.count)
     }
 }
 
