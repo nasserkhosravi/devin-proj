@@ -26,10 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.pullrefresh.PullRefreshIndicator
-import androidx.compose.material.pullrefresh.pullRefresh
-import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -56,7 +53,7 @@ import com.khosravi.devin.present.update.ReleaseInfo
 import com.khosravi.devin.present.update.updateMessage
 import com.khosravi.devin.present.update.updateTitle
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StarterScreen(
     message: String,
@@ -102,8 +99,7 @@ fun StarterScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small)
             )
-            val pullState = rememberPullRefreshState(refreshing = isRefreshing, onRefresh = onRefresh)
-            Box(modifier = Modifier.weight(1f).pullRefresh(pullState)) {
+            PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh, modifier = Modifier.weight(1f)) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
@@ -113,7 +109,6 @@ fun StarterScreen(
                         ClientCard(client = client, info = clientInfo[client.packageId], onClick = { onClientClick(client) })
                     }
                 }
-                PullRefreshIndicator(refreshing = isRefreshing, state = pullState, modifier = Modifier.align(Alignment.TopCenter))
             }
             // A button, so it reads as tappable: it opens the release page.
             TextButton(
